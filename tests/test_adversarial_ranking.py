@@ -29,7 +29,7 @@ def compute_volar_series(close_series: pd.Series, volatility_floor: float = 0.05
     df["ret_1d"] = df["close"].pct_change().fillna(0.0)
     df["vol_252"] = (
         df["ret_1d"].rolling(lookback, min_periods=min(251, len(df) - 1)).std(ddof=1) * np.sqrt(252)
-    ).replace(0.0, volatility_floor).fillna(volatility_floor)
+    ).clip(lower=volatility_floor).fillna(volatility_floor)
     df["volar_score"] = df["ret_252"] / df["vol_252"].clip(lower=volatility_floor)
     return df
 

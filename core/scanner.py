@@ -459,7 +459,7 @@ class PydroidScanner:
         bars["ret_1d"] = bars.groupby("symbol")["close"].pct_change().fillna(0.0)
         bars["vol_252"] = bars.groupby("symbol")["ret_1d"].transform(
             lambda s: s.rolling(self.config.volatility_lookback_bars, min_periods=min(251, len(s) - 1)).std(ddof=1) * np.sqrt(252)
-        ).replace(0.0, self.config.volatility_floor).fillna(self.config.volatility_floor)
+        ).clip(lower=self.config.volatility_floor).fillna(self.config.volatility_floor)
         bars["volar_score"] = bars["ret_252"] / bars["vol_252"].clip(lower=self.config.volatility_floor)
 
         # ATR-14 Calculation

@@ -1,0 +1,4 @@
+## 2026-10-14 - Volatility Floor Unclamped Near-Zero Floating Point Values
+**Bug:** `vol_252` (annualized 252-day volatility) was not clamped to `volatility_floor` (0.05) when volatility was extremely low or near zero (e.g. `1.85e-15`), leading to incorrect raw volatility values and potential division anomalies or extreme Volar scores if downstream calculations relied directly on `vol_252`.
+**Root cause:** `replace(0.0, floor)` was used instead of `.clip(lower=floor)` when constructing `vol_252`. Floating point calculations of standard deviation for low-volatility series produce values close to zero but not strictly equal to `0.0`, bypassing `.replace(0.0, ...)`.
+**Prevention:** Use `.clip(lower=floor)` when enforcing minimum numeric thresholds on continuous floating-point series instead of exact value replacement `.replace(0.0, ...)`.
