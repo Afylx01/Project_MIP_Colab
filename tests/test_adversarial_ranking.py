@@ -160,6 +160,16 @@ class TestAdversarialVolarAndIndicators(unittest.TestCase):
         expected_volar = ret / 0.05
         self.assertAlmostEqual(volar, expected_volar, places=4)
 
+    def test_near_zero_floating_point_volatility_clamps_at_floor(self):
+        """Floating point rolling std yielding non-zero small float (< 0.05) must clamp strictly at 0.05."""
+        prices = [100.0 + (0.01 if i % 15 == 0 else 0.0) for i in range(260)]
+        close = pd.Series(prices)
+        res = compute_volar_series(close, volatility_floor=0.05, lookback=252)
+        last_row = res.iloc[-1]
+        self.assertEqual(last_row["vol_252"], 0.05)
+        expected_volar = last_row["ret_252"] / 0.05
+        self.assertAlmostEqual(last_row["volar_score"], expected_volar, places=6)
+
     def test_extreme_price_collapse(self):
         """Massive 99.9% collapse: must calculate negative return and valid positive volatility without overflow/NaN."""
         prices = np.linspace(1000.0, 1.0, 260)

@@ -5,7 +5,7 @@
   "source_project": "Project_MIP_Pydroid3",
   "destination_project": "MIP_Android",
   "source_scanner_sha256": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-  "migrated_scanner_sha256": "eb5cb90e5a2dc3ff7e0d88aed474c80ee1f48e8f9985cd6fcc316c00f6a06bfe",
+  "migrated_scanner_sha256": "c30665b6ae320a2e6bd8ef3f54faddb8fdbaeea79998258e3ee90b514ecb3a61",
   "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "canonical_expected_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "fingerprint_verified": true,
@@ -140,9 +140,9 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "eb5cb90e5a2dc3ff7e0d88aed474c80ee1f48e8f9985cd6fcc316c00f6a06bfe",
+      "sha256_migrated": "c30665b6ae320a2e6bd8ef3f54faddb8fdbaeea79998258e3ee90b514ecb3a61",
       "status": "refactored",
-      "refactor_notes": "Integrated allow_stale_data parameter into run_scan and fail-closed resolution"
+      "refactor_notes": "Integrated allow_stale_data and fixed volatility floor clamping with .clip(lower=floor)"
     },
     {
       "filename": "sector_rotation.py",
