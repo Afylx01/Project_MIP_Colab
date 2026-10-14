@@ -300,11 +300,7 @@ class PydroidAutoFetch:
             if act_type in ['split', 'bonus']:
                 factor = act['factor']
                 vol_factor = 1.0 / factor
-                self.log(f"Applying {act_type} for {sym} before {ex_date}, factor {factor:.6f}")
-                cursor.execute(
-                    "UPDATE prices SET open=open*?, high=high*?, low=low*?, close=close*?, volume=volume*? WHERE symbol=? AND date<?",
-                    (factor, factor, factor, factor, vol_factor, sym, ex_date)
-                )
+                self.log(f"Recording {act_type} for {sym} before {ex_date}, factor {factor:.6f} (dynamic in-memory adjustment via AnalyticalPriceEngine)")
                 cursor.execute(
                     "INSERT OR REPLACE INTO applied_corporate_actions (symbol, ex_date, type, factor, amount, applied_at) VALUES (?, ?, ?, ?, ?, ?)",
                     (sym, ex_date, act_type, factor, None, now_str)

@@ -164,8 +164,8 @@ class AnalyticalPriceEngine:
         all_actions = self.actions_by_symbol.get(sym_clean, [])
         active: List[CorporateActionEvent] = []
         for a in all_actions:
-            # Enforce temporal boundary on both ex_date and effective_date
-            if a.ex_date <= as_of_clean and a.effective_date <= as_of_clean:
+            # Enforce temporal boundary: on or after ex_date, exchange pricing reflects corporate action
+            if a.ex_date <= as_of_clean:
                 active.append(a)
         return active
 

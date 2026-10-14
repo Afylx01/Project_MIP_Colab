@@ -21,9 +21,9 @@
     {
       "filename": "analytical_price.py",
       "sha256_source": "3031b619ce6f2c6fbe22cf29350e6ecaec10f39757ad19c06376b7115eae0a6a",
-      "sha256_migrated": "3031b619ce6f2c6fbe22cf29350e6ecaec10f39757ad19c06376b7115eae0a6a",
-      "status": "identical",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "sha256_migrated": "6bd787c5a2dada0ee94da44fa4609ee02ec50a32780fdc7902ea3fe8f4231d6a",
+      "status": "refactored",
+      "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
     },
     {
       "filename": "anomaly.py",
@@ -35,9 +35,9 @@
     {
       "filename": "auto_fetch.py",
       "sha256_source": "a99103cb6397860f9e3883403b2a69b7c88ccad32b09b7053b604ba29fbfdd29",
-      "sha256_migrated": "2f34638d803b36191ba7b9f4adc247f038f61811ab1c4331f0e869ade1a95163",
+      "sha256_migrated": "f644ebef946084ca9d843d2f09adcc03530e9a67981b6e4a65b1e7e273213b18",
       "status": "refactored",
-      "refactor_notes": "OWASP Top 10 security hardening & defensive boundaries"
+      "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
     },
     {
       "filename": "backtest.py",
@@ -70,9 +70,9 @@
     {
       "filename": "data_engine.py",
       "sha256_source": "a2836814d38d65315c0a1bc1645f75efcc6ea7b393e565816110b28e78dbd6ae",
-      "sha256_migrated": "ec2bb8bcd479955e02e0d5c8312e20e0913d366cb19299102fdf37714d1c9eb0",
+      "sha256_migrated": "63a30185de0a226fe1b59374bbe5364413793f9ce87d1e117bc79f83d3d87310",
       "status": "refactored",
-      "refactor_notes": "Authoritative latest actual trading day EOD resolution guarantee and MIP_BASE_DIR support"
+      "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
     },
     {
       "filename": "delivery.py",
