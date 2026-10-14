@@ -285,12 +285,10 @@ def sync_nse_sectors(base_dir: Optional[Path] = None) -> Dict[str, str]:
         except Exception as e:
             logger.warning(f"Session download failed for {fname} ({e}). Trying urllib fallback...")
             try:
-                req = urllib.request.Request(
-                    url, 
-                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-                )
-                with urllib.request.urlopen(req) as response:
-                    csv_path.write_bytes(response.read())
+                # Enforce bounded timeout and memory allocation limit (OWASP A05 / CWE-400)
+                max_bytes = 10 * 1024 * 1024
+                with urllib.request.urlopen(req, timeout=15) as response:
+                    csv_path.write_bytes(response.read(max_bytes))
                 logger.info(f"Fallback download succeeded for {fname}")
             except Exception as e_url:
                 logger.error(f"Fallback download failed for {fname}: {e_url}")

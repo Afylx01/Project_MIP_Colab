@@ -56,6 +56,13 @@ class PydroidTelegramSender:
     def is_configured(self) -> bool:
         return bool(self.bot_token and self.chat_id)
 
+    def _sanitize_error(self, err: Any) -> str:
+        """Redacts sensitive Telegram bot tokens from error messages and logs (CWE-209 / CWE-532)."""
+        msg = str(err)
+        if self.bot_token and self.bot_token in msg:
+            msg = msg.replace(self.bot_token, "[REDACTED_BOT_TOKEN]")
+        return msg
+
     def _get_session(self):
         """Attempts to return curl_cffi Chrome-impersonated session, else requests session."""
         try:
@@ -112,7 +119,7 @@ class PydroidTelegramSender:
                 print(f"✗ Telegram API Error: {res_data.get('description')}")
                 return False
         except Exception as e:
-            print(f"✗ Telegram request error: {e}")
+            print(f"✗ Telegram request error: {self._sanitize_error(e)}")
             return False
 
     def send_photo(self, photo_path: Path, caption: Optional[str] = None, dry_run: bool = False) -> bool:
@@ -144,7 +151,7 @@ class PydroidTelegramSender:
                 print(f"✗ Telegram photo API Error: {res_data.get('description')}")
                 return False
         except Exception as e:
-            print(f"✗ Telegram photo transmission failed: {e}")
+            print(f"✗ Telegram photo transmission failed: {self._sanitize_error(e)}")
             return False
 
     def send_document(self, doc_path: Path, caption: Optional[str] = None, dry_run: bool = False) -> bool:
@@ -176,8 +183,12 @@ class PydroidTelegramSender:
                 print(f"✗ Telegram document API Error: {res_data.get('description')}")
                 return False
         except Exception as e:
-            print(f"✗ Telegram document transmission failed: {e}")
+            print(f"✗ Telegram document transmission failed: {self._sanitize_error(e)}")
             return False
+
+
+# Institutional Aliases
+TelegramSender = PydroidTelegramSender
 
 
 def format_telegram_alert(

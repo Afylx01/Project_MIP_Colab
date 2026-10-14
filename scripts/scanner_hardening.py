@@ -625,7 +625,9 @@ class ConstituentReconciliationEngine:
                 )
                 with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
                     if resp.status == 200:
-                        data = resp.read()
+                        # Bounded buffer read: Max 10MB to prevent DoS memory exhaustion (OWASP A05 / CWE-400)
+                        max_csv_bytes = 10 * 1024 * 1024
+                        data = resp.read(max_csv_bytes)
                         val_res = ConstituentValidator.validate_csv_content(data, universe_key=universe_key)
                         if val_res.is_valid:
                             return data, url

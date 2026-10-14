@@ -12,6 +12,7 @@ import sys
 import time
 import json
 import argparse
+import subprocess
 from pathlib import Path
 from typing import Optional
 
@@ -582,7 +583,7 @@ def run_tdd_suite():
     print(f"\n{C_BOLD}{C_YELLOW}🛡️ RUNNING MASTER INSTITUTIONAL TEST SUITE (TESTS 01 - 09)...{C_RESET}\n")
 
     master_runner = BASE_DIR / "tests" / "run_all_tests.py"
-    ret = os.system(f'"{sys.executable}" "{master_runner}"')
+    subprocess.run([sys.executable, str(master_runner)])
 
     input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
 

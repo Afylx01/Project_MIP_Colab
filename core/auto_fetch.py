@@ -112,7 +112,16 @@ class PydroidAutoFetch:
                 if resp.status_code == 200 and resp.content:
                     if url.endswith(".zip") or resp.content[:2] == b"PK":
                         with zipfile.ZipFile(io.BytesIO(resp.content)) as z:
-                            csv_name = [n for n in z.namelist() if n.endswith('.csv')][0]
+                            csv_names = [n for n in z.namelist() if n.endswith('.csv')]
+                            if not csv_names:
+                                self.log(f"No CSV file found inside archive from {url}")
+                                continue
+                            csv_name = csv_names[0]
+                            # Decompression bomb safeguard: Max 50MB uncompressed (CWE-409)
+                            info = z.getinfo(csv_name)
+                            if info.file_size > 50 * 1024 * 1024:
+                                self.log(f"Security Alert: Uncompressed size exceeds 50MB limit ({info.file_size} bytes)")
+                                continue
                             with z.open(csv_name) as f:
                                 raw = pd.read_csv(f)
                                 return self._standardize_bhavcopy(raw, date_str)

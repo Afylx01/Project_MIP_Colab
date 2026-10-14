@@ -35,9 +35,9 @@
     {
       "filename": "auto_fetch.py",
       "sha256_source": "a99103cb6397860f9e3883403b2a69b7c88ccad32b09b7053b604ba29fbfdd29",
-      "sha256_migrated": "1238977a616621e50e18343955a9945fc21aa73b2481d4ae1afc7fb9154cf555",
+      "sha256_migrated": "2f34638d803b36191ba7b9f4adc247f038f61811ab1c4331f0e869ade1a95163",
       "status": "refactored",
-      "refactor_notes": "Phase 40 production immutability firewall added to sync_universe"
+      "refactor_notes": "OWASP Top 10 security hardening & defensive boundaries"
     },
     {
       "filename": "backtest.py",
@@ -154,23 +154,23 @@
     {
       "filename": "settings.py",
       "sha256_source": "a43d1cefd0a009583178e8a44ac6238d4575cf2320fafd4ed011723539988770",
-      "sha256_migrated": "a43d1cefd0a009583178e8a44ac6238d4575cf2320fafd4ed011723539988770",
-      "status": "identical",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "sha256_migrated": "ab4c1f00e85b8fffe9e3af294d5d286d3f221c6d3016aaa0c6dddec27d3ce555",
+      "status": "refactored",
+      "refactor_notes": "OWASP Top 10 security hardening & defensive boundaries"
     },
     {
       "filename": "sync_sectors.py",
       "sha256_source": "f22c930f44904f27134f9a24fd4b2cbbea3c12c4f79256548140f341dbb7a9e0",
-      "sha256_migrated": "7ff58576a5f963aed79f5fa5bf48c099cb2478bdc5069264fed3b47d4a9c5359",
+      "sha256_migrated": "649d4dc8029082f79b694ab3a4df68e0c3992fa991a1b54546e9a36d39c0ecbc",
       "status": "refactored",
-      "refactor_notes": "Updated pydroid_core internal imports to relative imports and aligned with official 22 AMFI macro industries"
+      "refactor_notes": "OWASP Top 10 security hardening & defensive boundaries"
     },
     {
       "filename": "telegram_sender.py",
       "sha256_source": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
-      "sha256_migrated": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
-      "status": "identical",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "sha256_migrated": "34e98974b8e3bc369a6f74013c29eedd762c670b19d41933569beb0f8d086311",
+      "status": "refactored",
+      "refactor_notes": "OWASP Top 10 security hardening & defensive boundaries"
     },
     {
       "filename": "validation.py",

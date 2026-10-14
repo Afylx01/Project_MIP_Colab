@@ -69,12 +69,18 @@ def load_investing_settings(base_dir: Optional[Path] = None) -> Dict[str, Any]:
 
 
 def save_investing_settings(settings: Dict[str, Any], base_dir: Optional[Path] = None) -> bool:
-    """Saves settings atomically to JSON file."""
+    """Saves settings atomically to JSON file with restrictive permissions (OWASP A01 / CWE-732)."""
     spath = get_settings_path(base_dir)
     try:
         tmp_path = spath.with_suffix(".tmp.json")
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(settings, f, indent=2, sort_keys=True)
+        # Enforce restrictive file permissions: 0o600 (owner read/write only)
+        if os.name == "posix":
+            try:
+                os.chmod(tmp_path, 0o600)
+            except OSError:
+                pass
         tmp_path.replace(spath)
         return True
     except Exception as e:

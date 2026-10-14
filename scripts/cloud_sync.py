@@ -16,6 +16,7 @@ Provides Zero-Leak Google Drive Access:
 
 import os
 import sys
+import re
 import time
 import shutil
 import sqlite3
@@ -23,6 +24,17 @@ from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
 
 from core.data_engine import get_base_dir, get_db_path
+
+
+def validate_gdrive_file_id(file_id: Optional[str]) -> bool:
+    """
+    Validates Google Drive File ID format to prevent SSRF, path traversal,
+    and injection attacks (OWASP A01 / CWE-20).
+    Google Drive File IDs are 10-100 characters composed strictly of [a-zA-Z0-9_-].
+    """
+    if not file_id or not isinstance(file_id, str):
+        return False
+    return bool(re.match(r"^[a-zA-Z0-9_-]{10,100}\Z", file_id))
 
 
 def is_running_in_colab() -> bool:
@@ -102,7 +114,10 @@ def sync_universe_from_gdrive(
         except Exception as e:
             log(f"Warning reading GDRIVE_SA_KEY_PATH: {e}")
 
-    target_file_id = file_id or get_colab_secret("GDRIVE_UNIVERSE_DB_FILE_ID") or os.environ.get("GDRIVE_UNIVERSE_DB_FILE_ID")
+    raw_file_id = file_id or get_colab_secret("GDRIVE_UNIVERSE_DB_FILE_ID") or os.environ.get("GDRIVE_UNIVERSE_DB_FILE_ID")
+    target_file_id = raw_file_id.strip() if validate_gdrive_file_id(raw_file_id) else None
+    if raw_file_id and not target_file_id:
+        log(f"Warning: Rejected invalid Google Drive File ID: {raw_file_id}")
 
     if sa_json_content and target_file_id:
         log("Authenticating via Google Cloud Service Account (Zero-Leak Private Vault)...")
