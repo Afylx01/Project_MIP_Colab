@@ -154,6 +154,57 @@ def sync_universe_from_gdrive(
     }
 
 
+def push_universe_to_gdrive(
+    local_db_path: Optional[Path] = None,
+    gdrive_dest_path: Optional[Path] = None,
+    verbose: bool = True,
+) -> Tuple[bool, str, Dict[str, Any]]:
+    """
+    Saves and synchronizes the local universe.db back to persistent Google Drive.
+    Call this when you perform a live market data sync (Option 8) in Colab and wish
+    to preserve newly downloaded trading bars permanently on your Google Drive.
+    """
+    local = Path(local_db_path) if local_db_path else get_db_path()
+    if not local.exists():
+        return False, "LOCAL_DATABASE_NOT_FOUND", {"local": str(local)}
+
+    def log(msg: str):
+        if verbose:
+            print(f"[CloudSync Push] {msg}")
+
+    # Identify Google Drive destination
+    if not gdrive_dest_path and is_running_in_colab():
+        gdrive_candidates = [
+            Path("/content/drive/MyDrive/MIP/universe.db"),
+            Path("/content/drive/MyDrive/Project_MIP/data/universe.db"),
+            Path("/content/drive/MyDrive/universe.db"),
+            Path("/content/drive/Shareddrives/MIP/universe.db"),
+        ]
+        for cand in gdrive_candidates:
+            if cand.parent.exists():
+                gdrive_dest_path = cand
+                break
+
+    if not gdrive_dest_path:
+        default_dir = Path("/content/drive/MyDrive/MIP")
+        if default_dir.exists():
+            gdrive_dest_path = default_dir / "universe.db"
+
+    if gdrive_dest_path:
+        dest_p = Path(gdrive_dest_path)
+        dest_p.parent.mkdir(parents=True, exist_ok=True)
+        log(f"Backing up local database ({local.stat().st_size / (1024*1024):.1f} MB) to Google Drive: {dest_p}...")
+        t0 = time.time()
+        shutil.copy2(local, dest_p)
+        elapsed = time.time() - t0
+        log(f"✓ Backup to Google Drive complete in {elapsed:.2f}s!")
+        return True, "BACKED_UP_TO_GDRIVE", {"source": str(local), "destination": str(dest_p), "elapsed_s": elapsed}
+
+    return False, "GDRIVE_DESTINATION_NOT_FOUND", {
+        "help": "Google Drive is not mounted or destination directory not found. Mount Drive first via drive.mount('/content/drive')."
+    }
+
+
 def benchmark_storage_latency(db_path: Path, num_queries: int = 50) -> Dict[str, Any]:
     """
     Benchmarks SQLite query latency against the specified database path.
