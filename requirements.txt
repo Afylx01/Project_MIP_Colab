@@ -1,0 +1,20 @@
+# Project MIP - Core & Cloud Dependencies
+# Zero-Compiler Pure Python Architecture with Optional C99 Native Acceleration
+
+# Core Quantitative & Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+requests>=2.28.0
+
+# Visualization & Reporting
+matplotlib>=3.7.0
+
+# Optional Cloud & Google Drive Synchronization
+google-api-python-client>=2.90.0
+google-auth>=2.20.0
+google-auth-oauthlib>=1.0.0
+gdown>=4.7.0
+
+# Optional Interactive Notebook UI
+ipywidgets>=8.0.0

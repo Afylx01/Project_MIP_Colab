@@ -1,0 +1,59 @@
+{
+  "manifest_type": "RELEASE_DISTRIBUTION_MANIFEST",
+  "project_name": "Project MIP (Momentum Investing System)",
+  "version": "1.0.0-sealed",
+  "vcs_release_tag": "v1.0.0-sealed",
+  "timestamp_utc": "2026-10-13T18:43:00Z",
+  "distribution_archive": {
+    "filename": "MIP_Android_v1.0.0_production_sealed.tar.gz",
+    "relative_path": "MIP_Android_v1.0.0_production_sealed.tar.gz",
+    "file_size_bytes": 431588570,
+    "sha256": "3c658bc906af6f889ffd69b56faf67953b149f03d479a2a41b92e283a36f9367",
+    "compression": "tar.gz (POSIX ustar, gzip compressed)"
+  },
+  "canonical_provenance": {
+    "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
+    "database": {
+      "relative_path": "data/universe.db",
+      "row_count": 2164420,
+      "file_size_bytes": 351744000,
+      "max_date": "2026-10-09",
+      "sha256": "0077ea77bfabf6cc5e0d12e3096e632878d1a28d02eed097c45f491ea0633f64",
+      "integrity_check": "ok"
+    },
+    "corporate_actions_registry": {
+      "relative_path": "data/corporate_actions_registry.json",
+      "sha256": "9e492f94e0e108fc968414e903cc730beda528379efee74594c6e521b1f6d2b9"
+    },
+    "trading_calendar": {
+      "relative_path": "data/trading_calendar.txt",
+      "session_count": 4888,
+      "sha256": "42e40e9ab665cfb7ba0850f414485eda9dc4f418c782cbb38107d1fd4b1986ef"
+    },
+    "provenance_manifest": {
+      "relative_path": "certificates/PROVENANCE_MANIFEST.json",
+      "module_count": 25,
+      "status": "SEALED"
+    },
+    "production_readiness_certificate": {
+      "relative_path": "certificates/PRODUCTION_READINESS_CERTIFICATE.json",
+      "status": "CERTIFIED"
+    }
+  },
+  "operational_summary": {
+    "total_tests": 243,
+    "tests_passed": 240,
+    "tests_skipped": 3,
+    "tests_failed": 0,
+    "tests_errors": 0,
+    "production_ready_status": true,
+    "concurrency_locking": "POSIX Atomic File Locking (.scanner.lock)",
+    "log_rotation": "Bounded RotatingFileHandler (10MB max, 5 backups, 50MB hard cap)",
+    "market_hours_guard": "Trading calendar holiday awareness",
+    "emergency_alerts": "Pre-flight health failure alert dispatch via Telegram Bot API",
+    "production_immutability_firewall": "ACTIVE (MIP_ALLOW_PROD_MUTATION=1 required for database writes)",
+    "staging_status": "BLOCKED",
+    "live_broker_order_routing": "DISABLED"
+  },
+  "release_disposition": "FINAL_PRODUCTION_RELEASE_SEALED"
+}

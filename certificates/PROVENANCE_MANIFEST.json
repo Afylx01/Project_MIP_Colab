@@ -1,0 +1,190 @@
+{
+  "manifest_schema_version": "1.1.0",
+  "migration_phase": "Phase 11: Android Productization, Parity Hardening & Long-Run Validation",
+  "timestamp_utc": "2026-10-07T20:49:40.874212+00:00",
+  "source_project": "Project_MIP_Pydroid3",
+  "destination_project": "MIP_Android",
+  "source_scanner_sha256": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
+  "migrated_scanner_sha256": "eb5cb90e5a2dc3ff7e0d88aed474c80ee1f48e8f9985cd6fcc316c00f6a06bfe",
+  "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
+  "canonical_expected_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
+  "fingerprint_verified": true,
+  "total_modules": 25,
+  "modules": [
+    {
+      "filename": "__init__.py",
+      "sha256_source": "f2c326444ac617e9a79f507cc2fb6273074bcb7e75c227fb614b4dc964081cfe",
+      "sha256_migrated": "f2c326444ac617e9a79f507cc2fb6273074bcb7e75c227fb614b4dc964081cfe",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "analytical_price.py",
+      "sha256_source": "3031b619ce6f2c6fbe22cf29350e6ecaec10f39757ad19c06376b7115eae0a6a",
+      "sha256_migrated": "3031b619ce6f2c6fbe22cf29350e6ecaec10f39757ad19c06376b7115eae0a6a",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "anomaly.py",
+      "sha256_source": "e789cca082bfa1bb7d3b77e3dcf02a0901583df125c8a288de9eb0b151572f75",
+      "sha256_migrated": "e789cca082bfa1bb7d3b77e3dcf02a0901583df125c8a288de9eb0b151572f75",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "auto_fetch.py",
+      "sha256_source": "a99103cb6397860f9e3883403b2a69b7c88ccad32b09b7053b604ba29fbfdd29",
+      "sha256_migrated": "1238977a616621e50e18343955a9945fc21aa73b2481d4ae1afc7fb9154cf555",
+      "status": "refactored",
+      "refactor_notes": "Phase 40 production immutability firewall added to sync_universe"
+    },
+    {
+      "filename": "backtest.py",
+      "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
+      "sha256_migrated": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "benchmark_validator.py",
+      "sha256_source": "b937cb2a309dc4e139a4e34194c5f83b1f2f6d202731c1c222de3548dffec36e",
+      "sha256_migrated": "b937cb2a309dc4e139a4e34194c5f83b1f2f6d202731c1c222de3548dffec36e",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "breadth.py",
+      "sha256_source": "85c7d449929dd569081ca25ca370a72f736d00bc18a18be336aab6550c8a38a7",
+      "sha256_migrated": "85c7d449929dd569081ca25ca370a72f736d00bc18a18be336aab6550c8a38a7",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "config.py",
+      "sha256_source": "44d207ea4961391a763266174713207c599e3e0e4133cd7cf607badb03b845f2",
+      "sha256_migrated": "44d207ea4961391a763266174713207c599e3e0e4133cd7cf607badb03b845f2",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "data_engine.py",
+      "sha256_source": "a2836814d38d65315c0a1bc1645f75efcc6ea7b393e565816110b28e78dbd6ae",
+      "sha256_migrated": "ec2bb8bcd479955e02e0d5c8312e20e0913d366cb19299102fdf37714d1c9eb0",
+      "status": "refactored",
+      "refactor_notes": "Authoritative latest actual trading day EOD resolution guarantee and MIP_BASE_DIR support"
+    },
+    {
+      "filename": "delivery.py",
+      "sha256_source": "4f0220d22d9f39c9b95048246d05b09f85ce966b62c60b7624a832f70b08e2f7",
+      "sha256_migrated": "4f0220d22d9f39c9b95048246d05b09f85ce966b62c60b7624a832f70b08e2f7",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "etf_engine.py",
+      "sha256_source": "dd8a04d68452c99da1171baac58337e40cc9d67b757a8a9dd5d00fef53ecba2e",
+      "sha256_migrated": "dd8a04d68452c99da1171baac58337e40cc9d67b757a8a9dd5d00fef53ecba2e",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "excel_generator.py",
+      "sha256_source": "bbbb2a7ed89c1b3beae65b5b15b52c5204ba12bd909ae93be2279ffa5973141a",
+      "sha256_migrated": "026de12b3a409072444fc61e8c950075d91b225b46f7096d1ad0f31a550d4bcd",
+      "status": "refactored",
+      "refactor_notes": "Mobile deliverables path resolution and Volar strategy documentation alignment"
+    },
+    {
+      "filename": "health.py",
+      "sha256_source": "568c4dce4d8653708e4f4dec9a7fd1e750111c9561511c0eae025bcf3357ad9a",
+      "sha256_migrated": "568c4dce4d8653708e4f4dec9a7fd1e750111c9561511c0eae025bcf3357ad9a",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "identity.py",
+      "sha256_source": "2909804137b97c04a2621189484151d6cd4138dba8bea3d54d7e0749c23e5941",
+      "sha256_migrated": "2909804137b97c04a2621189484151d6cd4138dba8bea3d54d7e0749c23e5941",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "portfolio.py",
+      "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
+      "sha256_migrated": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "reason_codes.py",
+      "sha256_source": "4db8ef5a79762956510f73c0616766366087d915320f29bed1b87b1742a66d3e",
+      "sha256_migrated": "4db8ef5a79762956510f73c0616766366087d915320f29bed1b87b1742a66d3e",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "rrg.py",
+      "sha256_source": "de5b3de14e1cd30751c4455936d2ee30c817411e30a7568706fd8c461cbda2c0",
+      "sha256_migrated": "de5b3de14e1cd30751c4455936d2ee30c817411e30a7568706fd8c461cbda2c0",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "scan_quality_report.py",
+      "sha256_source": "e722f67ec43d33453bde9455c7739efc377fbf8cb4256d7e16ba696903934d76",
+      "sha256_migrated": "e722f67ec43d33453bde9455c7739efc377fbf8cb4256d7e16ba696903934d76",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "scanner.py",
+      "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
+      "sha256_migrated": "eb5cb90e5a2dc3ff7e0d88aed474c80ee1f48e8f9985cd6fcc316c00f6a06bfe",
+      "status": "refactored",
+      "refactor_notes": "Integrated allow_stale_data parameter into run_scan and fail-closed resolution"
+    },
+    {
+      "filename": "sector_rotation.py",
+      "sha256_source": "be771a5850c691084e4cf9a40472b56934360e0d6b29bf48d111b48c5637f349",
+      "sha256_migrated": "be771a5850c691084e4cf9a40472b56934360e0d6b29bf48d111b48c5637f349",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "settings.py",
+      "sha256_source": "a43d1cefd0a009583178e8a44ac6238d4575cf2320fafd4ed011723539988770",
+      "sha256_migrated": "a43d1cefd0a009583178e8a44ac6238d4575cf2320fafd4ed011723539988770",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "sync_sectors.py",
+      "sha256_source": "f22c930f44904f27134f9a24fd4b2cbbea3c12c4f79256548140f341dbb7a9e0",
+      "sha256_migrated": "7ff58576a5f963aed79f5fa5bf48c099cb2478bdc5069264fed3b47d4a9c5359",
+      "status": "refactored",
+      "refactor_notes": "Updated pydroid_core internal imports to relative imports and aligned with official 22 AMFI macro industries"
+    },
+    {
+      "filename": "telegram_sender.py",
+      "sha256_source": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
+      "sha256_migrated": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "validation.py",
+      "sha256_source": "407b9b577685406cd28be8db6ce970812fa75c97bbfb08aab48d9be50b3ce31e",
+      "sha256_migrated": "407b9b577685406cd28be8db6ce970812fa75c97bbfb08aab48d9be50b3ce31e",
+      "status": "identical",
+      "refactor_notes": "Identical to Main MIP pydroid_core source"
+    },
+    {
+      "filename": "visuals.py",
+      "sha256_source": "680a4cbf8d54bd5b9a9e9768fba0dc289061e0776755645250e10052b5f4d33a",
+      "sha256_migrated": "54758b9a7df14b44828fac47d7f30ad38e941ab29356e90cfd79cf200daf74a9",
+      "status": "refactored",
+      "refactor_notes": "Mobile-compatible output paths and formatting"
+    }
+  ]
+}

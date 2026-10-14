@@ -1,0 +1,64 @@
+# Project MIP: Zero-Leak Institutional Git Ignore Rules
+
+# Credentials & API Keys (STRICTLY PROHIBITED IN VCS)
+.env
+*.env
+*.pem
+*.key
+*service_account*.json
+*sa_key*.json
+*credentials*.json
+*token*.txt
+*Token*.txt
+*toke*.txt
+GCP_SA.json
+secrets/
+credentials/
+
+# Large Binary Database (Staged from Google Drive / NVMe SSD)
+data/universe.db
+data/universe.db-wal
+data/universe.db-shm
+data/universe.db.bak
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+# C99 Compiled Shared Libraries & Binary Objects
+*.so
+*.o
+*.dylib
+*.dll
+*.a
+mip_sim_kernel.so
+
+# Execution Outputs, Tearsheets & Private Logs
+reports/*.csv
+reports/*.xlsx
+reports/*.png
+reports/*.html
+reports/*.json
+reports/*.log
+reports/.scanner.lock
+logs/*.log
+logs/*.log.*
+!reports/.gitkeep
+
+# Python Bytecode, Caches & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Operating System & Editor Metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
