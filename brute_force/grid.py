@@ -3,7 +3,7 @@ grid.py - Parameter Space & Multi-Tier Matrix Generators for Project MIP
 Supports Snapdragon 8 Gen 2 C99 NEON Brute Force Optimization.
 """
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import itertools
 import random
 import numpy as np

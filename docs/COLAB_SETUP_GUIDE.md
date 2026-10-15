@@ -68,7 +68,15 @@ If you don't have Google Drive or a Service Account configured:
 
 ---
 
-## 5. Why We Stage `universe.db` to Local NVMe (The 40x Latency Law)
+## 5. Google Drive Storage Quota Protection (High-Compression Pipeline)
+To prevent `universe.db` from consuming excessive Google Drive storage as market history grows:
+1. **Persistent Compressed Format**: On Google Drive, the database is stored as `universe.db.gz` (~100 MB instead of 351 MB, achieving >70% compression).
+2. **Streaming Decompression on Startup**: When Cell 1 runs in Google Colab, it streams and decompresses `universe.db.gz` into local fast NVMe memory in ~1.5 seconds.
+3. **Automatic Re-Compression on Update**: When new market sessions are fetched, `push_universe_to_gdrive()` automatically compresses the updated SQLite database and saves `universe.db.gz` to Google Drive, cleaning up any legacy uncompressed files to keep your Drive storage minimal.
+
+---
+
+## 6. Why We Stage `universe.db` to Local NVMe (The 40x Latency Law)
 Google Colab's `/content/drive/` is mounted using Google Drive FUSE (Filesystem in Userspace).
 - SQLite performs 4 KB random page reads and B-tree binary seeks.
 - Over FUSE, every page seek requires an HTTP round-trip over the network.
@@ -79,7 +87,7 @@ Google Colab's `/content/drive/` is mounted using Google Drive FUSE (Filesystem 
 
 ---
 
-## 6. Sharing the Codebase Safely
+## 7. Sharing the Codebase Safely
 When sharing this repository on GitHub or with colleagues:
 - `.gitignore` strictly ignores:
   - `*.env`
