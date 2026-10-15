@@ -995,6 +995,8 @@ class HardenedScanner(PydroidScanner):
         allow_stale_data: bool = False,
         send_telegram: bool = False,
         auto_download_excel: bool = False,
+        use_vol_targeting: bool = False,
+        use_delivery_veto: bool = False,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Hardened execution of screener pipeline:
@@ -1104,6 +1106,45 @@ class HardenedScanner(PydroidScanner):
             )
 
         top_df = res[0]
+        if use_delivery_veto and top_df is not None and not top_df.empty:
+            if "delivery_action" in top_df.columns:
+                vetoed_mask = top_df["delivery_action"].astype(str).str.contains("DISTRIBUTION|VETO", na=False)
+                vetoed_syms = top_df.loc[vetoed_mask, "symbol"].tolist()
+                if vetoed_syms:
+                    self.log(f"🛡️ Delivery Microstructure Veto: Excluded {len(vetoed_syms)} distribution candidate(s): {', '.join(vetoed_syms)}")
+                    top_df["is_delivery_vetoed"] = top_df["symbol"].isin(vetoed_syms)
+                    top_df.loc[top_df["is_delivery_vetoed"], "allow_buy"] = False
+                    top_df.loc[top_df["is_delivery_vetoed"], "target_qty"] = 0
+                    top_df.loc[top_df["is_delivery_vetoed"], "target_val"] = 0.0
+                    top_df.attrs["delivery_vetoed_symbols"] = vetoed_syms
+
+        if use_vol_targeting and top_df is not None and not top_df.empty:
+            try:
+                from nextgen.volatility_targeting import compute_ewma_realized_volatility, compute_dynamic_cash_shield_scalar
+                b_df = self.load_benchmark()
+                if not b_df.empty and "close" in b_df.columns:
+                    b_rets = b_df["close"].pct_change().dropna()
+                    ewma_vol = compute_ewma_realized_volatility(b_rets)
+                    current_vol = float(ewma_vol.iloc[-1]) if not ewma_vol.empty else 0.15
+                    breadth_res = res[1] if len(res) > 1 else {}
+                    b_tp = breadth_res.get("trend_participation", {}) if isinstance(breadth_res, dict) else {}
+                    b_ratio = float(b_tp.get("pct_above_200_ema", 50.0)) / 100.0
+                    regime_res = res[3] if len(res) > 3 else {}
+                    is_bull = bool(regime_res.get("is_normal_regime", True)) if isinstance(regime_res, dict) else True
+                    shield_scalar = compute_dynamic_cash_shield_scalar(
+                        is_bull_regime=is_bull,
+                        realized_vol=current_vol,
+                        target_vol=0.12,
+                        breadth_ratio=b_ratio,
+                    )
+                    top_df["target_qty"] = (top_df["target_qty"] * shield_scalar).astype(int)
+                    top_df["target_val"] = (top_df["target_qty"] * top_df["close"]).round(2)
+                    top_df.attrs["shield_scalar"] = shield_scalar
+                    top_df.attrs["market_realized_vol"] = current_vol
+                    self.log(f"🛡️ Dynamic Cash Shield: Exposure scaled to {shield_scalar*100:.1f}% Equity / {(1-shield_scalar)*100:.1f}% Cash (Realized Vol: {current_vol*100:.2f}%)")
+            except Exception as e_shield:
+                self.log(f"Dynamic cash shield notice: {e_shield}")
+
         if auto_download_excel and hasattr(top_df, "attrs"):
             excel_path = top_df.attrs.get("excel_path")
             if excel_path and Path(excel_path).exists():

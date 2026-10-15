@@ -221,6 +221,8 @@ def run_scanner_flow(
     force_refresh: bool = False,
     allow_stale: bool = True,
     auto_sync: bool = True,
+    use_vol_targeting: bool = False,
+    use_delivery_veto: bool = False,
 ):
     clear_screen()
     initial_date = get_latest_date()
@@ -266,6 +268,8 @@ def run_scanner_flow(
             force_constituent_refresh=force_live_fetch,
             allow_stale_universe=True,
             allow_stale_data=effective_allow_stale,
+            use_vol_targeting=use_vol_targeting,
+            use_delivery_veto=use_delivery_veto,
         )
     except (StaleDataError, DataUnavailableError, RuntimeError) as e:
         if interactive and isinstance(e, StaleDataError) and not effective_allow_stale:
@@ -284,6 +288,8 @@ def run_scanner_flow(
                         force_constituent_refresh=force_live_fetch,
                         allow_stale_universe=True,
                         allow_stale_data=True,
+                        use_vol_targeting=use_vol_targeting,
+                        use_delivery_veto=use_delivery_veto,
                     )
                 else:
                     input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
@@ -1410,6 +1416,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Allow execution on latest available database date if recent market data is not yet synced")
     parser.add_argument("--no-auto-sync", action="store_true",
                         help="Disable automated market data synchronization before scan")
+    parser.add_argument("--use-vol-targeting", action="store_true",
+                        help="Enable dynamic continuous volatility targeting & cash shield")
+    parser.add_argument("--use-delivery-veto", action="store_true",
+                        help="Enable institutional delivery absorption flow distribution veto")
     return parser
 
 
@@ -1441,6 +1451,8 @@ if __name__ == "__main__":
             force_refresh=args.force_refresh,
             allow_stale=args.allow_stale,
             auto_sync=(not args.no_auto_sync),
+            use_vol_targeting=args.use_vol_targeting,
+            use_delivery_veto=args.use_delivery_veto,
         ),
         2: run_telegram_preview,
         3: run_telegram_dispatch,

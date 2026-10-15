@@ -369,10 +369,14 @@ class BruteForceCampaignRunner:
             params = generate_tier1_baseline_matrix(cube)
         elif "tier2" in preset_clean or "ablation" in preset_clean:
             params = generate_tier2_ablation_grid(cube)
-        elif "tier3" in preset_clean or "hyper" in preset_clean:
+        elif "deep" in preset_clean or "10000" in preset_clean or "10k" in preset_clean:
+            params = generate_tier3_hyperparameter_grid(cube, sample_size=10000)
+        elif "full" in preset_clean or "factorial" in preset_clean or "61440" in preset_clean:
+            params = generate_tier3_hyperparameter_grid(cube, sample_size=61440)
+        elif "tier3" in preset_clean or "hyper" in preset_clean or "rapid" in preset_clean or "neighborhood" in preset_clean:
             params = generate_tier3_hyperparameter_grid(cube, sample_size=810)
-        elif "tier4" in preset_clean or "rolling" in preset_clean:
-            params = generate_tier4_rolling_windows_grid(cube, num_windows=100)
+        elif "tier4" in preset_clean or "rolling" in preset_clean or "dsr" in preset_clean:
+            params = generate_tier4_rolling_windows_grid(cube, num_windows=500)
         else:
             params = generate_tier1_baseline_matrix(cube)
         df = self.run_sweep(params, num_threads=num_threads)
@@ -389,7 +393,7 @@ class BruteForceCampaignRunner:
         Executes parameter sweep across all configurations in parallel.
         Returns a DataFrame merging parameters with simulation results.
         """
-        cube = self.ensure_cube()
+        cube = self.cube if self.cube is not None else self.ensure_cube()
         total_tasks = len(params_list)
 
         print(f"\n============================================================")

@@ -196,7 +196,7 @@ def generate_tier3_hyperparameter_grid(
     ))
 
     # If full_combos exceeds sample_size, take random sample; else take all or cycle with jitter
-    if len(full_combos) > sample_size:
+    if sample_size is not None and len(full_combos) > sample_size:
         random.seed(42)
         combos = random.sample(full_combos, sample_size)
     else:
