@@ -33,6 +33,25 @@ from core.data_engine import get_base_dir, get_db_path
 
 PUBLIC_UNIVERSE_DB_FILE_ID = "1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT"
 PUBLIC_UNIVERSE_DB_URL = "https://drive.google.com/file/d/1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT/view?usp=sharing"
+GDRIVE_UNIVERSE_PATH = Path("/content/drive/MyDrive/universe.db.gz")
+LOCAL_NVME_UNIVERSE_PATH = Path("/content/Project_MIP_Colab/data/universe.db")
+
+__all__ = [
+    "is_colab_environment",
+    "is_running_in_colab",
+    "get_colab_secret",
+    "is_gzipped_file",
+    "compress_file",
+    "decompress_file",
+    "sync_universe_from_gdrive",
+    "push_universe_to_gdrive",
+    "download_public_universe_db",
+    "benchmark_storage_latency",
+    "PUBLIC_UNIVERSE_DB_FILE_ID",
+    "PUBLIC_UNIVERSE_DB_URL",
+    "GDRIVE_UNIVERSE_PATH",
+    "LOCAL_NVME_UNIVERSE_PATH",
+]
 
 
 def validate_gdrive_file_id(file_id: Optional[str]) -> bool:
@@ -49,6 +68,9 @@ def validate_gdrive_file_id(file_id: Optional[str]) -> bool:
 def is_running_in_colab() -> bool:
     """Detects whether current process is executing within Google Colab runtime."""
     return ("google.colab" in sys.modules) or Path("/content").exists()
+
+
+is_colab_environment = is_running_in_colab
 
 
 def get_colab_secret(secret_name: str) -> Optional[str]:
