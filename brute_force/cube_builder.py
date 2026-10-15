@@ -119,14 +119,14 @@ class TensorCubeContainer:
 
 def build_tensor_cube(
     start_date: str = "2007-01-02",
-    end_date: str = "2026-10-09",
-    universe_name: str = "NIFTY500",
+    end_date: Optional[str] = None,
+    universe_name: str = "NIFTY750",
     lookback_values: Optional[List[int]] = None,
     ema_span_values: Optional[List[int]] = None,
     base_dir: Optional[Path] = None,
 ) -> TensorCubeContainer:
     """
-    Constructs the precomputed multi-schedule, multi-lookback tensor cube for NIFTY 500.
+    Constructs the precomputed multi-schedule, multi-lookback tensor cube for NIFTY 750 / 500 / ALL.
     Precomputes Volar, 52w Highs, Residual Momentum, EMAs, RS, and Volatility Targeting.
     """
     if lookback_values is None:
@@ -136,6 +136,9 @@ def build_tensor_cube(
 
     base_path = Path(base_dir) if base_dir else get_base_dir()
     db_path = get_db_path()
+    if end_date is None:
+        from core.data_engine import get_latest_date
+        end_date = get_latest_date()
 
     print(f"\n[CubeBuilder] Loading constituents for universe '{universe_name}'...")
     sym_set = load_universe_constituents(universe_name)

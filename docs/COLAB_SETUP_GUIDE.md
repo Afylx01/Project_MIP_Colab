@@ -57,7 +57,18 @@ If you prefer not using service accounts at all:
 
 ---
 
-## 4. Why We Stage `universe.db` to Local NVMe (The 40x Latency Law)
+## 4. Zero-Friction Option: Direct Public Google Drive Mirror (Zero-Setup)
+If you don't have Google Drive or a Service Account configured:
+1. The notebook automatically falls back to downloading the verified pre-compiled `universe.db` (351 MB) directly from our public Google Drive mirror.
+2. Direct link: [Google Drive universe.db](https://drive.google.com/file/d/1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT/view?usp=sharing)
+3. You can also download it manually via terminal:
+   ```bash
+   gdown --id 1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT -O data/universe.db
+   ```
+
+---
+
+## 5. Why We Stage `universe.db` to Local NVMe (The 40x Latency Law)
 Google Colab's `/content/drive/` is mounted using Google Drive FUSE (Filesystem in Userspace).
 - SQLite performs 4 KB random page reads and B-tree binary seeks.
 - Over FUSE, every page seek requires an HTTP round-trip over the network.
@@ -68,7 +79,7 @@ Google Colab's `/content/drive/` is mounted using Google Drive FUSE (Filesystem 
 
 ---
 
-## 5. Sharing the Codebase Safely
+## 6. Sharing the Codebase Safely
 When sharing this repository on GitHub or with colleagues:
 - `.gitignore` strictly ignores:
   - `*.env`

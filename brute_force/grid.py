@@ -290,3 +290,77 @@ def generate_tier4_rolling_windows_grid(
             pid += 1
 
     return grid
+
+
+def generate_custom_parameter_grid(
+    cube,
+    lookbacks: Optional[List[int]] = None,
+    ema_trends: Optional[List[int]] = None,
+    top_ns: Optional[List[int]] = None,
+    retrace_thresholds: Optional[List[float]] = None,
+    schedules: Optional[List[str]] = None,
+    max_per_sectors: Optional[List[int]] = None,
+    sizing_modes: Optional[List[str]] = None,
+    start_date: str = "2016-01-01",
+    end_date: Optional[str] = None,
+    filter_flags: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Generates a Cartesian product parameter grid from custom user specifications.
+    Maps values to closest indices in cube.lookback_values and cube.ema_span_values.
+    """
+    if lookbacks is None:
+        lookbacks = [252]
+    if ema_trends is None:
+        ema_trends = [200]
+    if top_ns is None:
+        top_ns = [20]
+    if retrace_thresholds is None:
+        retrace_thresholds = [0.80]
+    if schedules is None:
+        schedules = ["monthly"]
+    if max_per_sectors is None:
+        max_per_sectors = [2]
+    if sizing_modes is None:
+        sizing_modes = ["atr_risk_parity"]
+
+    actual_end_date = end_date or cube.dates[-1]
+
+    s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_date], default=0)
+    e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= actual_end_date], default=cube.num_dates - 1)
+
+    combos = list(itertools.product(
+        schedules, top_ns, lookbacks, ema_trends, retrace_thresholds, max_per_sectors, sizing_modes
+    ))
+
+    grid = []
+    pid = 0
+    for sched, tn, lb, ema, ret, sec, sz in combos:
+        l_idx = int(np.argmin([abs(v - lb) for v in cube.lookback_values]))
+        e_span_idx = int(np.argmin([abs(v - ema) for v in cube.ema_span_values]))
+
+        p = CANONICAL_BASELINE.copy()
+        p["param_id"] = pid
+        p["tier"] = "CUSTOM_SWEEP"
+        p["schedule"] = sched
+        p["schedule_idx"] = SCHEDULE_MAP.get(sched.lower(), 1)
+        p["start_date"] = start_date
+        p["end_date"] = actual_end_date
+        p["start_date_idx"] = s_idx
+        p["end_date_idx"] = e_idx
+        p["top_n"] = int(tn)
+        p["exit_buffer_rank"] = int(tn * 2.0)
+        p["lookback"] = int(cube.lookback_values[l_idx])
+        p["lookback_idx"] = l_idx
+        p["ema_trend"] = int(cube.ema_span_values[e_span_idx])
+        p["ema_idx"] = e_span_idx
+        p["retrace_threshold"] = float(ret)
+        p["max_per_sector"] = int(sec)
+        p["sizing_mode"] = sz
+        if filter_flags is not None:
+            p["filter_flags"] = int(filter_flags)
+        grid.append(p)
+        pid += 1
+
+    return grid
+

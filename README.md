@@ -32,14 +32,25 @@ Standalone institutional-grade quantitative momentum workstation engineered for 
 
 Click the **Open in Colab** badge above or open [`notebooks/Project_MIP_Colab.ipynb`](notebooks/Project_MIP_Colab.ipynb).
 
-### 5-Cell Cloud Workflow:
-- **Cell 1:** Environment probe & repository initialization.
-- **Cell 2:** Google Drive sync & fast local NVMe database staging.
-- **Cell 3:** Multi-architecture C99 SIMD kernel compilation & hardware benchmark sweep.
-- **Cell 4:** Interactive IPyWidgets UI cockpit (sliders, dropdowns, Matplotlib momentum charts).
-- **Cell 5:** Headless CLI execution.
+### 4-Cell Cloud Workflow:
+- **Cell 1:** Environment probe, Git sync, Drive mount & fast NVMe database staging (with zero-friction public database auto-download).
+- **Cell 2:** Interactive IPyWidgets Screener Dashboard & Tearsheet Generator (with SQLite auto-update audit banner and Excel auto-download).
+- **Cell 3:** High-Performance C99 SIMD Backtesting & Parallel Brute Force Cockpit (custom date backtests, era presets, sensitivity charts, and parallel sweeps).
+- **Cell 4:** Headless CLI Execution Examples.
 
 For detailed instructions on sharing and using Google Cloud Service Accounts without leaking `.json` keys, see [docs/COLAB_SETUP_GUIDE.md](docs/COLAB_SETUP_GUIDE.md).
+
+---
+
+## 💾 Pre-Compiled Universe Database (`universe.db`)
+
+The platform operates on a validated institutional SQLite database (351 MB, 2.16M OHLCV bars across 1,082 NSE symbols from 2007 to present with complete point-in-time corporate action adjustments).
+- **Direct Google Drive Link:** [Download universe.db](https://drive.google.com/file/d/1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT/view?usp=sharing)
+- **One-Command CLI Download:**
+  ```bash
+  gdown --id 1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT -O data/universe.db
+  ```
+When running in Google Colab, Cell 1 automatically checks and downloads this verified database directly into local NVMe storage if not already present.
 
 ---
 

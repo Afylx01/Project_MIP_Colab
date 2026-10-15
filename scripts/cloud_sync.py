@@ -25,6 +25,9 @@ from typing import Optional, Tuple, Dict, Any
 
 from core.data_engine import get_base_dir, get_db_path
 
+PUBLIC_UNIVERSE_DB_FILE_ID = "1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT"
+PUBLIC_UNIVERSE_DB_URL = "https://drive.google.com/file/d/1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT/view?usp=sharing"
+
 
 def validate_gdrive_file_id(file_id: Optional[str]) -> bool:
     """
@@ -56,6 +59,7 @@ def sync_universe_from_gdrive(
     gdrive_source_path: Optional[Path] = None,
     service_account_json: Optional[str] = None,
     file_id: Optional[str] = None,
+    allow_public_download: bool = False,
     verbose: bool = True,
 ) -> Tuple[bool, str, Dict[str, Any]]:
     """
@@ -157,23 +161,41 @@ def sync_universe_from_gdrive(
         except Exception as e:
             log(f"Service Account sync error: {e}")
 
-    # 4. Probe direct gdown download if file_id is provided
-    if target_file_id:
+    # 4. Probe download via Google Drive File ID (Service Account or Public Link)
+    active_file_id = target_file_id or (PUBLIC_UNIVERSE_DB_FILE_ID if (allow_public_download and not gdrive_source_path) else None)
+    if active_file_id:
+        log(f"Retrieving universe.db from Google Drive (File ID: {active_file_id})...")
+        downloaded = False
         try:
             import gdown
-            log(f"Attempting gdown retrieval for File ID: {target_file_id}...")
-            url = f"https://drive.google.com/uc?id={target_file_id}"
+            url = f"https://drive.google.com/uc?id={active_file_id}&export=download"
             gdown.download(url, str(dest), quiet=(not verbose))
             if dest.exists() and dest.stat().st_size > 10_000_000:
-                elapsed = time.time() - t0
-                log(f"✓ gdown download complete in {elapsed:.2f}s!")
-                return True, "DOWNLOADED_VIA_GDOWN", {"destination": str(dest), "elapsed_s": elapsed}
-        except Exception as e:
-            log(f"gdown retrieval failed: {e}")
+                downloaded = True
+        except Exception as e_gdown:
+            log(f"gdown retrieval notice: {e_gdown}. Attempting direct streaming download...")
+
+        if not downloaded:
+            try:
+                import urllib.request
+                stream_url = f"https://drive.usercontent.google.com/download?id={active_file_id}&export=download&confirm=t"
+                req = urllib.request.Request(stream_url, headers={"User-Agent": "Mozilla/5.0"})
+                log(f"Streaming from: {stream_url[:50]}...")
+                with urllib.request.urlopen(req, timeout=120) as resp, open(dest, "wb") as out_f:
+                    shutil.copyfileobj(resp, out_f)
+                if dest.exists() and dest.stat().st_size > 10_000_000:
+                    downloaded = True
+            except Exception as e_stream:
+                log(f"Direct stream download notice: {e_stream}")
+
+        if downloaded:
+            elapsed = time.time() - t0
+            log(f"✓ Google Drive download complete in {elapsed:.2f}s! ({dest.stat().st_size / (1024*1024):.1f} MB)")
+            return True, "DOWNLOADED_VIA_GDRIVE", {"destination": str(dest), "elapsed_s": elapsed}
 
     return False, "SOURCE_DATABASE_NOT_FOUND", {
         "destination": str(dest),
-        "help": "Please mount Google Drive, configure GDRIVE_SA_KEY secret, or copy universe.db to data/universe.db",
+        "help": f"Please mount Google Drive, configure GDRIVE_SA_KEY secret, or download from {PUBLIC_UNIVERSE_DB_URL}",
     }
 
 

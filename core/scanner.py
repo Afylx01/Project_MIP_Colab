@@ -29,6 +29,7 @@ import pandas as pd
 
 from .data_engine import (
     get_base_dir,
+    get_connection,
     get_latest_date,
     load_bars,
     load_symbol_sector_map,
@@ -225,7 +226,7 @@ class PydroidScanner:
         pre_db_latest = None
         pre_row_count = 0
         try:
-            with get_connection(self.base_dir, readonly=True) as conn:
+            with get_connection(read_only=True) as conn:
                 r = conn.execute("SELECT COUNT(*), MAX(date) FROM prices;").fetchone()
                 if r:
                     pre_row_count = int(r[0]) if r[0] is not None else 0
@@ -289,7 +290,7 @@ class PydroidScanner:
             post_db_latest = pre_db_latest
             post_row_count = pre_row_count
             try:
-                with get_connection(self.base_dir, readonly=True) as conn:
+                with get_connection(read_only=True) as conn:
                     r = conn.execute("SELECT COUNT(*), MAX(date) FROM prices;").fetchone()
                     if r:
                         post_row_count = int(r[0]) if r[0] is not None else 0
