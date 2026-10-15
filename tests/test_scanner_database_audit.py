@@ -117,6 +117,39 @@ class TestScannerDatabaseAuditAndAutoDownload(unittest.TestCase):
         self.assertIn("auto_download_excel", sig_hardened.parameters)
         self.assertFalse(sig_hardened.parameters["auto_download_excel"].default)
 
+    def test_trigger_colab_download_deduplication_and_cooldown(self):
+        """trigger_colab_download must strictly deduplicate repeated downloads within cooldown period."""
+        from unittest.mock import MagicMock, patch
+        from scripts.scanner_hardening import trigger_colab_download, _COLAB_DOWNLOAD_REGISTRY
+        import time
+
+        test_path = "/tmp/test_report.xlsx"
+        _COLAB_DOWNLOAD_REGISTRY.clear()
+
+        mock_files = MagicMock()
+        with patch.dict("sys.modules", {"google.colab": MagicMock(files=mock_files)}):
+            # First call -> Must trigger download
+            first_res = trigger_colab_download(test_path, cooldown_seconds=2.0)
+            self.assertTrue(first_res)
+            mock_files.download.assert_called_once_with(test_path)
+
+            # Second call within 2.0s cooldown -> Must be ignored/deduplicated
+            second_res = trigger_colab_download(test_path, cooldown_seconds=2.0)
+            self.assertFalse(second_res)
+            # Call count should STILL be 1 (zero duplicates!)
+            mock_files.download.assert_called_once()
+
+            # Different file -> Must trigger download
+            other_path = "/tmp/other_report.xlsx"
+            other_res = trigger_colab_download(other_path, cooldown_seconds=2.0)
+            self.assertTrue(other_res)
+            self.assertEqual(mock_files.download.call_count, 2)
+
+            # Calling with empty/None -> returns False safely
+            self.assertFalse(trigger_colab_download(None))
+            self.assertFalse(trigger_colab_download(""))
+
 
 if __name__ == "__main__":
     unittest.main()
+

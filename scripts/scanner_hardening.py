@@ -49,6 +49,29 @@ from core.config import MIPScannerConfig
 from core.reason_codes import ScannerReasonCode
 from core.auto_fetch import PydroidAutoFetch, AutoFetchStatus
 
+_COLAB_DOWNLOAD_REGISTRY: Dict[str, float] = {}
+
+def trigger_colab_download(file_path: Any, cooldown_seconds: float = 15.0) -> bool:
+    """
+    Safely triggers google.colab.files.download with strict deduplication and cooldown.
+    Guarantees that the exact same file is never downloaded more than once within cooldown period.
+    """
+    global _COLAB_DOWNLOAD_REGISTRY
+    if not file_path:
+        return False
+    p_str = str(Path(file_path).resolve())
+    now = time.time()
+    last_time = _COLAB_DOWNLOAD_REGISTRY.get(p_str, 0.0)
+    if (now - last_time) < cooldown_seconds:
+        return False
+    _COLAB_DOWNLOAD_REGISTRY[p_str] = now
+    try:
+        from google.colab import files
+        files.download(p_str)
+        return True
+    except Exception:
+        return False
+
 
 class ConstituentSourceStatus(str, Enum):
     LIVE_VERIFIED = "LIVE-VERIFIED"
@@ -1063,7 +1086,7 @@ class HardenedScanner(PydroidScanner):
                     auto_update_universe=auto_update_universe,
                     allow_stale_data=allow_stale_data,
                     send_telegram=send_telegram,
-                    auto_download_excel=auto_download_excel,
+                    auto_download_excel=False,
                 )
         else:
             res = super().run_scan(
@@ -1077,10 +1100,15 @@ class HardenedScanner(PydroidScanner):
                 auto_update_universe=auto_update_universe,
                 allow_stale_data=allow_stale_data,
                 send_telegram=send_telegram,
-                auto_download_excel=auto_download_excel,
+                auto_download_excel=False,
             )
 
         top_df = res[0]
+        if auto_download_excel and hasattr(top_df, "attrs"):
+            excel_path = top_df.attrs.get("excel_path")
+            if excel_path and Path(excel_path).exists():
+                dl_ok = trigger_colab_download(excel_path, cooldown_seconds=20.0)
+                top_df.attrs["excel_downloaded"] = dl_ok
         disposition_summary = {
             "total_constituents": const_report.total_constituents,
             "present_current": data_reconcile_report.present_current_count,
