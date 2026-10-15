@@ -35,9 +35,9 @@
     {
       "filename": "auto_fetch.py",
       "sha256_source": "a99103cb6397860f9e3883403b2a69b7c88ccad32b09b7053b604ba29fbfdd29",
-      "sha256_migrated": "f644ebef946084ca9d843d2f09adcc03530e9a67981b6e4a65b1e7e273213b18",
+      "sha256_migrated": "299558792fc1990c1cd0731f943d9fdc33ab9820e6f3f1dd353720e89f04763e",
       "status": "refactored",
-      "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
+      "refactor_notes": "Auto-sync mutation firewall pass & Telegram dispatch integration"
     },
     {
       "filename": "backtest.py",
@@ -140,9 +140,9 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "c30665b6ae320a2e6bd8ef3f54faddb8fdbaeea79998258e3ee90b514ecb3a61",
+      "sha256_migrated": "3232b3ce2fbcda403feeec9e808386c9ed0efb4aee3c3a5cfad3fc96825708a3",
       "status": "refactored",
-      "refactor_notes": "Integrated allow_stale_data and fixed volatility floor clamping with .clip(lower=floor)"
+      "refactor_notes": "Auto-sync mutation firewall pass & Telegram dispatch integration"
     },
     {
       "filename": "sector_rotation.py",
@@ -168,9 +168,9 @@
     {
       "filename": "telegram_sender.py",
       "sha256_source": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
-      "sha256_migrated": "34e98974b8e3bc369a6f74013c29eedd762c670b19d41933569beb0f8d086311",
+      "sha256_migrated": "ac38c40014e778cb0ee12e92e49377c8f173ce01e4d60ea8a749ff89b83f5aa2",
       "status": "refactored",
-      "refactor_notes": "OWASP Top 10 security hardening & defensive boundaries"
+      "refactor_notes": "Fix Any import and add future annotations in telegram_sender"
     },
     {
       "filename": "validation.py",

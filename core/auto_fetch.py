@@ -55,7 +55,7 @@ class PydroidAutoFetch:
         return self.session
 
     def get_missing_trading_dates(self, as_of_date: str = None) -> List[str]:
-        target = as_of_date if as_of_date else datetime.datetime.now().strftime("%Y-%m-%d")
+        target = as_of_date if as_of_date else _de.get_expected_latest_eod()
         conn = _de.get_connection(read_only=True, reuse=True)
         cursor = conn.cursor()
         cursor.execute("SELECT MAX(date) FROM prices;")

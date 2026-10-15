@@ -970,6 +970,7 @@ class HardenedScanner(PydroidScanner):
         force_constituent_refresh: bool = False,
         allow_stale_universe: bool = True,
         allow_stale_data: bool = False,
+        send_telegram: bool = False,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Hardened execution of screener pipeline:
@@ -1060,6 +1061,7 @@ class HardenedScanner(PydroidScanner):
                     export_excel=export_excel,
                     auto_update_universe=auto_update_universe,
                     allow_stale_data=allow_stale_data,
+                    send_telegram=send_telegram,
                 )
         else:
             res = super().run_scan(
@@ -1072,6 +1074,7 @@ class HardenedScanner(PydroidScanner):
                 export_excel=export_excel,
                 auto_update_universe=auto_update_universe,
                 allow_stale_data=allow_stale_data,
+                send_telegram=send_telegram,
             )
 
         top_df = res[0]

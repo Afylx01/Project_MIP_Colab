@@ -9,11 +9,12 @@ Pure Python REST client for Telegram Bot API:
   - Zero external binary dependency (/usr/local/bin/telegram-notify not needed).
 """
 
+from __future__ import annotations
 import os
 import sys
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import pandas as pd
 
 from .data_engine import get_base_dir
@@ -38,8 +39,15 @@ def load_env_credentials() -> Dict[str, str]:
                     v = v.strip().strip('"').strip("'")
                     if k == "TELEGRAM_BOT_TOKEN" and not creds["bot_token"]:
                         creds["bot_token"] = v
-                    elif k == "TELEGRAM_CHAT_ID" and not creds["chat_id"]:
-                        creds["chat_id"] = v
+    if not creds["bot_token"] or not creds["chat_id"]:
+        try:
+            from google.colab import userdata
+            if not creds["bot_token"]:
+                creds["bot_token"] = str(userdata.get("TELEGRAM_BOT_TOKEN") or "")
+            if not creds["chat_id"]:
+                creds["chat_id"] = str(userdata.get("TELEGRAM_CHAT_ID") or "")
+        except Exception:
+            pass
 
     return creds
 

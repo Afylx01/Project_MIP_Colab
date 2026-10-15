@@ -205,6 +205,7 @@ class PydroidScanner:
         export_excel: bool = True,
         auto_update_universe: bool = True,
         allow_stale_data: bool = False,
+        send_telegram: bool = False,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Executes end-to-end screener pipeline on SQLite universe with institutional Phase 4 hardening.
@@ -233,17 +234,29 @@ class PydroidScanner:
 
             if auto_update_universe:
                 self.log("Auto-Sync Active: Checking NSE archives for latest market data...")
+                old_mutation_flag = os.environ.get("MIP_ALLOW_PROD_MUTATION")
                 try:
+                    os.environ["MIP_ALLOW_PROD_MUTATION"] = "1"
                     from .auto_fetch import PydroidAutoFetch
                     fetcher = PydroidAutoFetch(self.base_dir)
                     sync_res = fetcher.sync_universe(dry_run=False)
                     dates_fetched = sync_res.get("dates_fetched", 0)
                     if dates_fetched > 0:
                         self.log(f"✓ Successfully fetched and saved {dates_fetched} new market session(s) to SQLite universe!")
+                        try:
+                            from scripts.cloud_sync import push_universe_to_gdrive
+                            push_universe_to_gdrive(verbose=True)
+                        except Exception as e_push:
+                            self.log(f"Drive backup notice: {e_push}")
                     else:
                         self.log(f"Auto-fetch status: {sync_res.get('status')} - {sync_res.get('message', '')}")
                 except Exception as e:
                     self.log(f"Auto-update universe exception: {e}")
+                finally:
+                    if old_mutation_flag is not None:
+                        os.environ["MIP_ALLOW_PROD_MUTATION"] = old_mutation_flag
+                    else:
+                        os.environ.pop("MIP_ALLOW_PROD_MUTATION", None)
 
             # Verify SQLite contains the expected latest session (Fail-Closed)
             ok, resolved_date, diag = resolve_latest_valid_eod(base_dir=self.base_dir, as_of_date=None, allow_stale=allow_stale_data)
@@ -897,6 +910,31 @@ class PydroidScanner:
                 top_df.attrs["excel_path"] = excel_file
             except Exception as e:
                 self.log(f"Warning: Excel workbook compilation failed: {e}")
+
+        if send_telegram:
+            try:
+                from .telegram_sender import PydroidTelegramSender, format_telegram_alert
+                tg_sender = PydroidTelegramSender()
+                if tg_sender.is_configured():
+                    alert_text = format_telegram_alert(
+                        top_df=top_df,
+                        breadth=breadth_results,
+                        sectors=sector_results,
+                        regime=regime_info,
+                        as_of_date=target_date,
+                        top_etf_df=top_etf_df,
+                        delivery_df=delivery_df,
+                        universe_label=u_label,
+                    )
+                    tg_sender.send_message(alert_text)
+                    chart_paths = top_df.attrs.get("chart_paths", {})
+                    if chart_paths and "market_overview" in chart_paths:
+                        tg_sender.send_photo(chart_paths["market_overview"], caption=f"📊 Market Overview & Breadth [{target_date}]")
+                    self.log("✓ Dispatched institutional scan summary to Telegram.")
+                else:
+                    self.log("⚠ Telegram dispatch skipped: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID not configured.")
+            except Exception as e_tg:
+                self.log(f"Warning: Telegram dispatch error ({e_tg})")
 
         top_df.attrs["scanned_date"] = target_date
         top_df.attrs["target_date"] = target_date
