@@ -140,7 +140,7 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "07b4f774a11f18fb250a127c9517c9ef7e1362e61700a150b8e96c9acb0bea13",
+      "sha256_migrated": "62092d9f8050afba438f31f4417cc3907c0d1991e1e2a65cd438d8bc7563564b",
       "status": "refactored",
       "refactor_notes": "Excel workbook Telegram dispatch integration"
     },
@@ -154,7 +154,7 @@
     {
       "filename": "settings.py",
       "sha256_source": "a43d1cefd0a009583178e8a44ac6238d4575cf2320fafd4ed011723539988770",
-      "sha256_migrated": "ab4c1f00e85b8fffe9e3af294d5d286d3f221c6d3016aaa0c6dddec27d3ce555",
+      "sha256_migrated": "248a0d36c896705eb91f7408b259597839ac0f5de73d9c248a9a978daa49606b",
       "status": "refactored",
       "refactor_notes": "OWASP Top 10 security hardening & defensive boundaries"
     },
@@ -168,7 +168,7 @@
     {
       "filename": "telegram_sender.py",
       "sha256_source": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
-      "sha256_migrated": "ac38c40014e778cb0ee12e92e49377c8f173ce01e4d60ea8a749ff89b83f5aa2",
+      "sha256_migrated": "07fcfcae61ec98d251c29ddc378fd158a2bd1db3c6a70bc6325ccc18ae58c1dd",
       "status": "refactored",
       "refactor_notes": "Fix Any import and add future annotations in telegram_sender"
     },

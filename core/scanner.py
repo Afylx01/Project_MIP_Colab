@@ -206,6 +206,7 @@ class PydroidScanner:
         auto_update_universe: bool = True,
         allow_stale_data: bool = False,
         send_telegram: bool = False,
+        auto_download_excel: bool = False,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Executes end-to-end screener pipeline on SQLite universe with institutional Phase 4 hardening.
@@ -214,11 +215,26 @@ class PydroidScanner:
         t0 = time.time()
         from .settings import load_investing_settings
         st = load_investing_settings(self.base_dir)
-        universe_mode = universe_mode or str(st.get("universe_mode", "NIFTY500"))
+        universe_mode = universe_mode or str(st.get("universe_mode", "NIFTY750"))
         top_n = int(top_n if top_n is not None else st.get("top_n", self.config.top_n_candidates))
         max_per_sector = int(max_per_sector if max_per_sector is not None else st.get("max_per_sector", self.config.max_per_sector))
         self.atr_stop_multiplier = float(st.get("atr_stop_multiplier", self.config.atr_stop_multiplier))
         effective_lookback_days = lookback_days or int(st.get("lookback_days", self.config.lookback_calendar_days))
+
+        # Capture pre-scan database status for audit tracking
+        pre_db_latest = None
+        pre_row_count = 0
+        try:
+            with get_connection(self.base_dir, readonly=True) as conn:
+                r = conn.execute("SELECT COUNT(*), MAX(date) FROM prices;").fetchone()
+                if r:
+                    pre_row_count = int(r[0]) if r[0] is not None else 0
+                    pre_db_latest = r[1]
+        except Exception as e_pre:
+            self.log(f"Database pre-check notice: {e_pre}")
+
+        gdrive_backed_up = False
+        dates_fetched = 0
 
         # 0. Dynamic Market Data Auto-Sync & Fail-Closed Date Resolution
         if as_of_date is not None:
@@ -227,6 +243,16 @@ class PydroidScanner:
             if not ok:
                 raise DataUnavailableError(diag.get("error", f"Requested date '{as_of_date}' has insufficient or no valid data in SQLite prices table."))
             target_date = resolved_date
+            db_audit = {
+                "is_updated": False,
+                "pre_latest_date": pre_db_latest,
+                "post_latest_date": pre_db_latest,
+                "pre_row_count": pre_row_count,
+                "post_row_count": pre_row_count,
+                "new_rows_added": 0,
+                "dates_fetched": 0,
+                "gdrive_backed_up": False,
+            }
         else:
             # Unspecified date: Determine expected latest EOD and sync if needed
             expected_session = get_expected_latest_eod()
@@ -245,7 +271,8 @@ class PydroidScanner:
                         self.log(f"✓ Successfully fetched and saved {dates_fetched} new market session(s) to SQLite universe!")
                         try:
                             from scripts.cloud_sync import push_universe_to_gdrive
-                            push_universe_to_gdrive(verbose=True)
+                            p_ok, p_msg = push_universe_to_gdrive(verbose=True)
+                            gdrive_backed_up = bool(p_ok)
                         except Exception as e_push:
                             self.log(f"Drive backup notice: {e_push}")
                     else:
@@ -257,6 +284,39 @@ class PydroidScanner:
                         os.environ["MIP_ALLOW_PROD_MUTATION"] = old_mutation_flag
                     else:
                         os.environ.pop("MIP_ALLOW_PROD_MUTATION", None)
+
+            # Post-sync database state evaluation
+            post_db_latest = pre_db_latest
+            post_row_count = pre_row_count
+            try:
+                with get_connection(self.base_dir, readonly=True) as conn:
+                    r = conn.execute("SELECT COUNT(*), MAX(date) FROM prices;").fetchone()
+                    if r:
+                        post_row_count = int(r[0]) if r[0] is not None else 0
+                        post_db_latest = r[1]
+            except Exception as e_post:
+                self.log(f"Database post-check notice: {e_post}")
+
+            new_rows_added = max(0, post_row_count - pre_row_count)
+            is_updated = (new_rows_added > 0) or (post_db_latest != pre_db_latest) or (dates_fetched > 0)
+
+            db_audit = {
+                "is_updated": is_updated,
+                "pre_latest_date": pre_db_latest,
+                "post_latest_date": post_db_latest,
+                "pre_row_count": pre_row_count,
+                "post_row_count": post_row_count,
+                "new_rows_added": new_rows_added,
+                "dates_fetched": dates_fetched,
+                "gdrive_backed_up": gdrive_backed_up,
+            }
+
+            if is_updated:
+                self.log(f"💾 DATABASE AUDIT: UPDATED! (+{new_rows_added:,} rows committed, latest date now {post_db_latest})")
+                if gdrive_backed_up:
+                    self.log("💾 Google Drive: Successfully backed up updated database to Google Drive.")
+            else:
+                self.log(f"💾 DATABASE AUDIT: VERIFIED UP-TO-DATE (Latest date {post_db_latest}, {post_row_count:,} rows)")
 
             # Verify SQLite contains the expected latest session (Fail-Closed)
             ok, resolved_date, diag = resolve_latest_valid_eod(base_dir=self.base_dir, as_of_date=None, allow_stale=allow_stale_data)
@@ -911,6 +971,15 @@ class PydroidScanner:
             except Exception as e:
                 self.log(f"Warning: Excel workbook compilation failed: {e}")
 
+        if auto_download_excel and excel_file and Path(excel_file).exists():
+            try:
+                from google.colab import files
+                self.log(f"📥 Triggering browser download for {Path(excel_file).name}...")
+                files.download(str(excel_file))
+                self.log("✓ Automatic Excel download initiated.")
+            except Exception as e_dl:
+                self.log(f"Auto-download notice: {e_dl}")
+
         if send_telegram:
             try:
                 from .telegram_sender import PydroidTelegramSender, format_telegram_alert
@@ -925,6 +994,7 @@ class PydroidScanner:
                         top_etf_df=top_etf_df,
                         delivery_df=delivery_df,
                         universe_label=u_label,
+                        db_audit=db_audit,
                     )
                     tg_sender.send_message(alert_text)
                     chart_paths = top_df.attrs.get("chart_paths", {})
@@ -945,6 +1015,7 @@ class PydroidScanner:
         top_df.attrs["universe_mode"] = universe_mode
         top_df.attrs["health_report"] = health_report
         top_df.attrs["scan_quality"] = report_data
+        top_df.attrs["db_audit"] = db_audit
         return top_df, breadth_results, sector_results, regime_info, top_etf_df, delivery_df
 
 
@@ -957,13 +1028,30 @@ def format_screener_tearsheet(
     top_etf_df: Optional[pd.DataFrame] = None,
     delivery_df: Optional[pd.DataFrame] = None,
     universe_label: Optional[str] = None,
+    db_audit: Optional[Dict] = None,
 ) -> str:
     """Formats plain-text / ANSI terminal summary tearsheet with full v5.5.1 sections."""
-    u_str = universe_label or top_df.attrs.get("universe_label", "NIFTY 500")
+    u_str = universe_label or top_df.attrs.get("universe_label", "NIFTY 750")
     lines = []
     lines.append("=" * 76)
     lines.append(f" PROJECT MIP: WEEKLY MOMENTUM SCANNER TEARSHEET ({as_of_date})")
     lines.append("=" * 76)
+
+    # 0. Database Synchronization Audit
+    db_audit_info = db_audit or top_df.attrs.get("db_audit")
+    if db_audit_info:
+        lines.append(f"\n[0] DATABASE SYNCHRONIZATION AUDIT")
+        if db_audit_info.get("is_updated"):
+            lines.append(f"  Audit Status:      UPDATED (Fresh market bars acquired)")
+            lines.append(f"  Rows Added:        +{db_audit_info.get('new_rows_added', 0):,} rows committed to SQLite")
+            lines.append(f"  Date Transition:   {db_audit_info.get('pre_latest_date')} ➔ {db_audit_info.get('post_latest_date')}")
+            lines.append(f"  Total Rows:        {db_audit_info.get('post_row_count', 0):,} rows in prices table")
+            if db_audit_info.get("gdrive_backed_up"):
+                lines.append(f"  Google Drive Sync: ✓ Backup completed to /MyDrive/MIP/universe.db")
+        else:
+            lines.append(f"  Audit Status:      VERIFIED UP-TO-DATE (No newer session required)")
+            lines.append(f"  Latest Session:    {db_audit_info.get('post_latest_date')}")
+            lines.append(f"  Total Rows:        {db_audit_info.get('post_row_count', 0):,} rows in prices table")
 
     # 1. Market Regime & Breadth
     lines.append(f"\n[1] MARKET REGIME & BREADTH")

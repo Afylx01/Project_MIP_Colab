@@ -207,7 +207,8 @@ def format_telegram_alert(
     as_of_date: str,
     top_etf_df: Optional[pd.DataFrame] = None,
     delivery_df: Optional[pd.DataFrame] = None,
-    universe_label: str = "NIFTY 500",
+    universe_label: str = "NIFTY 750",
+    db_audit: Optional[Dict] = None,
 ) -> str:
     """Formats institutional Telegram HTML message with v5.5.1 rich sections."""
     tp = breadth.get("trend_participation", {})
@@ -221,6 +222,16 @@ def format_telegram_alert(
 
     msg = f"🚀 <b>MIP-1 MOMENTUM SCANNER v5.5.1</b>\n"
     msg += f"📅 <b>Date:</b> <code>{as_of_date}</code> | <b>Universe:</b> <code>{universe_label}</code>\n"
+
+    # Database synchronization status
+    audit_data = db_audit or (top_df.attrs.get("db_audit") if hasattr(top_df, "attrs") else None)
+    if audit_data:
+        if audit_data.get("is_updated"):
+            gdrive_str = " | ☁️ Drive Synced" if audit_data.get("gdrive_backed_up") else ""
+            msg += f"💾 <b>Database:</b> 🟢 Updated (+{audit_data.get('new_rows_added', 0):,} rows ➔ <code>{audit_data.get('post_latest_date')}</code>{gdrive_str})\n"
+        else:
+            msg += f"💾 <b>Database:</b> 🔵 Up-to-date (<code>{audit_data.get('post_latest_date')}</code> | {audit_data.get('post_row_count', 0):,} rows)\n"
+
     msg += f"🛡️ <b>Benchmark Regime:</b> {regime.get('label', 'N/A')}\n"
     msg += f"📊 <b>Market Breadth:</b> {b_reg.get('label', 'N/A')}\n\n"
 
@@ -285,5 +296,5 @@ def format_telegram_alert(
                 t_str = f" ({d_times:.1f}x)" if pd.notna(d_times) else ""
                 msg += f"• <b>{sym}</b> {act}: <code>{d_per:.0f}%</code>{t_str} | ₹{d_val:.1f}Cr\n"
 
-    msg += f"\n<i>Generated natively on Samsung Galaxy S23 via Pydroid 3</i>"
+    msg += f"\n<i>Generated natively via Project MIP Institutional Engine</i>"
     return msg

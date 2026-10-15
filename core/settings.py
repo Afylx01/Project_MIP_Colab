@@ -39,7 +39,7 @@ DEFAULT_INVESTING_SETTINGS: Dict[str, Any] = {
     "atr_stop_multiplier": 2.0,      # Stop Loss = 2.0x ATR-14
     "exit_buffer_multiplier": 2.0,   # Exit Buffer = 2.0x Top-N (Rank 40)
     "cash_buffer_pct": 0.0,          # 0% cash buffer reserved
-    "universe_mode": "NIFTY500",      # "NIFTY500", "NIFTY750", "ALL"
+    "universe_mode": "NIFTY750",      # "NIFTY500", "NIFTY750", "ALL"
     "regime_filter_active": True,    # Filter on benchmark 20 EMA
     "friction_multiplier": 1.0,      # 1.0x institutional costs
 }

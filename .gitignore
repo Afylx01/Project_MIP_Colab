@@ -39,7 +39,10 @@ reports/*.png
 reports/*.html
 reports/*.json
 reports/*.log
+reports/charts/
+reports/deliverables/
 reports/.scanner.lock
+data/bhavcopy_delivery/
 logs/*.log
 logs/*.log.*
 !reports/.gitkeep

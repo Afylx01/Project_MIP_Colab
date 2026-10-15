@@ -971,6 +971,7 @@ class HardenedScanner(PydroidScanner):
         allow_stale_universe: bool = True,
         allow_stale_data: bool = False,
         send_telegram: bool = False,
+        auto_download_excel: bool = False,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Hardened execution of screener pipeline:
@@ -978,7 +979,7 @@ class HardenedScanner(PydroidScanner):
           2. Local market data reconciliation & gap detection.
           3. Standard frozen strategy execution (super().run_scan).
         """
-        u_mode = universe_mode or "NIFTY500"
+        u_mode = universe_mode or "NIFTY750"
         u_label = get_hardened_universe_label(u_mode)
         self.log(f"Hardened Scanner: Reconciling official constituent universe for [{u_label}]...")
         const_report = self.constituent_engine.fetch_and_reconcile(
@@ -1062,6 +1063,7 @@ class HardenedScanner(PydroidScanner):
                     auto_update_universe=auto_update_universe,
                     allow_stale_data=allow_stale_data,
                     send_telegram=send_telegram,
+                    auto_download_excel=auto_download_excel,
                 )
         else:
             res = super().run_scan(
@@ -1075,6 +1077,7 @@ class HardenedScanner(PydroidScanner):
                 auto_update_universe=auto_update_universe,
                 allow_stale_data=allow_stale_data,
                 send_telegram=send_telegram,
+                auto_download_excel=auto_download_excel,
             )
 
         top_df = res[0]

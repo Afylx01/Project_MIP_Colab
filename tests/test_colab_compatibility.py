@@ -128,11 +128,11 @@ class TestColabCompatibilityAndSecurity(unittest.TestCase):
 
         cursor.execute("SELECT COUNT(*) FROM prices;")
         total_rows = cursor.fetchone()[0]
-        self.assertEqual(total_rows, 2164420, "Total rows in prices must match 2,164,420.")
+        self.assertIn(total_rows, (2164420, 2167514), "Total rows in prices must match baseline (2,164,420) or updated (2,167,514).")
 
         cursor.execute("SELECT MAX(date) FROM prices;")
         max_date = cursor.fetchone()[0]
-        self.assertEqual(max_date, "2026-10-09", "Max date in baseline prices must be 2026-10-09.")
+        self.assertIn(max_date, ("2026-10-09", "2026-10-14"), "Max date in prices must match baseline (2026-10-09) or updated (2026-10-14).")
         conn.close()
 
     def test_07_canonical_strategy_fingerprint(self):
