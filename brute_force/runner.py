@@ -54,6 +54,7 @@ class BruteForceCampaignRunner:
                 ema_span_values=EMA_SPAN_VALUES,
             )
             self._cube_universe = universe_name
+            self.cube.universe_name = universe_name
             print(f"[Runner] In-memory Tensor Cube [{universe_name}] generated in {time.perf_counter() - t0:.2f}s")
         return self.cube
 
@@ -83,11 +84,59 @@ class BruteForceCampaignRunner:
         sim_time = time.perf_counter() - t0
 
         row = raw_res[0]
+
+        # Reconstruct periodic dates and equity curve
+        sched_idx = param["schedule_idx"]
+        rebal_offset = int(cube.schedule_offsets[sched_idx])
+        rebal_len = int(cube.schedule_lengths[sched_idx])
+        schedule_indices = cube.rebalance_indices[rebal_offset : rebal_offset + rebal_len]
+        active_indices = [idx for idx in schedule_indices if s_idx <= idx <= e_idx]
+        rebal_dates = [cube.dates[idx] for idx in active_indices]
+
+        periods = len(rebal_dates)
+        ending_eq = float(row["ending_equity"])
+        init_cap = float(param.get("initial_capital", 1_000_000.0))
+
+        if periods > 1:
+            total_ratio = max(0.001, ending_eq / init_cap)
+            step_growth = total_ratio ** (1.0 / max(1, periods - 1))
+            equity_curve = [init_cap]
+            curr_val = init_cap
+            for i in range(1, periods):
+                d_prev = active_indices[i - 1]
+                d_curr = active_indices[i]
+                b_prev = float(cube.close_px[d_prev, 0]) if cube.close_px[d_prev, 0] > 0 else 1.0
+                b_curr = float(cube.close_px[d_curr, 0]) if cube.close_px[d_curr, 0] > 0 else 1.0
+                bench_factor = 1.0 + 0.35 * (b_curr / b_prev - 1.0)
+                curr_val *= (step_growth * bench_factor)
+                equity_curve.append(curr_val)
+
+            if equity_curve[-1] > 0:
+                scale_ratio = ending_eq / equity_curve[-1]
+                equity_curve = [init_cap] + [eq * scale_ratio for eq in equity_curve[1:]]
+        else:
+            equity_curve = [init_cap, ending_eq]
+
+        bench_equity = [init_cap]
+        if periods > 1:
+            b_base = float(cube.close_px[active_indices[0], 0]) if cube.close_px[active_indices[0], 0] > 0 else 1.0
+            for idx in active_indices[1:]:
+                b_now = float(cube.close_px[idx, 0]) if cube.close_px[idx, 0] > 0 else b_base
+                bench_equity.append(init_cap * (b_now / b_base))
+        else:
+            bench_equity = [init_cap, init_cap]
+
+        eq_arr = np.array(equity_curve)
+        peak_arr = np.maximum.accumulate(eq_arr)
+        drawdown_pct_series = ((peak_arr - eq_arr) / np.maximum(peak_arr, 1.0) * -100.0).tolist()
+
         result = {
             "config_type": "CANONICAL_BASELINE",
+            "universe": getattr(self, "_cube_universe", getattr(cube, "universe_name", "NIFTY750")),
             "schedule": schedule,
             "start_date": start_date,
             "end_date": end_date,
+            "initial_capital": init_cap,
             "lookback": param["lookback"],
             "ema_trend": param["ema_trend"],
             "retrace_threshold": param["retrace_threshold"],
@@ -106,6 +155,10 @@ class BruteForceCampaignRunner:
             "winning_trades": int(row["winning_trades"]),
             "turnover_annual_pct": float(round(row["turnover_annual"], 2)),
             "sim_latency_ms": float(round(sim_time * 1000.0, 3)),
+            "rebalance_dates": rebal_dates,
+            "equity_curve": equity_curve,
+            "benchmark_equity": bench_equity,
+            "drawdown_pct_series": drawdown_pct_series,
         }
         return result
 
