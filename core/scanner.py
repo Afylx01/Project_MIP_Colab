@@ -930,6 +930,9 @@ class PydroidScanner:
                     chart_paths = top_df.attrs.get("chart_paths", {})
                     if chart_paths and "market_overview" in chart_paths:
                         tg_sender.send_photo(chart_paths["market_overview"], caption=f"📊 Market Overview & Breadth [{target_date}]")
+                    excel_path = top_df.attrs.get("excel_path") or excel_file
+                    if excel_path and Path(excel_path).exists():
+                        tg_sender.send_document(Path(excel_path), caption=f"📑 Institutional Excel Workbook [{u_label}] ({target_date})")
                     self.log("✓ Dispatched institutional scan summary to Telegram.")
                 else:
                     self.log("⚠ Telegram dispatch skipped: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID not configured.")

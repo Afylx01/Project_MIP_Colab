@@ -140,9 +140,9 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "3232b3ce2fbcda403feeec9e808386c9ed0efb4aee3c3a5cfad3fc96825708a3",
+      "sha256_migrated": "07b4f774a11f18fb250a127c9517c9ef7e1362e61700a150b8e96c9acb0bea13",
       "status": "refactored",
-      "refactor_notes": "Auto-sync mutation firewall pass & Telegram dispatch integration"
+      "refactor_notes": "Excel workbook Telegram dispatch integration"
     },
     {
       "filename": "sector_rotation.py",
