@@ -84,6 +84,14 @@ def sync_universe_from_gdrive(
 
     # 2. Probe Native Colab Drive Mount (/content/drive/MyDrive)
     if is_running_in_colab() and not gdrive_source_path:
+        if not Path("/content/drive/MyDrive").exists():
+            try:
+                from google.colab import drive
+                log("Google Drive not yet mounted. Prompting to mount /content/drive...")
+                drive.mount('/content/drive')
+            except Exception as e:
+                log(f"Native Colab drive mount notice: {e}")
+
         gdrive_candidates = [
             Path("/content/drive/MyDrive/MIP/universe.db"),
             Path("/content/drive/MyDrive/Project_MIP/data/universe.db"),
@@ -189,6 +197,13 @@ def push_universe_to_gdrive(
 
     # Identify Google Drive destination
     if not gdrive_dest_path and is_running_in_colab():
+        if not Path("/content/drive/MyDrive").exists():
+            try:
+                from google.colab import drive
+                drive.mount('/content/drive')
+            except Exception as e:
+                log(f"Native Colab drive mount notice: {e}")
+
         gdrive_candidates = [
             Path("/content/drive/MyDrive/MIP/universe.db"),
             Path("/content/drive/MyDrive/Project_MIP/data/universe.db"),
@@ -200,9 +215,10 @@ def push_universe_to_gdrive(
                 gdrive_dest_path = cand
                 break
 
-    if not gdrive_dest_path:
+    if not gdrive_dest_path and is_running_in_colab():
         default_dir = Path("/content/drive/MyDrive/MIP")
-        if default_dir.exists():
+        if default_dir.parent.exists():
+            default_dir.mkdir(parents=True, exist_ok=True)
             gdrive_dest_path = default_dir / "universe.db"
 
     if gdrive_dest_path:
