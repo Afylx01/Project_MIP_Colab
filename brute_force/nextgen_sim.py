@@ -58,8 +58,13 @@ class NextGenSimulationEngine:
         )
         self.res_volar_252 = df_res_252.to_numpy(dtype=np.float32)
 
-        # Composite Volar for lookback 252 (lookback_idx = 4)
-        volar_252 = self.cube.volar_cubes[4]
+        # Resolve index for lookback 252 (dynamic lookup with safe fallback)
+        lb_values = getattr(self.cube, "lookback_values", [126, 189, 252, 315])
+        lb_idx = lb_values.index(252) if 252 in lb_values else min(2, len(self.cube.volar_cubes) - 1)
+        self.lookback_idx_252 = lb_idx
+
+        # Composite Volar for lookback 252
+        volar_252 = self.cube.volar_cubes[lb_idx]
         self.composite_volar_252 = compute_composite_momentum_score(
             volar_scores=volar_252,
             residual_scores=self.res_volar_252,
@@ -72,22 +77,25 @@ class NextGenSimulationEngine:
         self.realized_vol = ann_vol.to_numpy(dtype=np.float32)
 
         # Market breadth participation: fraction of stocks > 200 EMA
-        ema_200 = self.cube.ema_cubes[2]  # span 200
+        ema_spans = getattr(self.cube, "ema_span_values", [50, 100, 150, 200, 250])
+        ema_idx_200 = ema_spans.index(200) if 200 in ema_spans else min(3, len(self.cube.ema_cubes) - 1)
+        self.ema_idx_200 = ema_idx_200
+        ema_200 = self.cube.ema_cubes[ema_idx_200]  # span 200
         valid_stocks = close_px > 0
         stocks_above_200 = (close_px > ema_200) & valid_stocks
         total_valid = np.maximum(np.sum(valid_stocks, axis=1), 1)
         self.breadth_participation = np.sum(stocks_above_200, axis=1).astype(np.float32) / total_valid
 
         # Precompute Close Location Value (CLV)
-        high_px = self.cube.high_cubes[4]  # rolling high 252
+        high_px = self.cube.high_cubes[lb_idx]  # rolling high 252
         low_px = np.where(close_px > 0, close_px * 0.90, 0.0)
         span_px = high_px - low_px
         self.clv_mat = np.where(span_px > 0, (2.0 * close_px - high_px - low_px) / span_px, 0.0)
 
     def run_single(
         self,
-        lookback_idx: int = 4,
-        ema_idx: int = 2,
+        lookback_idx: Optional[int] = None,
+        ema_idx: Optional[int] = None,
         retrace_threshold: float = 0.80,
         top_n: int = 20,
         exit_buffer_rank: int = 40,
@@ -102,6 +110,10 @@ class NextGenSimulationEngine:
     ) -> Dict[str, Any]:
         """Runs the Next-Gen simulation for a single configuration."""
         cube = self.cube
+        if lookback_idx is None:
+            lookback_idx = getattr(self, "lookback_idx_252", 2)
+        if ema_idx is None:
+            ema_idx = getattr(self, "ema_idx_200", 3)
         T = cube.num_dates
         N = cube.num_symbols
         num_rebalances = cube.num_rebalances

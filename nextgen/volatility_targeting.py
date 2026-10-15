@@ -30,13 +30,13 @@ def compute_ewma_realized_volatility(
     Computes Exponentially Weighted Moving Average (EWMA) realized variance & annualized volatility.
     sigma_t^2 = lambda * sigma_{t-1}^2 + (1 - lambda) * R_t^2
     """
-    vals = returns_series.to_numpy(dtype=np.float64)
+    vals = np.nan_to_num(returns_series.to_numpy(dtype=np.float64), nan=0.0)
     T = len(vals)
     var_ewma = np.zeros(T, dtype=np.float64)
 
     # Initial variance from first 20 observations or default 0.12^2 / 252
     init_var = np.var(vals[:min(20, T)]) if T > 5 else (0.12 ** 2 / 252.0)
-    if init_var <= 0:
+    if not math.isfinite(init_var) or init_var <= 0:
         init_var = 0.12 ** 2 / 252.0
 
     current_var = init_var
@@ -81,6 +81,11 @@ def compute_dynamic_cash_shield_scalar(
     if not is_bull_regime:
         return 0.0  # 100% Cash Shield in Bear Regime
 
+    if not math.isfinite(realized_vol) or realized_vol <= 0:
+        realized_vol = target_vol
+    if not math.isfinite(breadth_ratio):
+        breadth_ratio = 1.0
+
     vol_scalar = np.clip(target_vol / max(realized_vol, 0.01), min_exposure, max_exposure)
     b_clamped = np.clip(breadth_ratio, 0.10, 1.0)
     composite_scalar = float(vol_scalar * np.sqrt(b_clamped))
@@ -95,7 +100,7 @@ def scale_position_quantities_by_shield(
     Scales whole-share integer order quantities down by shield scalar.
     Enforces strict integer whole shares (zero fractional shares).
     """
-    if shield_scalar <= 0.0:
+    if not math.isfinite(shield_scalar) or shield_scalar <= 0.0:
         return {sym: 0 for sym in nominal_quantities}
 
     clamped_scalar = min(1.0, max(0.0, shield_scalar))

@@ -91,7 +91,12 @@ class TestMainAllIndicesIntegration(unittest.TestCase):
 
         try:
             with patch("core.telegram_sender.PydroidTelegramSender", return_value=mock_sender):
-                main.run_scanner_flow(interactive=False, universe_mode="NIFTYBank")
+                main.run_scanner_flow(
+                    interactive=False,
+                    universe_mode="NIFTYBank",
+                    as_of_date="2026-10-09",
+                    auto_sync=False,
+                )
         except SystemExit as e:
             self.assertEqual(e.code, 0, "run_scanner_flow must exit 0 or complete cleanly")
         finally:

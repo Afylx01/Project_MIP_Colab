@@ -42,8 +42,8 @@
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "status": "identical",
+      "sha256_migrated": "793f28edc89dfb57375d8030aa264d22e5eb48e4d5a98c489ecd080ecd50807a",
+      "status": "refactored",
       "refactor_notes": "Identical to Main MIP pydroid_core source"
     },
     {
@@ -56,8 +56,8 @@
     {
       "filename": "breadth.py",
       "sha256_source": "85c7d449929dd569081ca25ca370a72f736d00bc18a18be336aab6550c8a38a7",
-      "sha256_migrated": "85c7d449929dd569081ca25ca370a72f736d00bc18a18be336aab6550c8a38a7",
-      "status": "identical",
+      "sha256_migrated": "1e57f6b8bc7c4b312619562d27d5f55640dd84c66521c49c47bd9c0b823d2f6b",
+      "status": "refactored",
       "refactor_notes": "Identical to Main MIP pydroid_core source"
     },
     {
@@ -112,8 +112,8 @@
     {
       "filename": "portfolio.py",
       "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
-      "sha256_migrated": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
-      "status": "identical",
+      "sha256_migrated": "ee0c53c697577f81952097335a09031a2b1de41bfd0030f4d70b616252bfaebe",
+      "status": "refactored",
       "refactor_notes": "Identical to Main MIP pydroid_core source"
     },
     {
@@ -140,7 +140,7 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "5449622a1a62d208f482837f9b7694fb0acb8fea3864a5b1d6a5c5b5133b4457",
+      "sha256_migrated": "8a2113cb3f8a35c31139b1f7a42679a847df5d77e1b4d82f1d8741067145eda8",
       "status": "refactored",
       "refactor_notes": "Excel workbook Telegram dispatch integration"
     },
@@ -182,7 +182,7 @@
     {
       "filename": "visuals.py",
       "sha256_source": "680a4cbf8d54bd5b9a9e9768fba0dc289061e0776755645250e10052b5f4d33a",
-      "sha256_migrated": "54758b9a7df14b44828fac47d7f30ad38e941ab29356e90cfd79cf200daf74a9",
+      "sha256_migrated": "ae046e707929f3c884981a396c54d47051fdad8fb4b195e7dc89ce8d19f04c30",
       "status": "refactored",
       "refactor_notes": "Mobile-compatible output paths and formatting"
     }

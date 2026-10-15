@@ -38,6 +38,11 @@ class LightweightBacktester:
         self.benchmark_csv = self.base_dir / "data" / "benchmark_nifty500.csv"
         self.pm = PortfolioManager(self.base_dir)
         self.sector_map = load_symbol_sector_map()
+        try:
+            from .analytical_price import AnalyticalPriceEngine
+            self.analytical_engine = AnalyticalPriceEngine(self.base_dir / "data" / "corporate_actions_registry.json")
+        except Exception:
+            self.analytical_engine = None
 
     def log(self, msg: str):
         print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] [Backtest] {msg}")
@@ -105,6 +110,22 @@ class LightweightBacktester:
         bars["date"] = bars["date"].astype(str)
         bars = bars.sort_values(by=["symbol", "date"]).reset_index(drop=True)
         bars["sector"] = bars["symbol"].map(lambda s: self.sector_map.get(s, "OTHER"))
+
+        # Point-in-time corporate action adjustments via AnalyticalPriceEngine (DEF-01)
+        if getattr(self, "analytical_engine", None) and self.analytical_engine.actions_by_symbol:
+            for ca_sym in self.analytical_engine.actions_by_symbol:
+                mask = bars["symbol"] == ca_sym
+                if mask.any():
+                    df_sub = bars.loc[mask].copy()
+                    df_adj, _ = self.analytical_engine.derive_analytical_series(
+                        ca_sym, df_sub, as_of_date=end_date
+                    )
+                    if not df_adj.empty and len(df_adj) == len(df_sub):
+                        for col in ["open", "high", "low", "close"]:
+                            if col in df_adj.columns:
+                                bars.loc[mask, col] = df_adj[col].values
+
+        self.delisted_symbols = set(bars.loc[bars["is_delisted"] == 1, "symbol"].unique()) if "is_delisted" in bars.columns else set()
 
         b_df = self.load_benchmark()
         bench_bull_map = {}
@@ -239,6 +260,19 @@ class LightweightBacktester:
 
                 effective_buffer = exit_buffer if exit_buffer is not None else (top_n * 2)
 
+                # Adjust active holdings for splits/bonuses between rebalance dates (DEF-01)
+                if getattr(self, "analytical_engine", None):
+                    for sym, h in current_holdings.items():
+                        active_actions = self.analytical_engine.get_active_actions(sym, signal_date)
+                        last_ca_date = h.get("last_ca_date", h["entry_date"])
+                        for a in active_actions:
+                            if last_ca_date < a.ex_date <= signal_date:
+                                factor = a.adjustment_factor
+                                if factor > 0 and factor != 1.0:
+                                    h["shares"] = int(round(h["shares"] / factor))
+                                    h["buy_px"] = round(h["buy_px"] * factor, 2)
+                                    h["last_ca_date"] = a.ex_date
+
                 for sym, h in current_holdings.items():
                     shares = h["shares"]
                     buy_px = h["buy_px"]
@@ -266,6 +300,10 @@ class LightweightBacktester:
                         exit_px = o_slice.get(sym) or c_exec.get(sym) or last_known_close.get(sym, 0.0)
                         if exit_px <= 0:
                             exit_px = 0.0
+
+                        # Distress liquidation haircut for delisted / suspended companies (DEF-07)
+                        if sym in getattr(self, "delisted_symbols", set()) and (m is None or sym not in o_slice):
+                            exit_px = exit_px * 0.50
 
                         gross_proceeds = shares * exit_px
                         sell_fric = self.pm.compute_frictions(gross_proceeds)["total_friction"] + (gross_proceeds * slippage_rate)

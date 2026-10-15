@@ -28,6 +28,8 @@ def compute_close_location_value(close: float, high: float, low: float) -> float
     CLV = (2 * Close - High - Low) / (High - Low)
     Returns float in [-1.0, +1.0]. If High == Low, returns 0.0.
     """
+    if not (math.isfinite(close) and math.isfinite(high) and math.isfinite(low)):
+        return 0.0
     span = high - low
     if span <= 1e-6:
         return 0.0
@@ -82,10 +84,19 @@ def evaluate_microstructure_buy_gate(
 ) -> Dict[str, Union[bool, str, float]]:
     """
     Evaluates institutional buy gate based on SMFI score:
+    - If SMFI is NaN/non-finite -> BUY VETOED (Fail-Closed Invariant)
     - If SMFI <= distribution_threshold (-1.50) -> BUY VETOED
     - If SMFI >= accumulation_threshold (+2.50) -> ACCUMULATION CONFIRMED
     - Otherwise -> NEUTRAL
     """
+    if not math.isfinite(smfi_score):
+        return {
+            "allow_buy": False,
+            "action": "MISSING_DATA_VETO",
+            "smfi_score": 0.0,
+            "reason": "Delivery microstructure data unavailable or non-finite (Fail-Closed)",
+        }
+
     if smfi_score <= distribution_threshold:
         return {
             "allow_buy": False,

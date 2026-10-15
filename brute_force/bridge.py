@@ -362,6 +362,10 @@ class NativeBruteForceEngine:
 
         # Build ctypes CTensorCube
         c_cube = CTensorCube()
+        if cube.num_symbols > 2048:
+            raise ValueError(
+                f"Universe size {cube.num_symbols} exceeds native C kernel limit of 2048 symbols."
+            )
         c_cube.num_dates = cube.num_dates
         c_cube.num_symbols = cube.num_symbols
         c_cube.num_lookbacks = len(cube.lookback_values)

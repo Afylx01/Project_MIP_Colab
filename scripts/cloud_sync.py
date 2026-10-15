@@ -26,6 +26,7 @@ import time
 import gzip
 import shutil
 import sqlite3
+import uuid
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
 
@@ -103,7 +104,7 @@ def compress_file(src_path: Path, dest_gz_path: Path, compresslevel: int = 6) ->
     src = Path(src_path)
     dest_gz = Path(dest_gz_path)
     dest_gz.parent.mkdir(parents=True, exist_ok=True)
-    tmp_dest = dest_gz.parent / f"{dest_gz.name}.tmp_{int(time.time())}"
+    tmp_dest = dest_gz.parent / f"{dest_gz.name}.tmp_{int(time.time())}_{uuid.uuid4().hex[:8]}"
     with open(src, "rb") as f_in, gzip.open(tmp_dest, "wb", compresslevel=compresslevel) as f_out:
         shutil.copyfileobj(f_in, f_out, length=10 * 1024 * 1024)
     tmp_dest.replace(dest_gz)
@@ -118,7 +119,7 @@ def decompress_file(src_gz_path: Path, dest_path: Path) -> Tuple[int, int]:
     src_gz = Path(src_gz_path)
     dest = Path(dest_path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp_dest = dest.parent / f"{dest.name}.tmp_{int(time.time())}"
+    tmp_dest = dest.parent / f"{dest.name}.tmp_{int(time.time())}_{uuid.uuid4().hex[:8]}"
     with gzip.open(src_gz, "rb") as f_in, open(tmp_dest, "wb") as f_out:
         shutil.copyfileobj(f_in, f_out, length=10 * 1024 * 1024)
     tmp_dest.replace(dest)

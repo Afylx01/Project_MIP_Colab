@@ -16,6 +16,7 @@ import argparse
 import logging
 from logging.handlers import RotatingFileHandler
 import datetime
+import json
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
@@ -99,6 +100,33 @@ class ProductionScheduler:
         """Determines if a specific date (YYYY-MM-DD) is an official NSE trading session."""
         dates = self.get_trading_calendar_dates()
         return date_str in dates
+
+    def get_executed_sessions(self) -> List[str]:
+        """Loads list of trading dates for which production pipeline has completed."""
+        state_file = self.base_dir / "logs" / "scheduler_state.json"
+        if not state_file.exists():
+            return []
+        try:
+            with open(state_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data.get("completed_sessions", [])
+        except Exception:
+            return []
+
+    def mark_session_completed(self, date_str: str) -> None:
+        """Atomically records completed session to prevent duplicate execution loops."""
+        state_file = self.base_dir / "logs" / "scheduler_state.json"
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        sessions = self.get_executed_sessions()
+        if date_str not in sessions:
+            sessions.append(date_str)
+        try:
+            tmp_file = state_file.parent / f"{state_file.name}.tmp"
+            with open(tmp_file, "w", encoding="utf-8") as f:
+                json.dump({"completed_sessions": sessions, "last_updated": datetime.datetime.now(datetime.timezone.utc).isoformat()}, f, indent=2)
+            tmp_file.replace(state_file)
+        except Exception as e:
+            self.logger.warning(f"Could not persist scheduler session state: {e}")
 
     def get_next_market_close(self, now_utc: Optional[datetime.datetime] = None) -> datetime.datetime:
         """
@@ -197,6 +225,11 @@ class ProductionScheduler:
             status_info["reason"] = "MARKET_HOURS_ACTIVE"
             return status_info
 
+        if today_str in self.get_executed_sessions():
+            self.logger.info(f"Scheduler: Production pipeline already completed for {today_str}. Standing by.")
+            status_info["reason"] = "SESSION_ALREADY_COMPLETED"
+            return status_info
+
         # Market is closed on a trading day
         self.logger.info(f"Scheduler: Market closed on trading day {today_str}. Initiating production pipeline dispatch.")
         if dry_run:
@@ -213,6 +246,8 @@ class ProductionScheduler:
             allow_stale=True,
             skip_health_check=False,
         )
+        if telemetry.get("pipeline_status") == "SUCCESS":
+            self.mark_session_completed(today_str)
         status_info["action_taken"] = "PIPELINE_EXECUTED"
         status_info["telemetry"] = telemetry
         self.logger.info(f"Scheduler: Pipeline completed with status {telemetry.get('pipeline_status')}")

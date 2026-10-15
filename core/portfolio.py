@@ -863,6 +863,9 @@ class PortfolioState:
                 slippage=slip,
             )
             ok, msg = self.apply_fill(fill)
+            if not ok:
+                order.status = OrderStatus.REJECTED
+                order.rejection_reason = msg
             results.append({"order_id": order.order_id, "symbol": sym, "side": "SELL", "success": ok, "message": msg})
 
         # Phase 2: BUYs executed second
@@ -914,6 +917,9 @@ class PortfolioState:
                 slippage=slip,
             )
             ok, msg = self.apply_fill(fill)
+            if not ok:
+                order.status = OrderStatus.REJECTED
+                order.rejection_reason = msg
             results.append({"order_id": order.order_id, "symbol": sym, "side": "BUY", "success": ok, "message": msg})
 
         return results
@@ -1497,11 +1503,15 @@ class PortfolioManager:
                 "source_signal": source_sig,
             })
 
-        # Budget normalization: ensure total capital allocated does not exceed available budget
-        total_requested = sum(o["total_cost"] for o in buy_hold_orders)
-        if total_requested > capital and total_requested > 0:
-            scale_factor = (capital * 0.99) / total_requested
-            for o in buy_hold_orders:
+        # Budget normalization: ensure BUY orders do not exceed remaining unallocated capital
+        held_value = sum(o["target_value"] for o in buy_hold_orders if o["action"] == "HOLD")
+        avail_for_buys = max(0.0, (capital * 0.99) - held_value)
+        buy_orders = [o for o in buy_hold_orders if o["action"] == "BUY"]
+        buy_requested = sum(o["total_cost"] for o in buy_orders)
+
+        if buy_requested > avail_for_buys and buy_requested > 0:
+            scale_factor = avail_for_buys / buy_requested
+            for o in buy_orders:
                 scaled_shares = int(o["target_shares"] * scale_factor)
                 o["target_shares"] = scaled_shares
                 o["target_value"] = scaled_shares * o["close_price"]

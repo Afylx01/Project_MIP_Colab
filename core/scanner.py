@@ -127,6 +127,7 @@ class PydroidScanner:
         """Records weekly picks into SQLite picks_history table for Pick Performance tracking."""
         if os.environ.get("MIP_READONLY", "0") == "1":
             return
+        conn = None
         try:
             from .data_engine import get_connection
             conn = get_connection(read_only=False, reuse=False)
@@ -191,9 +192,14 @@ class PydroidScanner:
                     """, (ret_s, last_px_date, pdate, sym))
 
             conn.commit()
-            conn.close()
         except Exception as e:
             self.log(f"Warning: Failed to record picks history ({e})")
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def run_scan(
         self,
@@ -208,6 +214,9 @@ class PydroidScanner:
         allow_stale_data: bool = False,
         send_telegram: bool = False,
         auto_download_excel: bool = False,
+        use_vol_targeting: bool = False,
+        use_delivery_veto: bool = False,
+        **kwargs,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Executes end-to-end screener pipeline on SQLite universe with institutional Phase 4 hardening.

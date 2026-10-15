@@ -20,8 +20,9 @@
 #include <string.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <math.h>
 
-#define MAX_UNIVERSE_SYMBOLS 1024
+#define MAX_UNIVERSE_SYMBOLS 2048
 #define MAX_SECTORS 64
 #define MAX_HOLDINGS 64
 #define MAX_SCHEDULES 8
@@ -142,6 +143,7 @@ static inline void simulate_single_config(
     const TensorCube* cube
 ) {
     const uint32_t N = cube->num_symbols;
+    if (N > MAX_UNIVERSE_SYMBOLS) return; // Prevent stack buffer overflow
     const uint32_t T = cube->num_dates;
     const float total_friction_rate = (params->friction_bps + params->slippage_bps) / 10000.0f;
     const float initial_capital = params->initial_capital > 0.0f ? params->initial_capital : 1000000.0f;
@@ -250,7 +252,7 @@ static inline void simulate_single_config(
 
             // Metric for ranking: Volar vs Residual Momentum
             float rank_score = (filter_flags & FILTER_RESIDUAL_MOM) ? sig_res_mom[s] : sig_volar[s];
-            if (rank_score <= 0.0f) continue;
+            if (rank_score <= 0.0f || isnan(rank_score) || isinf(rank_score)) continue;
 
             pass_candidates[pass_count].symbol_idx = (int)s;
             pass_candidates[pass_count].volar = rank_score;
@@ -528,15 +530,14 @@ typedef struct {
     SimulationSummary* results;
     uint32_t total_tasks;
     const TensorCube* cube;
+    atomic_uint* task_counter;
 } WorkerContext;
-
-static atomic_uint g_task_counter = 0;
 
 static void* worker_thread_entry(void* arg) {
     WorkerContext* ctx = (WorkerContext*)arg;
     uint32_t task_start;
 
-    while ((task_start = atomic_fetch_add(&g_task_counter, CHUNK_SIZE)) < ctx->total_tasks) {
+    while ((task_start = atomic_fetch_add(ctx->task_counter, CHUNK_SIZE)) < ctx->total_tasks) {
         uint32_t task_end = task_start + CHUNK_SIZE;
         if (task_end > ctx->total_tasks) task_end = ctx->total_tasks;
 
@@ -555,7 +556,7 @@ void run_parallel_brute_force(
     uint32_t num_threads,
     const TensorCube* cube
 ) {
-    atomic_store(&g_task_counter, 0);
+    atomic_uint local_task_counter = 0;
     if (num_threads == 0 || num_threads > 16) {
         num_threads = 8;
     }
@@ -565,7 +566,8 @@ void run_parallel_brute_force(
         .param_grid = param_grid,
         .results = results,
         .total_tasks = total_tasks,
-        .cube = cube
+        .cube = cube,
+        .task_counter = &local_task_counter
     };
 
     for (uint32_t t = 0; t < num_threads; t++) {

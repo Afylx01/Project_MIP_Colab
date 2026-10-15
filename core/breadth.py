@@ -95,8 +95,9 @@ class MarketBreadthEngine:
             b_df = self.load_benchmark()
             if not b_df.empty:
                 bench_map = dict(zip(b_df["date"], b_df["close"]))
-                bars["benchmark_close"] = bars["date"].map(bench_map).fillna(1.0)
+                bars["benchmark_close"] = bars["date"].map(bench_map).ffill().bfill().fillna(1.0)
             else:
+                self.log("Warning: Benchmark dataframe empty. Defaulting benchmark_close to 1.0.")
                 bars["benchmark_close"] = 1.0
 
             bars = compute_rrg_metrics(bars)

@@ -41,42 +41,45 @@ def compute_rolling_residual_momentum(
     stock_mat = stock_returns.to_numpy() - daily_rf
 
     T, N = stock_mat.shape
-    res_mat = np.zeros((T, N), dtype=np.float64)
 
-    # Rolling benchmark variance
-    s_bm = pd.Series(bench_excess)
-    bench_var = s_bm.rolling(lookback, min_periods=min(50, lookback)).var().to_numpy()
-    bench_mean = s_bm.rolling(lookback, min_periods=min(50, lookback)).mean().to_numpy()
+    stock_df = pd.DataFrame(stock_mat, index=stock_returns.index, columns=stock_returns.columns)
+    s_bm = pd.Series(bench_excess, index=stock_returns.index)
+
+    # Rolling benchmark variance & mean
+    bench_var = s_bm.rolling(lookback, min_periods=min(50, lookback)).var()
+    bench_mean = s_bm.rolling(lookback, min_periods=min(50, lookback)).mean()
 
     effective_lb = lookback - skip_recent
     if effective_lb <= 0:
         effective_lb = lookback
 
-    for j in range(N):
-        s_stock = pd.Series(stock_mat[:, j])
-        stock_mean = s_stock.rolling(lookback, min_periods=min(50, lookback)).mean().to_numpy()
-        rolling_cov = s_stock.rolling(lookback, min_periods=min(50, lookback)).cov(s_bm).to_numpy()
+    # Vectorized 2D rolling stock mean & covariance across all columns
+    stock_mean = stock_df.rolling(lookback, min_periods=min(50, lookback)).mean()
+    rolling_cov = stock_df.rolling(lookback, min_periods=min(50, lookback)).cov(s_bm)
 
-        # Beta and Alpha
-        beta = np.where(bench_var > 1e-8, rolling_cov / bench_var, 1.0)
-        alpha = stock_mean - (beta * bench_mean)
+    # Vectorized Beta and Alpha
+    b_var_mat = np.tile(bench_var.to_numpy()[:, None], (1, N))
+    b_mean_mat = np.tile(bench_mean.to_numpy()[:, None], (1, N))
+    bm_excess_mat = np.tile(bench_excess[:, None], (1, N))
 
-        # Residual return series: eps_t = R_i,t - (alpha + beta * R_m,t)
-        eps = stock_mat[:, j] - (alpha + beta * bench_excess)
-        s_eps = pd.Series(eps)
+    cov_mat = rolling_cov.to_numpy()
+    beta = np.where(b_var_mat > 1e-8, cov_mat / b_var_mat, 1.0)
+    alpha = stock_mean.to_numpy() - (beta * b_mean_mat)
 
-        # Rolling standard deviation of residuals
-        eps_std = s_eps.rolling(lookback, min_periods=min(50, lookback)).std().to_numpy()
-        eps_std = np.clip(eps_std, 1e-4, None)
+    # Residual return series: eps_t = R_i,t - (alpha + beta * R_m,t)
+    eps = stock_mat - (alpha + beta * bm_excess_mat)
+    eps_df = pd.DataFrame(eps, index=stock_returns.index, columns=stock_returns.columns)
 
-        # Intermediate momentum sum: excluding the most recent skip_recent sessions
-        shifted_eps = s_eps.shift(skip_recent)
-        eps_sum = shifted_eps.rolling(effective_lb, min_periods=min(30, effective_lb)).sum().to_numpy()
+    # Rolling standard deviation of residuals (vectorized across all columns)
+    eps_std = eps_df.rolling(lookback, min_periods=min(50, lookback)).std().to_numpy()
+    eps_std = np.clip(eps_std, 1e-4, None)
 
-        res_score = np.nan_to_num(eps_sum / (eps_std * np.sqrt(effective_lb)), nan=0.0)
-        res_mat[:, j] = res_score
+    # Intermediate momentum sum: excluding the most recent skip_recent sessions
+    shifted_eps = eps_df.shift(skip_recent)
+    eps_sum = shifted_eps.rolling(effective_lb, min_periods=min(30, effective_lb)).sum().to_numpy()
 
-    return pd.DataFrame(res_mat, index=stock_returns.index, columns=stock_returns.columns)
+    res_score = np.nan_to_num(eps_sum / (eps_std * np.sqrt(effective_lb)), nan=0.0)
+    return pd.DataFrame(res_score, index=stock_returns.index, columns=stock_returns.columns)
 
 
 def compute_composite_momentum_score(
