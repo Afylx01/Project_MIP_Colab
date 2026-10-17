@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2026-10-17
 
 ### Added
+- **Random Time Duration Dimension (Monte Carlo Sub-Period Horizon Sweeping)**:
+  - Added the **10th Dimension** to the Factorial Matrix Search Space: `generate_random_time_duration_windows()` in `brute_force/grid.py`.
+  - Evaluates parameter sets across randomized multi-year horizons (1y, 2y, 3y, 5y, 7y, 10y, Full 18y) to eliminate regime-specific survivorship bias.
+  - Multiplies the factorial search space from 1.728M to up to **13,824,000 distinct configurations** ($5 \times 6 \times 4 \times 5 \times 6 \times 6 \times 5 \times 2 \times 8 \times 8$).
+  - Added new duration presets:
+    - `Tier 3: Factorial + Random Time Durations (Deep - 10,000 runs)` (`--brute-force-mode tier3_deep_durations`)
+    - `Tier 3: Factorial + Random Time Durations (Mega - 250,000 runs)` (`--brute-force-mode tier3_mega_durations`)
+    - `Tier 3: Factorial + Random Time Durations (Ultra - 1,000,000 runs)` (`--brute-force-mode tier3_ultra_durations`)
+  - Added CLI flags `--include-random-durations` / `--random-time-durations` and `--num-random-durations` in `main.py`.
+  - Integrated `Random Time Durations Dimension 🎲` toggle and dropdown options into Cell 3 of `Project_MIP_Colab.ipynb`.
+  - Dedicated TDD contract suite: 3 new tests in `tests/test_main_brute_force.py` (11/11 passed).
 - **Massive Factorial Hyperparameter Grid Engine (1.728M Combinations & Mega/Ultra Presets)**:
   - Expanded Tier 3 parameter search space to evaluate up to **1,728,000 distinct configurations** ($5_{\text{Schedules}} \times 6_{\text{TopN}} \times 4_{\text{Lookback}} \times 5_{\text{EMA}} \times 6_{\text{Buffer}} \times 6_{\text{Retrace}} \times 5_{\text{Sector}} \times 2_{\text{Sizing}} \times 8_{\text{Alphas}}$).
   - Implemented $O(1)$ high-speed indexed sampling (`random.sample(range(total), sample_size)` with flat integer modulo decomposition), generating 250k or 1M parameter sets instantly without Python list allocation overhead.

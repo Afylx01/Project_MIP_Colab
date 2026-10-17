@@ -380,6 +380,9 @@ class BruteForceCampaignRunner:
         use_residual_mom: bool = False,
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
+        include_random_durations: bool = False,
+        num_random_durations: int = 4,
+        duration_lengths_years: Optional[List[float]] = None,
     ) -> pd.DataFrame:
         """
         Executes a multi-threaded parallel parameter optimization sweep across all custom combinations.
@@ -401,6 +404,9 @@ class BruteForceCampaignRunner:
             use_residual_mom=use_residual_mom,
             use_vol_targeting=use_vol_targeting,
             use_delivery_veto=use_delivery_veto,
+            include_random_durations=include_random_durations,
+            num_random_durations=num_random_durations,
+            duration_lengths_years=duration_lengths_years,
         )
         df = self.run_sweep(params_list, num_threads=num_threads)
         if not df.empty and "sharpe" in df.columns:
@@ -415,10 +421,15 @@ class BruteForceCampaignRunner:
         use_residual_mom: bool = False,
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
+        include_random_durations: bool = False,
+        num_random_durations: int = 6,
+        duration_lengths_years: Optional[List[float]] = None,
     ) -> pd.DataFrame:
         """Runs institutional pre-packaged optimization matrices (tier1, tier2, tier3, tier4)."""
         cube = self.ensure_cube(universe_name=universe_name)
         preset_clean = preset.lower().replace("-", "").replace("_", "")
+        has_durations = include_random_durations or ("duration" in preset_clean) or ("window" in preset_clean)
+
         if "tier1" in preset_clean or "baseline" in preset_clean:
             params = generate_tier1_baseline_matrix(
                 cube,
@@ -437,6 +448,9 @@ class BruteForceCampaignRunner:
                 use_delivery_veto=use_delivery_veto,
                 expanded_grid=True,
                 include_alpha_permutations=True,
+                include_random_durations=has_durations,
+                num_random_durations=num_random_durations,
+                duration_lengths_years=duration_lengths_years,
             )
         elif "mega" in preset_clean or "250000" in preset_clean or "250k" in preset_clean:
             params = generate_tier3_hyperparameter_grid(
@@ -447,6 +461,9 @@ class BruteForceCampaignRunner:
                 use_delivery_veto=use_delivery_veto,
                 expanded_grid=True,
                 include_alpha_permutations=False,
+                include_random_durations=has_durations,
+                num_random_durations=num_random_durations,
+                duration_lengths_years=duration_lengths_years,
             )
         elif "deep" in preset_clean or "10000" in preset_clean or "10k" in preset_clean:
             params = generate_tier3_hyperparameter_grid(
@@ -455,6 +472,10 @@ class BruteForceCampaignRunner:
                 use_residual_mom=use_residual_mom,
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
+                expanded_grid=has_durations,
+                include_random_durations=has_durations,
+                num_random_durations=num_random_durations,
+                duration_lengths_years=duration_lengths_years,
             )
         elif "full" in preset_clean or "factorial" in preset_clean or "61440" in preset_clean:
             params = generate_tier3_hyperparameter_grid(
@@ -463,6 +484,9 @@ class BruteForceCampaignRunner:
                 use_residual_mom=use_residual_mom,
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
+                include_random_durations=has_durations,
+                num_random_durations=num_random_durations,
+                duration_lengths_years=duration_lengths_years,
             )
         elif "tier3" in preset_clean or "hyper" in preset_clean or "rapid" in preset_clean or "neighborhood" in preset_clean:
             params = generate_tier3_hyperparameter_grid(
@@ -471,6 +495,9 @@ class BruteForceCampaignRunner:
                 use_residual_mom=use_residual_mom,
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
+                include_random_durations=has_durations,
+                num_random_durations=num_random_durations,
+                duration_lengths_years=duration_lengths_years,
             )
         elif "tier4" in preset_clean or "rolling" in preset_clean or "dsr" in preset_clean:
             params = generate_tier4_rolling_windows_grid(cube, num_windows=500)

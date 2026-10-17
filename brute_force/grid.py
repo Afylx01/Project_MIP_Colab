@@ -184,6 +184,77 @@ def generate_tier2_ablation_grid(cube) -> List[Dict[str, Any]]:
     return grid
 
 
+def generate_random_time_duration_windows(
+    cube,
+    num_durations: int = 6,
+    duration_lengths_years: Optional[List[float]] = None,
+    seed: int = 42,
+    include_full_era: bool = True,
+) -> List[Dict[str, Any]]:
+    """
+    Generates random time duration windows across the historical date range.
+    Each window represents a randomized market slice (e.g., 1y, 2y, 3y, 5y, 7y, 10y)
+    with exact start/end date indices, dates, and descriptive labels.
+    """
+    if duration_lengths_years is None:
+        duration_lengths_years = [1.0, 2.0, 3.0, 5.0, 7.0, 10.0]
+
+    random.seed(seed)
+    T = cube.num_dates
+    min_start_idx = 350  # Warmup buffer to allow 252-day lookback + indicators
+
+    windows = []
+    if include_full_era:
+        windows.append({
+            "start_date_idx": 0,
+            "end_date_idx": T - 1,
+            "start_date": cube.dates[0],
+            "end_date": cube.dates[-1],
+            "duration_years": round(T / 252.0, 2),
+            "duration_name": f"Full_Era ({cube.dates[0]} to {cube.dates[-1]})",
+            "era": "FULL_ERA",
+        })
+
+    for y_len in duration_lengths_years:
+        bars_len = int(y_len * 252)
+        max_start = T - bars_len - 10
+        if max_start <= min_start_idx:
+            continue
+        s_idx = random.randint(min_start_idx, max_start)
+        e_idx = s_idx + bars_len
+        windows.append({
+            "start_date_idx": s_idx,
+            "end_date_idx": e_idx,
+            "start_date": cube.dates[s_idx],
+            "end_date": cube.dates[e_idx],
+            "duration_years": round((e_idx - s_idx) / 252.0, 2),
+            "duration_name": f"Random_{y_len:.1f}Y ({cube.dates[s_idx]} to {cube.dates[e_idx]})",
+            "era": f"RANDOM_{y_len:.1f}Y",
+        })
+        if len(windows) >= num_durations:
+            break
+
+    while len(windows) < num_durations:
+        y_len = random.choice(duration_lengths_years)
+        bars_len = int(y_len * 252)
+        max_start = T - bars_len - 10
+        if max_start <= min_start_idx:
+            break
+        s_idx = random.randint(min_start_idx, max_start)
+        e_idx = s_idx + bars_len
+        windows.append({
+            "start_date_idx": s_idx,
+            "end_date_idx": e_idx,
+            "start_date": cube.dates[s_idx],
+            "end_date": cube.dates[e_idx],
+            "duration_years": round((e_idx - s_idx) / 252.0, 2),
+            "duration_name": f"Random_{y_len:.1f}Y ({cube.dates[s_idx]} to {cube.dates[e_idx]})",
+            "era": f"RANDOM_{y_len:.1f}Y",
+        })
+
+    return windows
+
+
 def generate_tier3_hyperparameter_grid(
     cube,
     era_key: str = "2008-2026",
@@ -195,17 +266,41 @@ def generate_tier3_hyperparameter_grid(
     use_delivery_veto: bool = False,
     expanded_grid: bool = False,
     include_alpha_permutations: bool = False,
+    include_random_durations: bool = False,
+    num_random_durations: int = 6,
+    duration_lengths_years: Optional[List[float]] = None,
+    duration_windows: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """
-    Tier 3: Factorial Hyperparameter Grid across Top N, Lookbacks, EMAs, Buffers, Retrace, Sector Caps, and Alphas.
-    Supports standard 61,440 full factorial matrix or expanded 1,728,000 mega factorial space.
-    Produces institutional parameter sensitivity maps.
+    Tier 3: Factorial Hyperparameter Grid across Top N, Lookbacks, EMAs, Buffers, Retrace, Sector Caps, Alphas,
+    and optional Random Time Duration Dimension.
+    Supports standard 61,440 full factorial matrix or expanded 1.7M+ to 13.8M+ multi-dimensional spaces.
+    Produces institutional parameter sensitivity maps with robust regime cross-validation.
     """
-    start_dt, end_dt, era_name = MACRO_ERAS[era_key]
+    start_dt, end_dt, era_name = MACRO_ERAS.get(era_key, (cube.dates[0], cube.dates[-1], era_key))
     s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_dt], default=0)
     e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= end_dt], default=cube.num_dates - 1)
 
-    is_expanded = expanded_grid or (sample_size is not None and sample_size > 61440) or include_alpha_permutations
+    if duration_windows is not None:
+        duration_opts = duration_windows
+    elif include_random_durations:
+        duration_opts = generate_random_time_duration_windows(
+            cube,
+            num_durations=num_random_durations,
+            duration_lengths_years=duration_lengths_years,
+        )
+    else:
+        duration_opts = [{
+            "start_date_idx": s_idx,
+            "end_date_idx": e_idx,
+            "start_date": start_dt,
+            "end_date": end_dt,
+            "duration_years": round((e_idx - s_idx) / 252.0, 2),
+            "duration_name": era_name,
+            "era": era_key,
+        }]
+
+    is_expanded = expanded_grid or (sample_size is not None and sample_size > 61440) or include_alpha_permutations or include_random_durations
 
     if is_expanded:
         if schedules is None:
@@ -252,6 +347,7 @@ def generate_tier3_hyperparameter_grid(
         len(sector_opts),
         len(sizing_opts),
         len(alpha_opts),
+        len(duration_opts),
     ]
     total_combinations = 1
     for l in lens:
@@ -269,6 +365,7 @@ def generate_tier3_hyperparameter_grid(
 
     for pid, idx in enumerate(selected_indices):
         rem = idx
+        dur_info = duration_opts[rem % lens[9]]; rem //= lens[9]
         a_res, a_vol, a_veto = alpha_opts[rem % lens[8]]; rem //= lens[8]
         sz = sizing_opts[rem % lens[7]]; rem //= lens[7]
         sec = sector_opts[rem % lens[6]]; rem //= lens[6]
@@ -282,13 +379,15 @@ def generate_tier3_hyperparameter_grid(
         p = CANONICAL_BASELINE.copy()
         p["param_id"] = pid
         p["tier"] = "TIER_3_GRID"
-        p["era"] = era_key
+        p["era"] = dur_info["era"]
+        p["duration_name"] = dur_info["duration_name"]
+        p["duration_years"] = dur_info["duration_years"]
         p["schedule"] = sched
         p["schedule_idx"] = SCHEDULE_MAP[sched]
-        p["start_date"] = start_dt
-        p["end_date"] = end_dt
-        p["start_date_idx"] = s_idx
-        p["end_date_idx"] = e_idx
+        p["start_date"] = dur_info["start_date"]
+        p["end_date"] = dur_info["end_date"]
+        p["start_date_idx"] = dur_info["start_date_idx"]
+        p["end_date_idx"] = dur_info["end_date_idx"]
         p["top_n"] = tn
         p["lookback_idx"] = lb_idx
         p["lookback"] = LOOKBACK_VALUES[lb_idx]
@@ -395,11 +494,15 @@ def generate_custom_parameter_grid(
     use_residual_mom: bool = False,
     use_vol_targeting: bool = False,
     use_delivery_veto: bool = False,
+    include_random_durations: bool = False,
+    num_random_durations: int = 4,
+    duration_lengths_years: Optional[List[float]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Generates a Cartesian product parameter grid from custom user specifications.
     Maps values to closest indices in cube.lookback_values and cube.ema_span_values.
-    Supports optional residual momentum, volatility targeting, and delivery flow overlays.
+    Supports optional residual momentum, volatility targeting, delivery flow overlays,
+    and random time duration windows.
     """
     if lookbacks is None:
         lookbacks = [252]
@@ -421,8 +524,26 @@ def generate_custom_parameter_grid(
     s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_date], default=0)
     e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= actual_end_date], default=cube.num_dates - 1)
 
+    if include_random_durations:
+        dur_opts = generate_random_time_duration_windows(
+            cube,
+            num_durations=num_random_durations,
+            duration_lengths_years=duration_lengths_years,
+            include_full_era=False,
+        )
+    else:
+        dur_opts = [{
+            "start_date_idx": s_idx,
+            "end_date_idx": e_idx,
+            "start_date": start_date,
+            "end_date": actual_end_date,
+            "duration_years": round((e_idx - s_idx) / 252.0, 2),
+            "duration_name": "Custom",
+            "era": "CUSTOM",
+        }]
+
     combos = list(itertools.product(
-        schedules, top_ns, lookbacks, ema_trends, retrace_thresholds, max_per_sectors, sizing_modes
+        schedules, top_ns, lookbacks, ema_trends, retrace_thresholds, max_per_sectors, sizing_modes, dur_opts
     ))
 
     flags = CANONICAL_FILTER_FLAGS if filter_flags is None else filter_flags
@@ -435,7 +556,7 @@ def generate_custom_parameter_grid(
 
     grid = []
     pid = 0
-    for sched, tn, lb, ema, ret, sec, sz in combos:
+    for sched, tn, lb, ema, ret, sec, sz, dur_info in combos:
         l_idx = int(np.argmin([abs(v - lb) for v in cube.lookback_values]))
         e_span_idx = int(np.argmin([abs(v - ema) for v in cube.ema_span_values]))
 
@@ -444,10 +565,13 @@ def generate_custom_parameter_grid(
         p["tier"] = "CUSTOM_SWEEP"
         p["schedule"] = sched
         p["schedule_idx"] = SCHEDULE_MAP.get(sched.lower(), 1)
-        p["start_date"] = start_date
-        p["end_date"] = actual_end_date
-        p["start_date_idx"] = s_idx
-        p["end_date_idx"] = e_idx
+        p["start_date"] = dur_info["start_date"]
+        p["end_date"] = dur_info["end_date"]
+        p["start_date_idx"] = dur_info["start_date_idx"]
+        p["end_date_idx"] = dur_info["end_date_idx"]
+        p["duration_name"] = dur_info["duration_name"]
+        p["duration_years"] = dur_info["duration_years"]
+        p["era"] = dur_info["era"]
         p["top_n"] = int(tn)
         p["exit_buffer_rank"] = int(tn * 2.0)
         p["lookback"] = int(cube.lookback_values[l_idx])

@@ -169,6 +169,70 @@ class TestMainBruteForceIntegration(unittest.TestCase):
         self.assertIn("use_vol_targeting", grid_sampled[0])
         self.assertIn("use_delivery_veto", grid_sampled[0])
 
+    def test_generate_random_time_duration_windows(self):
+        """Verify random time duration window generator produces valid sub-periods."""
+        from brute_force.grid import generate_random_time_duration_windows
+        from brute_force.runner import BruteForceCampaignRunner
+        runner = BruteForceCampaignRunner()
+        cube = runner.ensure_cube(universe_name="NIFTY500")
+
+        windows = generate_random_time_duration_windows(cube, num_durations=6, seed=42)
+        self.assertEqual(len(windows), 6)
+        for w in windows:
+            self.assertIn("start_date_idx", w)
+            self.assertIn("end_date_idx", w)
+            self.assertIn("start_date", w)
+            self.assertIn("end_date", w)
+            self.assertIn("duration_years", w)
+            self.assertIn("duration_name", w)
+            self.assertGreater(w["end_date_idx"], w["start_date_idx"])
+            self.assertGreater(w["duration_years"], 0.0)
+
+    def test_generate_tier3_grid_with_random_time_duration_dimension(self):
+        """Verify Tier 3 hyperparameter grid incorporates random time duration as an explicit dimension."""
+        from brute_force.grid import generate_tier3_hyperparameter_grid
+        from brute_force.runner import BruteForceCampaignRunner
+        runner = BruteForceCampaignRunner()
+        cube = runner.ensure_cube(universe_name="NIFTY500")
+
+        # Sample 50 configurations with random time durations enabled
+        grid = generate_tier3_hyperparameter_grid(
+            cube,
+            sample_size=50,
+            expanded_grid=True,
+            include_random_durations=True,
+            num_random_durations=6,
+        )
+        self.assertEqual(len(grid), 50)
+        p = grid[0]
+        self.assertIn("duration_years", p)
+        self.assertIn("duration_name", p)
+        self.assertIn("start_date_idx", p)
+        self.assertIn("end_date_idx", p)
+        self.assertIn("era", p)
+
+    def test_sweep_execution_with_random_time_durations(self):
+        """Verify sweep execution runs cleanly across random time durations."""
+        from brute_force.runner import BruteForceCampaignRunner
+        from brute_force.grid import generate_tier3_hyperparameter_grid
+        runner = BruteForceCampaignRunner()
+        cube = runner.ensure_cube(universe_name="NIFTY500")
+
+        grid = generate_tier3_hyperparameter_grid(
+            cube,
+            sample_size=5,
+            expanded_grid=True,
+            include_random_durations=True,
+            num_random_durations=4,
+        )
+        df = runner.run_sweep(grid, num_threads=2)
+        self.assertFalse(df.empty)
+        self.assertEqual(len(df), 5)
+        self.assertIn("duration_years", df.columns)
+        self.assertIn("cagr", df.columns)
+        self.assertIn("sharpe", df.columns)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

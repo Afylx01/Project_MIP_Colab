@@ -1121,6 +1121,8 @@ def run_brute_force_flow(
     use_residual_momentum: bool = False,
     use_vol_targeting: bool = False,
     use_delivery_veto: bool = False,
+    include_random_durations: bool = False,
+    num_random_durations: int = 6,
 ):
     clear_screen()
     latest_date = get_latest_date()
@@ -1187,6 +1189,8 @@ def run_brute_force_flow(
                 use_residual_mom=use_residual_momentum,
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
+                include_random_durations=include_random_durations,
+                num_random_durations=num_random_durations,
             )
             df = runner.run_sweep(grid)
             print(f"Completed Tier 3 Deep hyperparameter sweep across {len(df)} configurations.")
@@ -1199,6 +1203,8 @@ def run_brute_force_flow(
                 use_residual_mom=use_residual_momentum,
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
+                include_random_durations=include_random_durations,
+                num_random_durations=num_random_durations,
             )
             df = runner.run_sweep(grid)
             print(f"Completed Tier 3 Full Factorial sweep across {len(df)} configurations.")
@@ -1212,6 +1218,8 @@ def run_brute_force_flow(
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
                 expanded_grid=True,
+                include_random_durations=include_random_durations,
+                num_random_durations=num_random_durations,
             )
             df = runner.run_sweep(grid)
             print(f"Completed Tier 3 Mega Factorial sweep across {len(df)} configurations.")
@@ -1226,9 +1234,58 @@ def run_brute_force_flow(
                 use_delivery_veto=use_delivery_veto,
                 expanded_grid=True,
                 include_alpha_permutations=True,
+                include_random_durations=include_random_durations,
+                num_random_durations=num_random_durations,
             )
             df = runner.run_sweep(grid)
             print(f"Completed Tier 3 Ultra Factorial sweep across {len(df)} configurations.")
+            return df
+        elif mode == "tier3_deep_durations":
+            cube = runner.ensure_cube(universe_name=universe_mode)
+            grid = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=10000,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                expanded_grid=True,
+                include_random_durations=True,
+                num_random_durations=num_random_durations,
+            )
+            df = runner.run_sweep(grid)
+            print(f"Completed Tier 3 Deep Factorial + Random Durations sweep across {len(df)} configurations.")
+            return df
+        elif mode == "tier3_mega_durations":
+            cube = runner.ensure_cube(universe_name=universe_mode)
+            grid = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=250000,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                expanded_grid=True,
+                include_alpha_permutations=False,
+                include_random_durations=True,
+                num_random_durations=num_random_durations,
+            )
+            df = runner.run_sweep(grid)
+            print(f"Completed Tier 3 Mega Factorial + Random Durations sweep across {len(df)} configurations.")
+            return df
+        elif mode == "tier3_ultra_durations":
+            cube = runner.ensure_cube(universe_name=universe_mode)
+            grid = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=1000000,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                expanded_grid=True,
+                include_alpha_permutations=True,
+                include_random_durations=True,
+                num_random_durations=num_random_durations,
+            )
+            df = runner.run_sweep(grid)
+            print(f"Completed Tier 3 Ultra Factorial + Random Durations sweep across {len(df)} configurations.")
             return df
 
     # Interactive Submenu Loop
@@ -1468,7 +1525,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--brute-force", action="store_true",
                         help="Execute blazing brute force engine directly (Option 18)")
     parser.add_argument("--brute-force-mode", type=str,
-                        choices=["baseline", "tier1", "tier2", "comprehensive", "tier3", "tier3_deep", "tier3_full", "tier3_mega", "tier3_ultra", "matrix"],
+                        choices=["baseline", "tier1", "tier2", "comprehensive", "tier3", "tier3_deep", "tier3_full", "tier3_mega", "tier3_ultra", "tier3_deep_durations", "tier3_mega_durations", "tier3_ultra_durations", "matrix"],
                         default="baseline",
                         help="Brute force execution mode (default baseline)")
     parser.add_argument("--schedule", type=str, choices=["weekly", "monthly", "quarterly", "half_yearly", "yearly"], default="monthly",
@@ -1487,6 +1544,11 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Enable institutional delivery absorption flow distribution veto")
     parser.add_argument("--use-residual-momentum", action="store_true",
                         help="Enable idiosyncratic residual momentum and 21-day reversal guard")
+    parser.add_argument("--include-random-durations", "--random-time-durations", action="store_true",
+                        dest="include_random_durations",
+                        help="Include random time duration dimension across multi-year market windows")
+    parser.add_argument("--num-random-durations", type=int, default=6,
+                        help="Number of random time duration windows to generate (default 6)")
     return parser
 
 
@@ -1510,6 +1572,8 @@ if __name__ == "__main__":
             use_residual_momentum=args.use_residual_momentum,
             use_vol_targeting=args.use_vol_targeting,
             use_delivery_veto=args.use_delivery_veto,
+            include_random_durations=args.include_random_durations,
+            num_random_durations=args.num_random_durations,
         )
         sys.exit(0)
 
