@@ -77,10 +77,24 @@ def get_canonical_baseline_param() -> Dict[str, Any]:
     return CANONICAL_BASELINE.copy()
 
 
-def generate_tier1_baseline_matrix(cube) -> List[Dict[str, Any]]:
+def generate_tier1_baseline_matrix(
+    cube,
+    use_residual_mom: bool = False,
+    use_vol_targeting: bool = False,
+    use_delivery_veto: bool = False,
+) -> List[Dict[str, Any]]:
     """
     Tier 1: Canonical Baseline across 7 Macro Eras x 5 Rebalance Schedules = 35 runs.
+    Supports optional residual momentum, volatility targeting, and delivery flow overlays.
     """
+    flags = CANONICAL_FILTER_FLAGS
+    if use_residual_mom:
+        flags |= FILTER_RESIDUAL_MOM
+    if use_vol_targeting:
+        flags |= FILTER_VOL_TARGETING
+    if use_delivery_veto:
+        flags |= FILTER_DELIVERY_VETO
+
     grid = []
     pid = 0
     for era_key, (start_dt, end_dt, era_name) in MACRO_ERAS.items():
@@ -108,6 +122,10 @@ def generate_tier1_baseline_matrix(cube) -> List[Dict[str, Any]]:
             p["end_date"] = end_dt
             p["start_date_idx"] = s_idx
             p["end_date_idx"] = e_idx
+            p["filter_flags"] = flags
+            p["use_residual_mom"] = use_residual_mom
+            p["use_vol_targeting"] = use_vol_targeting
+            p["use_delivery_veto"] = use_delivery_veto
             grid.append(p)
             pid += 1
     return grid
@@ -171,9 +189,14 @@ def generate_tier3_hyperparameter_grid(
     era_key: str = "2008-2026",
     schedules: List[str] = None,
     sample_size: int = 128000,
+    filter_flags: Optional[int] = None,
+    use_residual_mom: bool = False,
+    use_vol_targeting: bool = False,
+    use_delivery_veto: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Tier 3: Factorial Hyperparameter Grid across Top N, Lookbacks, EMAs, Buffers, Retrace, Sector Caps.
+    Supports optional residual momentum, volatility targeting, and delivery flow overlays.
     Produces institutional parameter sensitivity maps.
     """
     if schedules is None:
@@ -182,6 +205,14 @@ def generate_tier3_hyperparameter_grid(
     start_dt, end_dt, era_name = MACRO_ERAS[era_key]
     s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_dt], default=0)
     e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= end_dt], default=cube.num_dates - 1)
+
+    flags = CANONICAL_FILTER_FLAGS if filter_flags is None else filter_flags
+    if use_residual_mom:
+        flags |= FILTER_RESIDUAL_MOM
+    if use_vol_targeting:
+        flags |= FILTER_VOL_TARGETING
+    if use_delivery_veto:
+        flags |= FILTER_DELIVERY_VETO
 
     top_n_opts = [5, 10, 15, 20]
     lookback_opts = list(range(len(LOOKBACK_VALUES)))  # 0, 1, 2, 3
@@ -223,6 +254,10 @@ def generate_tier3_hyperparameter_grid(
         p["retrace_threshold"] = ret
         p["max_per_sector"] = sec
         p["sizing_mode"] = sz
+        p["filter_flags"] = flags
+        p["use_residual_mom"] = use_residual_mom
+        p["use_vol_targeting"] = use_vol_targeting
+        p["use_delivery_veto"] = use_delivery_veto
         grid.append(p)
     return grid
 
@@ -304,10 +339,14 @@ def generate_custom_parameter_grid(
     start_date: str = "2016-01-01",
     end_date: Optional[str] = None,
     filter_flags: Optional[int] = None,
+    use_residual_mom: bool = False,
+    use_vol_targeting: bool = False,
+    use_delivery_veto: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Generates a Cartesian product parameter grid from custom user specifications.
     Maps values to closest indices in cube.lookback_values and cube.ema_span_values.
+    Supports optional residual momentum, volatility targeting, and delivery flow overlays.
     """
     if lookbacks is None:
         lookbacks = [252]
@@ -333,6 +372,14 @@ def generate_custom_parameter_grid(
         schedules, top_ns, lookbacks, ema_trends, retrace_thresholds, max_per_sectors, sizing_modes
     ))
 
+    flags = CANONICAL_FILTER_FLAGS if filter_flags is None else filter_flags
+    if use_residual_mom:
+        flags |= FILTER_RESIDUAL_MOM
+    if use_vol_targeting:
+        flags |= FILTER_VOL_TARGETING
+    if use_delivery_veto:
+        flags |= FILTER_DELIVERY_VETO
+
     grid = []
     pid = 0
     for sched, tn, lb, ema, ret, sec, sz in combos:
@@ -357,8 +404,10 @@ def generate_custom_parameter_grid(
         p["retrace_threshold"] = float(ret)
         p["max_per_sector"] = int(sec)
         p["sizing_mode"] = sz
-        if filter_flags is not None:
-            p["filter_flags"] = int(filter_flags)
+        p["filter_flags"] = int(flags)
+        p["use_residual_mom"] = bool(use_residual_mom)
+        p["use_vol_targeting"] = bool(use_vol_targeting)
+        p["use_delivery_veto"] = bool(use_delivery_veto)
         grid.append(p)
         pid += 1
 

@@ -1118,6 +1118,9 @@ def run_brute_force_flow(
     sizing_mode: str = "atr_risk_parity",
     start_date: str = "2016-01-01",
     end_date: str = "2026-08-31",
+    use_residual_momentum: bool = False,
+    use_vol_targeting: bool = False,
+    use_delivery_veto: bool = False,
 ):
     clear_screen()
     latest_date = get_latest_date()
@@ -1141,7 +1144,14 @@ def run_brute_force_flow(
     if not interactive:
         print(f"Executing Brute Force in non-interactive mode: mode={mode}, schedule={schedule}, universe={universe_mode}...")
         if mode == "baseline":
-            res = runner.run_baseline(start_date=start_date, end_date=end_date, schedule=schedule)
+            res = runner.run_baseline(
+                start_date=start_date,
+                end_date=end_date,
+                schedule=schedule,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
             print(f"\n{C_BOLD}{'=' * 68}{C_RESET}")
             print(f"{C_BOLD} BRUTE FORCE BASELINE SIMULATION REPORT ({schedule.upper()}){C_RESET}")
             print(f"{C_BOLD}{'=' * 68}{C_RESET}")
@@ -1154,7 +1164,12 @@ def run_brute_force_flow(
             return run_matrix_campaign()
         elif mode == "tier1":
             cube = runner.ensure_cube(universe_name=universe_mode)
-            grid = generate_tier1_baseline_matrix(cube)
+            grid = generate_tier1_baseline_matrix(
+                cube,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
             df = runner.run_sweep(grid)
             print(f"Completed Tier 1 sweep across {len(df)} configurations.")
             return df
@@ -1166,7 +1181,13 @@ def run_brute_force_flow(
             return df
         elif mode in ("comprehensive", "tier3"):
             cube = runner.ensure_cube(universe_name=universe_mode)
-            grid = generate_tier3_hyperparameter_grid(cube, sample_size=10000)
+            grid = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=10000,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
             df = runner.run_sweep(grid)
             print(f"Completed Tier 3 hyperparameter sweep across {len(df)} configurations.")
             return df
@@ -1445,6 +1466,9 @@ if __name__ == "__main__":
             top_n=args.top_n,
             sizing_mode=args.sizing_mode,
             start_date=args.date or "2016-01-01",
+            use_residual_momentum=args.use_residual_momentum,
+            use_vol_targeting=args.use_vol_targeting,
+            use_delivery_veto=args.use_delivery_veto,
         )
         sys.exit(0)
 
@@ -1484,6 +1508,9 @@ if __name__ == "__main__":
             top_n=args.top_n,
             sizing_mode=args.sizing_mode,
             start_date=args.date or "2016-01-01",
+            use_residual_momentum=args.use_residual_momentum,
+            use_vol_targeting=args.use_vol_targeting,
+            use_delivery_veto=args.use_delivery_veto,
         ),
     }
 

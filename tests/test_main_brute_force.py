@@ -104,6 +104,48 @@ class TestMainBruteForceIntegration(unittest.TestCase):
         self.assertIn("sharpe", df.columns)
         self.assertIn("schedule", df.columns)
 
+    def test_brute_force_with_optional_alpha_overlays(self):
+        """Verify brute force baseline runs with residual momentum, vol targeting, and delivery veto."""
+        import main
+        res = main.run_brute_force_flow(
+            interactive=False,
+            mode="baseline",
+            schedule="monthly",
+            universe_mode="NIFTY500",
+            start_date="2020-01-01",
+            end_date="2021-12-31",
+            use_residual_momentum=True,
+            use_vol_targeting=True,
+            use_delivery_veto=True,
+        )
+        self.assertIsInstance(res, dict)
+        self.assertIn("cagr_pct", res)
+        self.assertIn("sharpe_ratio", res)
+        self.assertGreater(res["ending_equity"], 0.0)
+
+    def test_custom_sweep_with_optional_alphas(self):
+        """Verify BruteForceCampaignRunner custom sweep accepts and evaluates alpha overlays."""
+        from brute_force.runner import BruteForceCampaignRunner
+        runner = BruteForceCampaignRunner()
+        df = runner.run_custom_sweep(
+            lookbacks=[252],
+            ema_trends=[200],
+            top_ns=[10],
+            schedules=["monthly"],
+            start_date="2020-01-01",
+            end_date="2020-12-31",
+            universe_name="NIFTY500",
+            num_threads=2,
+            use_residual_mom=True,
+            use_vol_targeting=True,
+            use_delivery_veto=True,
+        )
+        self.assertFalse(df.empty)
+        self.assertEqual(len(df), 1)
+        self.assertTrue(df.iloc[0]["use_residual_mom"])
+        self.assertTrue(df.iloc[0]["use_vol_targeting"])
+        self.assertTrue(df.iloc[0]["use_delivery_veto"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

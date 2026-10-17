@@ -63,14 +63,25 @@ class BruteForceCampaignRunner:
         start_date: str = "2016-01-01",
         end_date: str = "2026-08-31",
         schedule: str = "monthly",
+        use_residual_mom: bool = False,
+        use_vol_targeting: bool = False,
+        use_delivery_veto: bool = False,
     ) -> Dict[str, Any]:
-        """Runs the single canonical baseline configuration."""
+        """Runs the single canonical baseline configuration with optional alpha overlays."""
         cube = self.ensure_cube()
         param = get_canonical_baseline_param()
 
         # Date indexing
         s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_date], default=0)
         e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= end_date], default=cube.num_dates - 1)
+
+        flags = CANONICAL_FILTER_FLAGS
+        if use_residual_mom:
+            flags |= FILTER_RESIDUAL_MOM
+        if use_vol_targeting:
+            flags |= FILTER_VOL_TARGETING
+        if use_delivery_veto:
+            flags |= FILTER_DELIVERY_VETO
 
         param["start_date"] = start_date
         param["end_date"] = end_date
@@ -80,6 +91,10 @@ class BruteForceCampaignRunner:
         param["schedule_idx"] = SCHEDULE_MAP.get(schedule, 1)
         param["lookback"] = 252 if 252 in cube.lookback_values else cube.lookback_values[0]
         param["ema_trend"] = 200 if 200 in cube.ema_span_values else cube.ema_span_values[0]
+        param["filter_flags"] = flags
+        param["use_residual_mom"] = use_residual_mom
+        param["use_vol_targeting"] = use_vol_targeting
+        param["use_delivery_veto"] = use_delivery_veto
 
         t0 = time.perf_counter()
         raw_res = self.engine.execute_sweep([param], cube, num_threads=1)
@@ -361,6 +376,10 @@ class BruteForceCampaignRunner:
         end_date: Optional[str] = None,
         universe_name: str = "NIFTY750",
         num_threads: int = 8,
+        filter_flags: Optional[int] = None,
+        use_residual_mom: bool = False,
+        use_vol_targeting: bool = False,
+        use_delivery_veto: bool = False,
     ) -> pd.DataFrame:
         """
         Executes a multi-threaded parallel parameter optimization sweep across all custom combinations.
@@ -378,6 +397,10 @@ class BruteForceCampaignRunner:
             sizing_modes=sizing_modes,
             start_date=start_date,
             end_date=end_date,
+            filter_flags=filter_flags,
+            use_residual_mom=use_residual_mom,
+            use_vol_targeting=use_vol_targeting,
+            use_delivery_veto=use_delivery_veto,
         )
         df = self.run_sweep(params_list, num_threads=num_threads)
         if not df.empty and "sharpe" in df.columns:
@@ -389,24 +412,55 @@ class BruteForceCampaignRunner:
         preset: str = "tier1",
         universe_name: str = "NIFTY750",
         num_threads: int = 8,
+        use_residual_mom: bool = False,
+        use_vol_targeting: bool = False,
+        use_delivery_veto: bool = False,
     ) -> pd.DataFrame:
         """Runs institutional pre-packaged optimization matrices (tier1, tier2, tier3, tier4)."""
         cube = self.ensure_cube(universe_name=universe_name)
         preset_clean = preset.lower().replace("-", "").replace("_", "")
         if "tier1" in preset_clean or "baseline" in preset_clean:
-            params = generate_tier1_baseline_matrix(cube)
+            params = generate_tier1_baseline_matrix(
+                cube,
+                use_residual_mom=use_residual_mom,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
         elif "tier2" in preset_clean or "ablation" in preset_clean:
             params = generate_tier2_ablation_grid(cube)
         elif "deep" in preset_clean or "10000" in preset_clean or "10k" in preset_clean:
-            params = generate_tier3_hyperparameter_grid(cube, sample_size=10000)
+            params = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=10000,
+                use_residual_mom=use_residual_mom,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
         elif "full" in preset_clean or "factorial" in preset_clean or "61440" in preset_clean:
-            params = generate_tier3_hyperparameter_grid(cube, sample_size=61440)
+            params = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=61440,
+                use_residual_mom=use_residual_mom,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
         elif "tier3" in preset_clean or "hyper" in preset_clean or "rapid" in preset_clean or "neighborhood" in preset_clean:
-            params = generate_tier3_hyperparameter_grid(cube, sample_size=810)
+            params = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=810,
+                use_residual_mom=use_residual_mom,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
         elif "tier4" in preset_clean or "rolling" in preset_clean or "dsr" in preset_clean:
             params = generate_tier4_rolling_windows_grid(cube, num_windows=500)
         else:
-            params = generate_tier1_baseline_matrix(cube)
+            params = generate_tier1_baseline_matrix(
+                cube,
+                use_residual_mom=use_residual_mom,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
         df = self.run_sweep(params, num_threads=num_threads)
         if not df.empty and "sharpe" in df.columns:
             df = df.sort_values("sharpe", ascending=False).reset_index(drop=True)
