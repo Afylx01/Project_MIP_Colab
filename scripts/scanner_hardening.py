@@ -1077,6 +1077,7 @@ class HardenedScanner(PydroidScanner):
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
         use_residual_momentum: bool = False,
+        benchmark: Optional[str] = None,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Hardened execution of screener pipeline:
@@ -1174,6 +1175,7 @@ class HardenedScanner(PydroidScanner):
                     use_vol_targeting=use_vol_targeting,
                     use_delivery_veto=use_delivery_veto,
                     use_residual_momentum=use_residual_momentum,
+                    benchmark=benchmark,
                 )
         else:
             res = super().run_scan(
@@ -1191,6 +1193,7 @@ class HardenedScanner(PydroidScanner):
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
                 use_residual_momentum=use_residual_momentum,
+                benchmark=benchmark,
             )
 
         top_df = res[0]
@@ -1268,6 +1271,7 @@ class HardenedScanner(PydroidScanner):
         allow_stale_universe: bool = True,
         auto_update_universe: bool = False,
         export_reports: bool = True,
+        benchmark: Optional[str] = None,
     ) -> Tuple[pd.DataFrame, Dict[str, Any], ConstituentReconciliationReport, MarketDataReconciliationReport]:
         """
         Executes end-to-end hardened scanning workflow returning explicit disposition tuple:
@@ -1281,6 +1285,7 @@ class HardenedScanner(PydroidScanner):
             export_excel=export_reports,
             force_constituent_refresh=force_constituent_refresh,
             allow_stale_universe=allow_stale_universe,
+            benchmark=benchmark,
         )
         top_df = res[0]
         const_report = top_df.attrs.get("constituent_report")

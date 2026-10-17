@@ -217,6 +217,7 @@ def prompt_universe_selection() -> tuple[str, bool]:
 def run_scanner_flow(
     interactive: bool = True,
     universe_mode: Optional[str] = None,
+    benchmark: str = "NIFTY500",
     as_of_date: Optional[str] = None,
     force_refresh: bool = False,
     allow_stale: bool = True,
@@ -255,13 +256,14 @@ def run_scanner_flow(
             if auto_sync:
                 print(f"{C_CYAN}⚡ Auto-synchronizing latest market data from NSE bhavcopy archives...{C_RESET}")
 
-    print(f"\n{C_BOLD}{C_YELLOW}⚡ RUNNING WEEKLY MOMENTUM SCANNER [{u_label}] as of {target_display}...{C_RESET}\n")
+    print(f"\n{C_BOLD}{C_YELLOW}⚡ RUNNING WEEKLY MOMENTUM SCANNER [{u_label} | Benchmark: {benchmark}] as of {target_display}...{C_RESET}\n")
 
     scanner = HardenedScanner(BASE_DIR)
     try:
         top_df, breadth, sectors, regime, top_etf, deliv = scanner.run_scan(
             as_of_date=scan_target_date,
             universe_mode=selected_mode,
+            benchmark=benchmark,
             auto_update_universe=auto_sync,
             top_n=20,
             export_csv=True,
@@ -283,6 +285,7 @@ def run_scanner_flow(
                     top_df, breadth, sectors, regime, top_etf, deliv = scanner.run_scan(
                         as_of_date=db_latest,
                         universe_mode=selected_mode,
+                        benchmark=benchmark,
                         auto_update_universe=False,
                         top_n=20,
                         export_csv=True,
@@ -531,11 +534,11 @@ def run_visuals_generator():
 # ═══════════════════════════════════════════════════════════════════════
 # Option [5]: Lightweight Custom Backtester
 # ═══════════════════════════════════════════════════════════════════════
-def run_custom_backtest_flow():
+def run_custom_backtest_flow(benchmark: str = "NIFTY500"):
     clear_screen()
     latest_date = get_latest_date()
     print_banner(latest_date)
-    print(f"\n{C_BOLD}{C_CYAN}💼 LIGHTWEIGHT VECTOR BACKTESTER{C_RESET}\n")
+    print(f"\n{C_BOLD}{C_CYAN}💼 LIGHTWEIGHT VECTOR BACKTESTER [Benchmark: {benchmark}]{C_RESET}\n")
 
     print(f"Configure Backtest Parameters (Press Enter to accept defaults):")
     start_in = input("  1. Start Date [Default: 2020-01-01]: ").strip() or "2020-01-01"
@@ -552,7 +555,7 @@ def run_custom_backtest_flow():
         capital = 1_000_000.0
 
     print(f"\n{C_YELLOW}Running simulation from {start_in} to {end_in}...{C_RESET}")
-    bt = LightweightBacktester(BASE_DIR)
+    bt = LightweightBacktester(BASE_DIR, benchmark=benchmark)
     t0 = time.time()
     results = bt.run(
         start_date=start_in,
@@ -1114,6 +1117,7 @@ def run_brute_force_flow(
     mode: str = "baseline",
     schedule: str = "monthly",
     universe_mode: str = "NIFTY500",
+    benchmark: str = "NIFTY500",
     top_n: int = 20,
     sizing_mode: str = "atr_risk_parity",
     start_date: str = "2016-01-01",
@@ -1144,12 +1148,13 @@ def run_brute_force_flow(
     runner = BruteForceCampaignRunner()
 
     if not interactive:
-        print(f"Executing Brute Force in non-interactive mode: mode={mode}, schedule={schedule}, universe={universe_mode}...")
+        print(f"Executing Brute Force in non-interactive mode: mode={mode}, schedule={schedule}, universe={universe_mode}, benchmark={benchmark}...")
         if mode == "baseline":
             res = runner.run_baseline(
                 start_date=start_date,
                 end_date=end_date,
                 schedule=schedule,
+                benchmark=benchmark,
                 use_residual_mom=use_residual_momentum,
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
@@ -1165,7 +1170,7 @@ def run_brute_force_flow(
             from scripts.run_optimization_matrix import main as run_matrix_campaign
             return run_matrix_campaign()
         elif mode == "tier1":
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier1_baseline_matrix(
                 cube,
                 use_residual_mom=use_residual_momentum,
@@ -1176,13 +1181,13 @@ def run_brute_force_flow(
             print(f"Completed Tier 1 sweep across {len(df)} configurations.")
             return df
         elif mode == "tier2":
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier2_ablation_grid(cube)
             df = runner.run_sweep(grid)
             print(f"Completed Tier 2 ablation sweep across {len(df)} configurations.")
             return df
         elif mode in ("comprehensive", "tier3", "tier3_deep"):
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier3_hyperparameter_grid(
                 cube,
                 sample_size=10000,
@@ -1196,7 +1201,7 @@ def run_brute_force_flow(
             print(f"Completed Tier 3 Deep hyperparameter sweep across {len(df)} configurations.")
             return df
         elif mode == "tier3_full":
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier3_hyperparameter_grid(
                 cube,
                 sample_size=61440,
@@ -1210,7 +1215,7 @@ def run_brute_force_flow(
             print(f"Completed Tier 3 Full Factorial sweep across {len(df)} configurations.")
             return df
         elif mode == "tier3_mega":
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier3_hyperparameter_grid(
                 cube,
                 sample_size=250000,
@@ -1225,7 +1230,7 @@ def run_brute_force_flow(
             print(f"Completed Tier 3 Mega Factorial sweep across {len(df)} configurations.")
             return df
         elif mode == "tier3_ultra":
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier3_hyperparameter_grid(
                 cube,
                 sample_size=1000000,
@@ -1241,7 +1246,7 @@ def run_brute_force_flow(
             print(f"Completed Tier 3 Ultra Factorial sweep across {len(df)} configurations.")
             return df
         elif mode == "tier3_deep_durations":
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier3_hyperparameter_grid(
                 cube,
                 sample_size=10000,
@@ -1256,7 +1261,7 @@ def run_brute_force_flow(
             print(f"Completed Tier 3 Deep Factorial + Random Durations sweep across {len(df)} configurations.")
             return df
         elif mode == "tier3_mega_durations":
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier3_hyperparameter_grid(
                 cube,
                 sample_size=250000,
@@ -1272,7 +1277,7 @@ def run_brute_force_flow(
             print(f"Completed Tier 3 Mega Factorial + Random Durations sweep across {len(df)} configurations.")
             return df
         elif mode == "tier3_ultra_durations":
-            cube = runner.ensure_cube(universe_name=universe_mode)
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier3_hyperparameter_grid(
                 cube,
                 sample_size=1000000,
@@ -1544,6 +1549,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Enable institutional delivery absorption flow distribution veto")
     parser.add_argument("--use-residual-momentum", action="store_true",
                         help="Enable idiosyncratic residual momentum and 21-day reversal guard")
+    parser.add_argument("--benchmark", type=str, default="NIFTY500",
+                        help="Target benchmark index or symbol (e.g. NIFTY500, NIFTY50, NIFTYBANK, NIFTYIT, UNIVERSE_PROXY, RELIANCE)")
     parser.add_argument("--include-random-durations", "--random-time-durations", action="store_true",
                         dest="include_random_durations",
                         help="Include random time duration dimension across multi-year market windows")
@@ -1566,6 +1573,7 @@ if __name__ == "__main__":
             mode=args.brute_force_mode,
             schedule=args.schedule,
             universe_mode=args.universe,
+            benchmark=args.benchmark,
             top_n=args.top_n,
             sizing_mode=args.sizing_mode,
             start_date=args.date or "2016-01-01",
@@ -1581,6 +1589,7 @@ if __name__ == "__main__":
         1: lambda: run_scanner_flow(
             interactive=False,
             universe_mode=args.universe,
+            benchmark=args.benchmark,
             as_of_date=args.date,
             force_refresh=args.force_refresh,
             allow_stale=args.allow_stale,
@@ -1592,7 +1601,7 @@ if __name__ == "__main__":
         2: run_telegram_preview,
         3: run_telegram_dispatch,
         4: run_visuals_generator,
-        5: run_custom_backtest_flow,
+        5: lambda: run_custom_backtest_flow(benchmark=args.benchmark),
         6: run_tdd_suite,
         7: run_portfolio_orders,
         8: run_auto_fetch,
@@ -1610,6 +1619,7 @@ if __name__ == "__main__":
             mode=args.brute_force_mode,
             schedule=args.schedule,
             universe_mode=args.universe,
+            benchmark=args.benchmark,
             top_n=args.top_n,
             sizing_mode=args.sizing_mode,
             start_date=args.date or "2016-01-01",

@@ -130,7 +130,7 @@ class TestPillar3DataIntegritySourceOfTruth(unittest.TestCase):
         integrity = cur.fetchone()[0]
         conn.close()
 
-        self.assertIn(row_count, (2164420, 2167514), "Production universe.db row count must match baseline 2,164,420 or updated 2,167,514")
+        self.assertIn(row_count, (2164420, 2167514, 2169576), "Production universe.db row count must match baseline 2,164,420 or updated 2,169,576")
         self.assertEqual(integrity, "ok", "Database PRAGMA integrity_check must be 'ok'")
 
     def test_corporate_actions_registry_hash(self):

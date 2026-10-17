@@ -31,6 +31,7 @@ from core.data_engine import get_expected_latest_eod, get_latest_date, get_db_pa
 
 def run_screener_view(
     universe: str = "NIFTY750",
+    benchmark: str = "NIFTY500",
     top_n: int = 20,
     generate_excel: bool = True,
     auto_download_excel: bool = True,
@@ -65,6 +66,7 @@ def run_screener_view(
         "export_csv": True,
         "export_excel": generate_excel,
         "allow_stale_data": allow_stale_data,
+        "benchmark": benchmark,
     }
     if "send_telegram" in sig.parameters:
         scan_kwargs["send_telegram"] = send_telegram
@@ -77,7 +79,7 @@ def run_screener_view(
     if "use_residual_momentum" in sig.parameters:
         scan_kwargs["use_residual_momentum"] = use_residual_momentum
 
-    print(f"⏳ Executing momentum scan on {universe} (Top {top_n})...")
+    print(f"⏳ Executing momentum scan on {universe} vs Benchmark [{benchmark}] (Top {top_n})...")
     top_df, breadth, sectors, regime, top_etf, deliv = scanner.run_scan(**scan_kwargs)
     scanned_date = top_df.attrs.get("scanned_date") or db_latest
 
@@ -171,7 +173,7 @@ def run_screener_view(
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 10px 0;">
   <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
     <div style="color: #a6e3a1; font-weight: bold; font-size: 14px;">
-      ✅ Scan Complete: <span style="color: #cdd6f4;">{universe}</span> • {len(top_df) if top_df is not None else 0} Candidates Ranked • {scanned_date}
+      ✅ Scan Complete: <span style="color: #cdd6f4;">{universe}</span> • Benchmark: <span style="color: #f9e2af;">{benchmark}</span> • {len(top_df) if top_df is not None else 0} Candidates Ranked • {scanned_date}
     </div>
     <div style="font-size: 12px; color: #89b4fa;">
       {dl_notice}

@@ -27,6 +27,7 @@ except ImportError:
 from brute_force.bridge import compile_native_kernel
 from brute_force.runner import BruteForceCampaignRunner
 from scripts.scanner_hardening import trigger_colab_download
+from core.benchmark_validator import get_benchmark_display_options
 
 _bf_runner_instance: Optional[BruteForceCampaignRunner] = None
 
@@ -74,10 +75,13 @@ def render_backtest_dashboard() -> Any:
         "Custom Dates": ("", ""),
     }
 
+    benchmark_options = get_benchmark_display_options()
+
     w_bt_preset = widgets.Dropdown(options=list(era_presets.keys()), value="Full 10-Year (2016–2026)", description="Era Preset:")
     w_bt_start = widgets.Text(value="2016-01-01", description="Start Date:")
     w_bt_end = widgets.Text(value="2026-08-31", description="End Date:")
     w_bt_universe = widgets.Dropdown(options=["NIFTY750", "NIFTY500", "ALL"], value="NIFTY750", description="Universe:")
+    w_bt_benchmark = widgets.Dropdown(options=benchmark_options, value="NIFTY500", description="Benchmark:")
     w_bt_schedule = widgets.Dropdown(options=["monthly", "weekly", "quarterly", "half_yearly", "yearly"], value="monthly", description="Schedule:")
     w_bt_top_n = widgets.IntSlider(value=20, min=5, max=50, step=5, description="Top N:")
     w_bt_lookback = widgets.Dropdown(options=[126, 189, 252, 315], value=252, description="Lookback:")
@@ -109,6 +113,7 @@ def render_backtest_dashboard() -> Any:
     ]
     w_sw_preset = widgets.Dropdown(options=sweep_presets, value="Tier 1: Multi-Era & Multi-Schedule Sweep (35 runs)", description="Sweep Type:")
     w_sw_universe = widgets.Dropdown(options=["NIFTY750", "NIFTY500", "ALL"], value="NIFTY750", description="Universe:")
+    w_sw_benchmark = widgets.Dropdown(options=benchmark_options, value="NIFTY500", description="Benchmark:")
     w_sw_schedule = widgets.Dropdown(options=["monthly", "weekly", "quarterly", "half_yearly", "yearly"], value="monthly", description="Schedule:")
     w_sw_start = widgets.Text(value="2016-01-01", description="Start Date:")
     w_sw_end = widgets.Text(value="2026-08-31", description="End Date:")
@@ -122,6 +127,29 @@ def render_backtest_dashboard() -> Any:
 
     w_btn_run_sw = widgets.Button(description="⚡ Launch Parallel C99 Sweep", button_style="warning", icon="bolt")
 
+    w_sw_progress = widgets.IntProgress(value=0, min=0, max=100, step=1, description="Progress:", bar_style="info", layout={"width": "95%", "display": "none"})
+    w_sw_progress_lbl = widgets.HTML(value="", layout={"margin": "0 0 10px 0", "display": "none"})
+
+    card_preset_info = widgets.HTML(
+        value="""
+        <div style="background: #181825; border: 1px solid #45475a; border-left: 4px solid #89b4fa; border-radius: 6px; padding: 10px 14px; margin: 8px 0; font-size: 12px; color: #cdd6f4;">
+          <span style="font-weight: bold; color: #89b4fa;">ℹ Matrix Preset Active:</span>
+          Rebalance schedules, eras, and duration windows are generated systematically by the preset matrix. Manual date/schedule inputs apply only to <b>Custom Parameter Sweep</b>.
+        </div>
+        """,
+        layout={"display": "block"}
+    )
+    box_sw_dates = widgets.HBox([w_sw_start, w_sw_end], layout={"display": "none"})
+    box_sw_sched = widgets.HBox([w_sw_schedule], layout={"display": "none"})
+
+    def on_sw_preset_changed(change):
+        is_custom = change["new"] == "Custom Parameter Sweep"
+        box_sw_dates.layout.display = "flex" if is_custom else "none"
+        box_sw_sched.layout.display = "flex" if is_custom else "none"
+        card_preset_info.layout.display = "none" if is_custom else "block"
+
+    w_sw_preset.observe(on_sw_preset_changed, names="value")
+
     w_output_bt = widgets.Output()
 
     def on_preset_changed(change):
@@ -134,22 +162,26 @@ def render_backtest_dashboard() -> Any:
 
     box_backtest = widgets.VBox([
         widgets.HBox([w_bt_preset, w_bt_universe]),
+        widgets.HBox([w_bt_benchmark, w_bt_schedule]),
         widgets.HBox([w_bt_start, w_bt_end]),
-        widgets.HBox([w_bt_schedule, w_bt_top_n]),
+        widgets.HBox([w_bt_top_n, w_bt_sizing]),
         widgets.HBox([w_bt_lookback, w_bt_ema]),
         widgets.HBox([w_bt_retrace, w_bt_sector_cap]),
-        widgets.HBox([w_bt_sizing]),
         widgets.HBox([w_alpha_res, w_alpha_vol, w_alpha_flow]),
         w_btn_run_bt,
     ])
 
     box_sweep = widgets.VBox([
         widgets.HBox([w_sw_preset, w_sw_universe]),
-        widgets.HBox([w_sw_schedule, w_sw_threads]),
-        widgets.HBox([w_sw_start, w_sw_end]),
+        widgets.HBox([w_sw_benchmark, w_sw_threads]),
+        card_preset_info,
+        box_sw_sched,
+        box_sw_dates,
         widgets.HBox([w_sw_alpha_res, w_sw_alpha_vol, w_sw_alpha_flow]),
         widgets.HBox([w_sw_durations, w_sw_auto_dl]),
         w_btn_run_sw,
+        w_sw_progress,
+        w_sw_progress_lbl,
     ])
 
     ui_container = widgets.VBox([box_backtest])
@@ -173,7 +205,7 @@ def render_backtest_dashboard() -> Any:
         w_btn_run_bt.description = "⏳ Simulating..."
         with w_output_bt:
             clear_output()
-            print(f"🚀 Initializing C99 Custom Backtest [{w_bt_universe.value}]...")
+            print(f"🚀 Initializing C99 Custom Backtest [{w_bt_universe.value} | Benchmark: {w_bt_benchmark.value}]...")
             print(f"  • Date Span:  {w_bt_start.value} ➔ {w_bt_end.value} ({w_bt_schedule.value})")
             print(f"  • Parameters: Lookback={w_bt_lookback.value}d | EMA={w_bt_ema.value}d | Top {w_bt_top_n.value} | Retrace={w_bt_retrace.value:.2f} | Max/Sec={w_bt_sector_cap.value}")
             print(f"  • Sizing:     {w_bt_sizing.value} | Alphas: ResMom={w_alpha_res.value}, VolTarget={w_alpha_vol.value}, Delivery={w_alpha_flow.value}")
@@ -183,6 +215,7 @@ def render_backtest_dashboard() -> Any:
                     start_date=w_bt_start.value,
                     end_date=w_bt_end.value or None,
                     universe_name=w_bt_universe.value,
+                    benchmark=w_bt_benchmark.value,
                     schedule=w_bt_schedule.value,
                     lookback=w_bt_lookback.value,
                     ema_trend=w_bt_ema.value,
@@ -200,6 +233,7 @@ def render_backtest_dashboard() -> Any:
                     "=" * 76 + "\n"
                     f" PROJECT MIP: INSTITUTIONAL TEARSHEET ({res.get('start_date', w_bt_start.value)} ➔ {res.get('end_date', w_bt_end.value)})\n"
                     + "=" * 76 + "\n"
+                    f"  • Benchmark:          {res.get('benchmark', w_bt_benchmark.value)}\n"
                     f"  • Initial Capital:    ₹{res.get('initial_capital', 1_000_000.0):,.2f}\n"
                     f"  • Ending Capital:     ₹{res['ending_equity']:,.2f} (Total Return: {((res['ending_equity']/max(1.0, res.get('initial_capital', 1_000_000.0)))-1)*100:+.2f}%)\n"
                     f"  • Annualized CAGR:    {res['cagr_pct']:+.2f}%\n"
@@ -222,7 +256,7 @@ def render_backtest_dashboard() -> Any:
                 dd = np.array(res.get("drawdown_pct_series", np.zeros_like(eq)))
 
                 ax1.plot(dates, eq, label=f"MIP Strategy ({res['universe']}) [CAGR: {res['cagr_pct']:+.1f}%]", color="#00adb5", lw=2.2)
-                ax1.plot(dates, bench, label="NIFTY 500 Benchmark", color="#ff79c6", lw=1.6, ls="--", alpha=0.85)
+                ax1.plot(dates, bench, label=f"{res.get('benchmark', w_bt_benchmark.value)} Benchmark", color="#ff79c6", lw=1.6, ls="--", alpha=0.85)
                 ax1.set_title(f"MIP Institutional Backtest • {res['universe']} ({res['start_date']} to {res['end_date']})", fontsize=13, fontweight="bold")
                 ax1.set_ylabel("Portfolio Value (₹)", fontsize=11)
                 ax1.grid(True, alpha=0.25, ls=":")
@@ -282,8 +316,27 @@ def render_backtest_dashboard() -> Any:
         with w_output_bt:
             clear_output()
             print(f"⚡ Launching C99 SIMD Parallel Parameter Sweep [{w_sw_preset.value}]...")
-            print(f"  • Universe: {w_sw_universe.value} | Threads: {w_sw_threads.value}")
+            print(f"  • Universe: {w_sw_universe.value} | Benchmark: {w_sw_benchmark.value} | Threads: {w_sw_threads.value}")
             print(f"  • Overlays: Residual={w_sw_alpha_res.value}, VolTarget={w_sw_alpha_vol.value}, Delivery={w_sw_alpha_flow.value}, Durations={w_sw_durations.value}")
+
+            w_sw_progress.layout.display = "block"
+            w_sw_progress_lbl.layout.display = "block"
+            w_sw_progress.value = 0
+            w_sw_progress.bar_style = "info"
+            w_sw_progress_lbl.value = "<span style='color: #89b4fa;'>⏳ Initializing parallel SIMD kernel...</span>"
+
+            def update_sweep_progress(completed, total, speed, elapsed, eta):
+                w_sw_progress.max = total
+                w_sw_progress.value = completed
+                pct = (completed / total) * 100.0 if total > 0 else 0.0
+                w_sw_progress_lbl.value = (
+                    f"<span style='color: #89b4fa; font-weight: bold;'>⚡ Sweeping:</span> "
+                    f"<span style='color: #a6e3a1;'>{completed:,}</span> / {total:,} ({pct:.1f}%) | "
+                    f"Speed: <span style='color: #f9e2af;'>{speed:,.0f} sims/sec</span> | "
+                    f"Elapsed: {elapsed:.1f}s | "
+                    f"ETA: <span style='color: #fab387;'>{eta:.1f}s</span>"
+                )
+
             t0 = time.perf_counter()
             try:
                 has_durations = w_sw_durations.value or ("Durations" in w_sw_preset.value) or ("Random" in w_sw_preset.value)
@@ -291,82 +344,100 @@ def render_backtest_dashboard() -> Any:
                     df = runner.run_grid_preset(
                         preset="tier1",
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         num_threads=w_sw_threads.value,
                         use_residual_mom=w_sw_alpha_res.value,
                         use_vol_targeting=w_sw_alpha_vol.value,
                         use_delivery_veto=w_sw_alpha_flow.value,
+                        progress_callback=update_sweep_progress,
                     )
                 elif "Tier 2" in w_sw_preset.value or "Ablation" in w_sw_preset.value:
                     df = runner.run_grid_preset(
                         preset="tier2",
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         num_threads=w_sw_threads.value,
+                        progress_callback=update_sweep_progress,
                     )
                 elif "Tier 4" in w_sw_preset.value or "Monte Carlo" in w_sw_preset.value:
                     df = runner.run_grid_preset(
                         preset="tier4",
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         num_threads=w_sw_threads.value,
+                        progress_callback=update_sweep_progress,
                     )
                 elif "Ultra" in w_sw_preset.value or "1,000,000" in w_sw_preset.value:
                     df = runner.run_grid_preset(
                         preset="tier3_ultra_durations" if has_durations else "tier3_ultra",
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         num_threads=w_sw_threads.value,
                         use_residual_mom=w_sw_alpha_res.value,
                         use_vol_targeting=w_sw_alpha_vol.value,
                         use_delivery_veto=w_sw_alpha_flow.value,
                         include_random_durations=has_durations,
+                        progress_callback=update_sweep_progress,
                     )
                 elif "Mega" in w_sw_preset.value or "250,000" in w_sw_preset.value:
                     df = runner.run_grid_preset(
                         preset="tier3_mega_durations" if has_durations else "tier3_mega",
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         num_threads=w_sw_threads.value,
                         use_residual_mom=w_sw_alpha_res.value,
                         use_vol_targeting=w_sw_alpha_vol.value,
                         use_delivery_veto=w_sw_alpha_flow.value,
                         include_random_durations=has_durations,
+                        progress_callback=update_sweep_progress,
                     )
                 elif "Full Factorial" in w_sw_preset.value or "61,440" in w_sw_preset.value:
                     df = runner.run_grid_preset(
                         preset="tier3_full",
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         num_threads=w_sw_threads.value,
                         use_residual_mom=w_sw_alpha_res.value,
                         use_vol_targeting=w_sw_alpha_vol.value,
                         use_delivery_veto=w_sw_alpha_flow.value,
+                        progress_callback=update_sweep_progress,
                     )
                 elif "Deep" in w_sw_preset.value or "10,000" in w_sw_preset.value:
                     df = runner.run_grid_preset(
                         preset="tier3_deep_durations" if has_durations else "tier3_deep",
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         num_threads=w_sw_threads.value,
                         use_residual_mom=w_sw_alpha_res.value,
                         use_vol_targeting=w_sw_alpha_vol.value,
                         use_delivery_veto=w_sw_alpha_flow.value,
                         include_random_durations=has_durations,
+                        progress_callback=update_sweep_progress,
                     )
                 elif "Tier 3" in w_sw_preset.value or "Rapid" in w_sw_preset.value:
                     df = runner.run_grid_preset(
                         preset="tier3_rapid",
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         num_threads=w_sw_threads.value,
                         use_residual_mom=w_sw_alpha_res.value,
                         use_vol_targeting=w_sw_alpha_vol.value,
                         use_delivery_veto=w_sw_alpha_flow.value,
+                        progress_callback=update_sweep_progress,
                     )
                 else:
                     df = runner.run_custom_sweep(
                         start_date=w_sw_start.value,
                         end_date=w_sw_end.value or None,
                         universe_name=w_sw_universe.value,
+                        benchmark=w_sw_benchmark.value,
                         schedules=[w_sw_schedule.value],
                         num_threads=w_sw_threads.value,
                         use_residual_mom=w_sw_alpha_res.value,
                         use_vol_targeting=w_sw_alpha_vol.value,
                         use_delivery_veto=w_sw_alpha_flow.value,
                         include_random_durations=has_durations,
+                        progress_callback=update_sweep_progress,
                     )
 
                 elapsed_s = time.perf_counter() - t0
@@ -436,6 +507,7 @@ def render_backtest_dashboard() -> Any:
             except Exception as e:
                 print(f"❌ Sweep Error: {e}")
             finally:
+                w_sw_progress.bar_style = "success"
                 w_btn_run_sw.disabled = False
                 w_btn_run_sw.description = _orig_sw_desc
                 _sw_is_running[0] = False

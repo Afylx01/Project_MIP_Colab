@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2026-10-17
+
+### Added
+- **Universal Benchmark Selection Across Scanner, Backtester & Brute Force Engine**:
+  - Full manual selection freedom for benchmarks across all operational modes:
+    - **Scanner**: Computes relative strength (RS-200), market regime (Close vs 20 EMA), and idiosyncratic residual momentum against the selected benchmark index or symbol.
+    - **Backtester**: Compares equity curves, calculates relative alpha, beta, and information ratio against the selected benchmark.
+    - **Parallel Brute Force Sweeps**: Dynamically generates TensorCubes aligned with the selected benchmark and evaluates market regime cash shields.
+  - Complete catalog of supported benchmarks (`core/benchmark_validator.py`):
+    - Frontline & Broad Market: `NIFTY500` (Default), `NIFTY50`, `NIFTY750`, `NIFTYNEXT50`, `NIFTYMIDCAP150`, `NIFTYSMALLCAP250`.
+    - Sectoral Indices: `NIFTYBANK`, `NIFTYIT`.
+    - Dynamic Proxies: `UNIVERSE_PROXY` (Equal-weighted universe median proxy).
+    - Constituent Equities: Any individual liquid ticker symbol from `universe.db` (e.g. `RELIANCE`, `TCS`, `HDFCBANK`).
+  - Unified benchmark architecture: Catalog, display options, Yahoo continuous chart fetching, and robust indicator calculations integrated into `core/benchmark_validator.py`, preserving the strict 25-module core architecture invariant.
+  - CLI parser integration: `--benchmark` parameter supported across `main.py` Options [1], [5], and [18].
+  - Interactive Colab UI: Dropdowns for benchmark selection added in both Mode 1 (Backtester) and Mode 2 (Brute Force Sweep) of `colab/dashboard.py`.
+  - Dedicated TDD contract suite: `tests/test_benchmark_selection.py` (7 tests, 100% passed).
+
+### Fixed & Improved
+- **Chunked Streaming Execution & Real-Time Throughput Telemetry for Massive Sweeps**:
+  - Fixed apparent UI freezes during massive brute-force sweeps (e.g. 250,000 or 1,000,000 runs) where no progress was rendered.
+  - Sweeps are now dispatched in deterministic streaming chunks (25,000 configurations per batch) with real-time telemetry:
+    - Current processed count and total count.
+    - Live throughput (`configurations/sec`).
+    - Elapsed runtime and estimated time remaining (ETA countdown).
+    - Real-time `ipywidgets.IntProgress` bar and label updates in Colab notebook.
+- **Dynamic Interactive UI Cockpit for Matrix Presets vs Custom Sweeps**:
+  - Automatically hides redundant `Start Date`, `End Date`, and `Schedule` input fields when running matrix presets (which intrinsically define their own dates, multi-era schedules, or random sub-period duration windows).
+  - Replaces redundant controls with an informative **Matrix Preset Card** explaining the pre-configured parameters and random horizon sampling.
+  - Seamlessly re-displays full date and schedule controls when switching back to `Custom Parameter Sweep`.
+
 ## [2.2.0] - 2026-10-17
 
 ### Added

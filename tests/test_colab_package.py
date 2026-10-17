@@ -49,11 +49,13 @@ class TestColabPackage(unittest.TestCase):
         sig = inspect.signature(run_screener_view)
         params = sig.parameters
         self.assertIn("universe", params)
+        self.assertIn("benchmark", params)
         self.assertIn("top_n", params)
         self.assertIn("use_vol_targeting", params)
         self.assertIn("use_delivery_veto", params)
         self.assertIn("use_residual_momentum", params)
         self.assertEqual(params["universe"].default, "NIFTY750")
+        self.assertEqual(params["benchmark"].default, "NIFTY500")
 
     def test_dashboard_renderer_callable(self):
         """Verify render_backtest_dashboard is callable and runs without uncaught exceptions."""

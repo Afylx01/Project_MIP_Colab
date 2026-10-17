@@ -33,8 +33,9 @@ from .portfolio import PortfolioManager, normalize_sector
 class LightweightBacktester:
     """Zero-compiler vectorized portfolio backtester for Pydroid 3."""
 
-    def __init__(self, base_dir: Optional[Path] = None):
+    def __init__(self, base_dir: Optional[Path] = None, benchmark: str = "NIFTY500"):
         self.base_dir = Path(base_dir) if base_dir else get_base_dir()
+        self.benchmark_name = benchmark or "NIFTY500"
         self.benchmark_csv = self.base_dir / "data" / "benchmark_nifty500.csv"
         self.pm = PortfolioManager(self.base_dir)
         self.sector_map = load_symbol_sector_map()
@@ -47,12 +48,17 @@ class LightweightBacktester:
     def log(self, msg: str):
         print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] [Backtest] {msg}")
 
-    def load_benchmark(self) -> pd.DataFrame:
-        if not self.benchmark_csv.exists():
-            return pd.DataFrame(columns=["date", "close"])
-        df = pd.read_csv(self.benchmark_csv)
-        df["date"] = df["date"].astype(str)
-        return df
+    def load_benchmark(self, benchmark_override: Optional[str] = None) -> pd.DataFrame:
+        try:
+            from core.benchmark_validator import resolve_benchmark_dataframe
+            bm_name = benchmark_override or getattr(self, "benchmark_name", "NIFTY500")
+            return resolve_benchmark_dataframe(bm_name, base_dir=self.base_dir)
+        except Exception:
+            if not self.benchmark_csv.exists():
+                return pd.DataFrame(columns=["date", "close"])
+            df = pd.read_csv(self.benchmark_csv)
+            df["date"] = df["date"].astype(str)
+            return df
 
     def run(
         self,
@@ -540,6 +546,7 @@ class LightweightBacktester:
             "final_equity": round(final_equity, 2),
             "total_return_pct": round(total_return * 100.0, 2),
             "cagr_pct": round(cagr, 2),
+            "benchmark_name": getattr(self, "benchmark_name", "NIFTY500"),
             "benchmark_cagr_pct": round(bm_cagr, 2),
             "excess_cagr_pct": round(cagr - bm_cagr, 2),
             "sharpe_ratio": float(sharpe),

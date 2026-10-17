@@ -37,25 +37,36 @@ class BruteForceCampaignRunner:
         self.engine = NativeBruteForceEngine(force_recompile=force_recompile)
         self.cube = cube
         self._cube_universe = getattr(cube, "universe_name", None) if cube else None
+        self._cube_benchmark = getattr(cube, "benchmark_name", None) if cube else None
 
     def ensure_cube(
         self,
         start_date: str = "2007-01-02",
         end_date: Optional[str] = None,
         universe_name: str = "NIFTY750",
+        benchmark: str = "NIFTY500",
     ) -> TensorCubeContainer:
-        if self.cube is None or (self._cube_universe is not None and self._cube_universe != universe_name):
+        from core.benchmark_validator import normalize_benchmark_name
+        benchmark_name = normalize_benchmark_name(benchmark)
+        if (
+            self.cube is None
+            or (self._cube_universe is not None and self._cube_universe != universe_name)
+            or (self._cube_benchmark is not None and self._cube_benchmark != benchmark_name)
+        ):
             t0 = time.perf_counter()
             self.cube = build_tensor_cube(
                 start_date=start_date,
                 end_date=end_date,
                 universe_name=universe_name,
+                benchmark_name=benchmark_name,
                 lookback_values=LOOKBACK_VALUES,
                 ema_span_values=EMA_SPAN_VALUES,
             )
             self._cube_universe = universe_name
+            self._cube_benchmark = benchmark_name
             self.cube.universe_name = universe_name
-            print(f"[Runner] In-memory Tensor Cube [{universe_name}] generated in {time.perf_counter() - t0:.2f}s")
+            self.cube.benchmark_name = benchmark_name
+            print(f"[Runner] In-memory Tensor Cube [{universe_name} | Benchmark: {benchmark_name}] generated in {time.perf_counter() - t0:.2f}s")
         return self.cube
 
     def run_baseline(
@@ -63,12 +74,13 @@ class BruteForceCampaignRunner:
         start_date: str = "2016-01-01",
         end_date: str = "2026-08-31",
         schedule: str = "monthly",
+        benchmark: str = "NIFTY500",
         use_residual_mom: bool = False,
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
     ) -> Dict[str, Any]:
         """Runs the single canonical baseline configuration with optional alpha overlays."""
-        cube = self.ensure_cube()
+        cube = self.ensure_cube(benchmark=benchmark)
         param = get_canonical_baseline_param()
 
         # Date indexing
@@ -163,6 +175,7 @@ class BruteForceCampaignRunner:
         result = {
             "config_type": "CANONICAL_BASELINE",
             "universe": getattr(self, "_cube_universe", getattr(cube, "universe_name", "NIFTY750")),
+            "benchmark": getattr(cube, "benchmark_name", benchmark),
             "schedule": schedule,
             "start_date": start_date,
             "end_date": end_date,
@@ -197,6 +210,7 @@ class BruteForceCampaignRunner:
         start_date: str = "2016-01-01",
         end_date: Optional[str] = None,
         universe_name: str = "NIFTY750",
+        benchmark: str = "NIFTY500",
         schedule: str = "monthly",
         lookback: int = 252,
         ema_trend: int = 200,
@@ -218,7 +232,7 @@ class BruteForceCampaignRunner:
         Executes a single simulation configuration over custom dates, universe, and parameters.
         Reconstructs the full periodic equity curve trajectory for visualization.
         """
-        cube = self.ensure_cube(universe_name=universe_name)
+        cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
         actual_end_date = end_date or cube.dates[-1]
 
         # Date indexing
@@ -334,6 +348,7 @@ class BruteForceCampaignRunner:
         return {
             "config_type": "CUSTOM_BACKTEST",
             "universe": universe_name,
+            "benchmark": getattr(cube, "benchmark_name", benchmark),
             "schedule": schedule,
             "start_date": start_date,
             "end_date": actual_end_date,
@@ -375,6 +390,7 @@ class BruteForceCampaignRunner:
         start_date: str = "2016-01-01",
         end_date: Optional[str] = None,
         universe_name: str = "NIFTY750",
+        benchmark: str = "NIFTY500",
         num_threads: int = 8,
         filter_flags: Optional[int] = None,
         use_residual_mom: bool = False,
@@ -383,12 +399,13 @@ class BruteForceCampaignRunner:
         include_random_durations: bool = False,
         num_random_durations: int = 4,
         duration_lengths_years: Optional[List[float]] = None,
+        progress_callback: Optional[Any] = None,
     ) -> pd.DataFrame:
         """
         Executes a multi-threaded parallel parameter optimization sweep across all custom combinations.
         Returns a pandas DataFrame sorted by Sharpe Ratio descending.
         """
-        cube = self.ensure_cube(universe_name=universe_name)
+        cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
         params_list = generate_custom_parameter_grid(
             cube=cube,
             lookbacks=lookbacks,
@@ -408,7 +425,7 @@ class BruteForceCampaignRunner:
             num_random_durations=num_random_durations,
             duration_lengths_years=duration_lengths_years,
         )
-        df = self.run_sweep(params_list, num_threads=num_threads)
+        df = self.run_sweep(params_list, num_threads=num_threads, progress_callback=progress_callback)
         if not df.empty and "sharpe" in df.columns:
             df = df.sort_values("sharpe", ascending=False).reset_index(drop=True)
         return df
@@ -417,6 +434,7 @@ class BruteForceCampaignRunner:
         self,
         preset: str = "tier1",
         universe_name: str = "NIFTY750",
+        benchmark: str = "NIFTY500",
         num_threads: int = 8,
         use_residual_mom: bool = False,
         use_vol_targeting: bool = False,
@@ -424,9 +442,10 @@ class BruteForceCampaignRunner:
         include_random_durations: bool = False,
         num_random_durations: int = 6,
         duration_lengths_years: Optional[List[float]] = None,
+        progress_callback: Optional[Any] = None,
     ) -> pd.DataFrame:
         """Runs institutional pre-packaged optimization matrices (tier1, tier2, tier3, tier4)."""
-        cube = self.ensure_cube(universe_name=universe_name)
+        cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
         preset_clean = preset.lower().replace("-", "").replace("_", "")
         has_durations = include_random_durations or ("duration" in preset_clean) or ("window" in preset_clean)
 
@@ -508,7 +527,7 @@ class BruteForceCampaignRunner:
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
             )
-        df = self.run_sweep(params, num_threads=num_threads)
+        df = self.run_sweep(params, num_threads=num_threads, progress_callback=progress_callback)
         if not df.empty and "sharpe" in df.columns:
             df = df.sort_values("sharpe", ascending=False).reset_index(drop=True)
         return df
@@ -517,30 +536,86 @@ class BruteForceCampaignRunner:
         self,
         params_list: List[Dict[str, Any]],
         num_threads: int = 8,
+        progress_callback: Optional[Any] = None,
+        chunk_size: int = 25000,
     ) -> pd.DataFrame:
         """
         Executes parameter sweep across all configurations in parallel.
-        Returns a DataFrame merging parameters with simulation results.
+        For large sweeps (> 5,000 runs), streams execution in chunks of 25,000 runs
+        with real-time throughput telemetry (sims/sec) and ETA reporting so the UI never hangs.
         """
         cube = self.cube if self.cube is not None else self.ensure_cube()
         total_tasks = len(params_list)
 
         print(f"\n============================================================")
         print(f"[Runner] DISPATCHING BLAZING BRUTE FORCE SWEEP ({total_tasks:,} configurations)")
-        print(f"[Runner] Threads: {num_threads} (SIMD Parallel Kernel)")
-        print(f"============================================================")
+        print(f"[Runner] Threads: {num_threads} (SIMD Parallel Kernel) | Benchmark: {getattr(cube, 'benchmark_name', 'NIFTY500')}")
+        print(f"============================================================", flush=True)
+
+        if total_tasks == 0:
+            return pd.DataFrame()
 
         t0 = time.perf_counter()
-        raw_res = self.engine.execute_sweep(params_list, cube, num_threads=num_threads)
+
+        if total_tasks <= 5000:
+            raw_res = self.engine.execute_sweep(params_list, cube, num_threads=num_threads)
+            elapsed = time.perf_counter() - t0
+            rate = total_tasks / max(0.0001, elapsed)
+            print(f"[Runner] SWEEP COMPLETED in {elapsed:.3f}s ({rate:,.1f} configurations/sec)", flush=True)
+            if progress_callback:
+                try:
+                    progress_callback(total_tasks, total_tasks, rate, elapsed, 0.0)
+                except Exception:
+                    pass
+
+            df_params = pd.DataFrame(params_list)
+            df_res = pd.DataFrame(raw_res)
+            df_merged = pd.concat([df_params, df_res.drop(columns=["param_id"], errors="ignore")], axis=1)
+            return df_merged
+
+        # Chunked streaming execution for massive sweeps (> 5,000)
+        num_chunks = (total_tasks + chunk_size - 1) // chunk_size
+        all_raw_chunks = []
+        completed_count = 0
+
+        for chunk_idx in range(num_chunks):
+            start_i = chunk_idx * chunk_size
+            end_i = min(start_i + chunk_size, total_tasks)
+            chunk_params = params_list[start_i:end_i]
+
+            t_chunk_start = time.perf_counter()
+            chunk_raw = self.engine.execute_sweep(chunk_params, cube, num_threads=num_threads)
+            all_raw_chunks.append(chunk_raw)
+
+            completed_count += len(chunk_params)
+            elapsed = time.perf_counter() - t0
+            speed = completed_count / max(0.001, elapsed)
+            remaining_tasks = total_tasks - completed_count
+            eta_seconds = remaining_tasks / max(1.0, speed)
+
+            pct = (completed_count / total_tasks) * 100.0
+            print(
+                f"[Runner] Chunk {chunk_idx + 1}/{num_chunks}: {completed_count:,}/{total_tasks:,} ({pct:.1f}%) "
+                f"| Speed: {speed:,.0f} sims/sec | Elapsed: {elapsed:.1f}s | ETA: {eta_seconds:.1f}s",
+                flush=True,
+            )
+
+            if progress_callback:
+                try:
+                    progress_callback(completed_count, total_tasks, speed, elapsed, eta_seconds)
+                except Exception:
+                    pass
+
+            # Yield briefly to keep Colab / Jupyter event loop responsive
+            time.sleep(0.002)
+
         elapsed = time.perf_counter() - t0
-        rate = total_tasks / elapsed if elapsed > 0 else 0.0
+        rate = total_tasks / max(0.0001, elapsed)
+        print(f"[Runner] SWEEP FULLY COMPLETED in {elapsed:.3f}s ({rate:,.1f} configurations/sec)", flush=True)
 
-        print(f"[Runner] SWEEP COMPLETED in {elapsed:.3f}s ({rate:,.1f} configurations/sec)")
-
-        # Merge parameter metadata with metrics
+        raw_res = np.concatenate(all_raw_chunks)
         df_params = pd.DataFrame(params_list)
         df_res = pd.DataFrame(raw_res)
-
         df_merged = pd.concat([df_params, df_res.drop(columns=["param_id"], errors="ignore")], axis=1)
         return df_merged
 

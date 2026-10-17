@@ -15,13 +15,16 @@ DIRECTIVES SATISFIED:
       UNALLOCATED CAPITAL = CASH
 """
 
+import os
+import io
+import datetime
+import math
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any, Union
-import datetime
-import math
 import numpy as np
 import pandas as pd
+import requests
 
 
 class BenchmarkRegimeStatus(str, Enum):
@@ -391,3 +394,356 @@ def evaluate_regime(
         expected_date=expected_date,
         df=df_calc,
     )
+
+
+# ============================================================================
+# Universal Benchmark Resolution & Indicator Engine
+# ============================================================================
+
+# Standard Benchmark Catalog
+BENCHMARK_CATALOG: Dict[str, Dict[str, Any]] = {
+    "NIFTY500": {
+        "label": "NIFTY 500 (Broad Market Institutional Standard)",
+        "aliases": ["NIFTY500", "NIFTY 500", "^CRSLDX", "500", "DEFAULT"],
+        "filename": "benchmark_nifty500.csv",
+        "yahoo_symbol": "^CRSLDX",
+        "category": "Broad Market",
+    },
+    "NIFTY50": {
+        "label": "NIFTY 50 (Frontline Large-Cap)",
+        "aliases": ["NIFTY50", "NIFTY 50", "^NSEI", "50", "NIFTY"],
+        "filename": "benchmark_nifty50.csv",
+        "yahoo_symbol": "^NSEI",
+        "category": "Broad Market",
+    },
+    "NIFTY750": {
+        "label": "NIFTY Total Market / 750 (All-Cap Universe)",
+        "aliases": ["NIFTY750", "NIFTY 750", "NIFTYTOTALMARKET", "TOTALMARKET", "TOTAL_MARKET", "750"],
+        "filename": "benchmark_nifty750.csv",
+        "yahoo_symbol": None,
+        "category": "Broad Market",
+    },
+    "NIFTYNEXT50": {
+        "label": "NIFTY Next 50 (Large-Mid Cap)",
+        "aliases": ["NIFTYNEXT50", "NIFTY NEXT 50", "NEXT50", "^NSENEXT50"],
+        "filename": "benchmark_niftynext50.csv",
+        "yahoo_symbol": "^NSENEXT50",
+        "category": "Broad Market",
+    },
+    "NIFTYMIDCAP150": {
+        "label": "NIFTY Midcap 150 (Mid-Cap Space)",
+        "aliases": ["NIFTYMIDCAP150", "NIFTY MIDCAP 150", "MIDCAP150", "NIFTYMIDCAP"],
+        "filename": "benchmark_niftymidcap150.csv",
+        "yahoo_symbol": None,
+        "category": "Broad Market",
+    },
+    "NIFTYSMALLCAP250": {
+        "label": "NIFTY Smallcap 250 (Small-Cap Space)",
+        "aliases": ["NIFTYSMALLCAP250", "NIFTY SMALLCAP 250", "SMALLCAP250", "NIFTYSMALLCAP"],
+        "filename": "benchmark_niftysmallcap250.csv",
+        "yahoo_symbol": None,
+        "category": "Broad Market",
+    },
+    "NIFTYBANK": {
+        "label": "NIFTY Bank (Financial Sector)",
+        "aliases": ["NIFTYBANK", "NIFTY BANK", "BANKNIFTY", "BANK", "^NSEBANK"],
+        "filename": "benchmark_niftybank.csv",
+        "yahoo_symbol": "^NSEBANK",
+        "category": "Sectoral",
+    },
+    "NIFTYIT": {
+        "label": "NIFTY IT (Technology Sector)",
+        "aliases": ["NIFTYIT", "NIFTY IT", "IT", "^CNXIT"],
+        "filename": "benchmark_niftyit.csv",
+        "yahoo_symbol": "^CNXIT",
+        "category": "Sectoral",
+    },
+    "UNIVERSE_PROXY": {
+        "label": "Equal-Weighted Universe Median Proxy",
+        "aliases": ["UNIVERSE_PROXY", "PROXY", "MEDIAN_PROXY", "EQUAL_WEIGHT", "UNIVERSE"],
+        "filename": "benchmark_universe_proxy.csv",
+        "yahoo_symbol": None,
+        "category": "Dynamic Synthetic",
+    },
+}
+
+_BENCHMARK_CACHE: Dict[str, pd.DataFrame] = {}
+
+
+def get_benchmark_display_options() -> List[Tuple[str, str]]:
+    """Returns list of (label, key) tuples for UI widgets."""
+    options = []
+    for key, info in BENCHMARK_CATALOG.items():
+        options.append((f"📊 {info['label']}", key))
+    return options
+
+
+def normalize_benchmark_name(benchmark_input: Optional[str]) -> str:
+    """Normalizes any benchmark name, alias, ticker, or symbol to canonical key."""
+    if not benchmark_input:
+        return "NIFTY500"
+    
+    clean = str(benchmark_input).strip().upper().replace(" ", "").replace("_", "").replace("-", "")
+    for key, info in BENCHMARK_CATALOG.items():
+        if clean == key:
+            return key
+        for alias in info["aliases"]:
+            a_clean = alias.strip().upper().replace(" ", "").replace("_", "").replace("-", "").replace("^", "")
+            if clean == a_clean or clean == alias.strip().upper():
+                return key
+    
+    # Return as uppercase stock symbol or custom key
+    return str(benchmark_input).strip().upper()
+
+
+def _get_app_base_dir() -> Path:
+    try:
+        from core.data_engine import get_base_dir
+        return get_base_dir()
+    except Exception:
+        try:
+            from .data_engine import get_base_dir
+            return get_base_dir()
+        except Exception:
+            return Path(__file__).resolve().parent.parent
+
+
+def resolve_benchmark_dataframe(
+    benchmark_name: Optional[str] = "NIFTY500",
+    base_dir: Optional[Path] = None,
+    required_dates: Optional[List[str]] = None,
+    universe_name: str = "NIFTY500",
+) -> pd.DataFrame:
+    """
+    Authoritative benchmark series loader and indicator generator.
+    Resolves official indices, constituent stock tickers, universe proxies, or custom CSVs.
+    Guarantees non-empty continuous price series with all indicators populated:
+      - date, close, daily_return, ret_252, ema_20, ema_50, ema_200, high_252, drawdown
+    """
+    global _BENCHMARK_CACHE
+    base_path = Path(base_dir) if base_dir else _get_app_base_dir()
+    norm_key = normalize_benchmark_name(benchmark_name)
+    cache_key = f"{norm_key}_{universe_name}"
+
+    if cache_key in _BENCHMARK_CACHE:
+        df_cached = _BENCHMARK_CACHE[cache_key].copy()
+        if required_dates:
+            return _align_and_fill_dates(df_cached, required_dates)
+        return df_cached
+
+    df: Optional[pd.DataFrame] = None
+
+    # Case 1: Standard Catalog Preset with existing CSV
+    if norm_key in BENCHMARK_CATALOG:
+        fn = BENCHMARK_CATALOG[norm_key]["filename"]
+        csv_path = base_path / "data" / fn
+        if csv_path.exists():
+            try:
+                raw_df = pd.read_csv(csv_path)
+                if "date" in raw_df.columns and "close" in raw_df.columns and len(raw_df) > 100:
+                    df = compute_benchmark_indicators(raw_df)
+            except Exception:
+                df = None
+
+    # Case 2: Direct file path
+    if df is None:
+        direct_path = Path(str(benchmark_name))
+        if direct_path.exists() and direct_path.is_file():
+            try:
+                raw_df = pd.read_csv(direct_path)
+                if "date" in raw_df.columns and "close" in raw_df.columns:
+                    df = compute_benchmark_indicators(raw_df)
+            except Exception:
+                df = None
+
+    # Case 3: Single stock ticker from universe.db (e.g. RELIANCE, TCS, HDFCBANK)
+    if df is None and norm_key not in ("UNIVERSE_PROXY", "PROXY"):
+        stock_df = _load_ticker_from_db(norm_key, base_path)
+        if stock_df is not None and len(stock_df) > 100:
+            df = compute_benchmark_indicators(stock_df)
+
+    # Case 4: Fetch online if Yahoo symbol exists and network is reachable
+    if df is None and norm_key in BENCHMARK_CATALOG and BENCHMARK_CATALOG[norm_key].get("yahoo_symbol"):
+        y_sym = BENCHMARK_CATALOG[norm_key]["yahoo_symbol"]
+        fetched_df = _fetch_yahoo_chart_series(y_sym)
+        if fetched_df is not None and len(fetched_df) > 200:
+            # Backfill early dates (pre-2007) from NIFTY500 baseline if available
+            base_n500 = base_path / "data" / "benchmark_nifty500.csv"
+            if base_n500.exists():
+                try:
+                    n500_df = pd.read_csv(base_n500)
+                    fetched_df = _bridge_with_reference(fetched_df, n500_df)
+                except Exception:
+                    pass
+            df = compute_benchmark_indicators(fetched_df)
+            # Save for offline reuse
+            fn = BENCHMARK_CATALOG[norm_key]["filename"]
+            csv_path = base_path / "data" / fn
+            try:
+                df.to_csv(csv_path, index=False)
+            except Exception:
+                pass
+
+    # Case 5: Universe Equal-Weighted Median Proxy
+    if df is None and norm_key in ("UNIVERSE_PROXY", "NIFTY750", "NIFTYMIDCAP150", "NIFTYSMALLCAP250"):
+        df = _build_universe_proxy_series(universe_name=universe_name, base_dir=base_path)
+
+    # Case 6: Fallback to baseline benchmark_nifty500.csv
+    if df is None:
+        fallback_csv = base_path / "data" / "benchmark_nifty500.csv"
+        if fallback_csv.exists():
+            raw_df = pd.read_csv(fallback_csv)
+            df = compute_benchmark_indicators(raw_df)
+        else:
+            # Absolute synthetic fallback
+            df = _build_synthetic_flat_benchmark(required_dates)
+
+    # Align dates if requested
+    if required_dates:
+        df = _align_and_fill_dates(df, required_dates)
+
+    _BENCHMARK_CACHE[cache_key] = df
+    return df.copy()
+
+
+def _align_and_fill_dates(df: pd.DataFrame, dates: List[str]) -> pd.DataFrame:
+    """Guarantees benchmark DataFrame has exactly one row for every required trading date."""
+    df = df.copy()
+    df["date"] = df["date"].astype(str)
+    date_set = set(df["date"].values)
+    missing = [d for d in dates if d not in date_set]
+
+    if missing:
+        extra_rows = pd.DataFrame({"date": missing})
+        df = pd.concat([df, extra_rows], ignore_index=True)
+        df.sort_values("date", inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        df["close"] = df["close"].ffill().bfill().fillna(1000.0)
+        df = compute_benchmark_indicators(df)
+
+    # Filter to requested dates
+    req_set = set(dates)
+    aligned = df[df["date"].isin(req_set)].copy()
+    aligned.sort_values("date", inplace=True)
+    aligned.reset_index(drop=True, inplace=True)
+    return aligned
+
+
+def _load_ticker_from_db(symbol: str, base_dir: Path) -> Optional[pd.DataFrame]:
+    """Loads price series for a single ticker directly from universe.db."""
+    db_path = base_dir / "data" / "universe.db"
+    if not db_path.exists():
+        return None
+    try:
+        import sqlite3
+        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        q = "SELECT date, close FROM prices WHERE symbol = ? ORDER BY date ASC;"
+        df = pd.read_sql_query(q, conn, params=(symbol,))
+        conn.close()
+        if not df.empty and "date" in df.columns and "close" in df.columns:
+            df["date"] = df["date"].astype(str)
+            df["close"] = df["close"].astype(float)
+            return df
+    except Exception:
+        pass
+    return None
+
+
+def _fetch_yahoo_chart_series(symbol: str) -> Optional[pd.DataFrame]:
+    """Fetches continuous daily index prices via Yahoo Finance API."""
+    try:
+        sym_encoded = requests.utils.quote(symbol)
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_encoded}?period1=1167696000&period2=1792195200&interval=1d"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get(url, headers=headers, timeout=12)
+        if r.status_code == 200:
+            data = r.json()
+            res = data["chart"]["result"][0]
+            ts = res.get("timestamp", [])
+            closes = res.get("indicators", {}).get("quote", [{}])[0].get("close", [])
+            if ts and closes and len(ts) == len(closes):
+                rows = []
+                for t, c in zip(ts, closes):
+                    if c is not None and np.isfinite(c) and c > 0:
+                        d_str = datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d")
+                        rows.append({"date": d_str, "close": float(c)})
+                if rows:
+                    df = pd.DataFrame(rows)
+                    df.drop_duplicates(subset=["date"], keep="last", inplace=True)
+                    df.sort_values("date", inplace=True)
+                    df.reset_index(drop=True, inplace=True)
+                    return df
+    except Exception:
+        pass
+    return None
+
+
+def _bridge_with_reference(df: pd.DataFrame, ref_df: pd.DataFrame) -> pd.DataFrame:
+    """Pre-pends scaled reference returns for historical dates preceding the target index inception."""
+    if df.empty or ref_df.empty:
+        return df
+    
+    first_dt = df["date"].min()
+    earlier_ref = ref_df[ref_df["date"] < first_dt].copy()
+    if earlier_ref.empty:
+        return df
+    
+    earlier_ref.sort_values("date", inplace=True)
+    first_target_px = float(df["close"].iloc[0])
+    ref_overlap_px = float(ref_df[ref_df["date"] >= first_dt]["close"].iloc[0]) if (ref_df["date"] >= first_dt).any() else float(ref_df["close"].iloc[-1])
+    scale = first_target_px / max(1.0, ref_overlap_px)
+
+    bridged_rows = []
+    for _, r in earlier_ref.iterrows():
+        bridged_rows.append({"date": str(r["date"]), "close": float(r["close"]) * scale})
+
+    b_df = pd.DataFrame(bridged_rows)
+    merged = pd.concat([b_df, df], ignore_index=True)
+    merged.sort_values("date", inplace=True)
+    merged.drop_duplicates(subset=["date"], keep="last", inplace=True)
+    merged.reset_index(drop=True, inplace=True)
+    return merged
+
+
+def _build_universe_proxy_series(universe_name: str = "NIFTY500", base_dir: Optional[Path] = None) -> pd.DataFrame:
+    """Builds an equal-weighted, continuous benchmark proxy from universe.db constituent prices."""
+    base_path = Path(base_dir) if base_dir else _get_app_base_dir()
+    db_path = base_path / "data" / "universe.db"
+    
+    try:
+        import sqlite3
+        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        # Pull 50 liquid symbols
+        q = "SELECT symbol, count(*) as cnt FROM prices GROUP BY symbol HAVING cnt > 1000 ORDER BY cnt DESC LIMIT 60;"
+        syms_df = pd.read_sql_query(q, conn)
+        symbols = syms_df["symbol"].tolist()[:50]
+        
+        placeholders = ",".join(["?"] * len(symbols))
+        q_prices = f"SELECT date, close FROM prices WHERE symbol IN ({placeholders}) ORDER BY date ASC;"
+        px_df = pd.read_sql_query(q_prices, conn, params=symbols)
+        conn.close()
+
+        if not px_df.empty:
+            piv = px_df.pivot(index="date", columns="symbol", values="close")
+            rets = piv.pct_change(fill_method=None).median(axis=1).fillna(0.0)
+            cum_index = (1.0 + rets).cumprod() * 1000.0
+            proxy_df = pd.DataFrame({"date": cum_index.index.astype(str), "close": cum_index.values.astype(float)})
+            return compute_benchmark_indicators(proxy_df)
+    except Exception:
+        pass
+    
+    return _build_synthetic_flat_benchmark()
+
+
+def _build_synthetic_flat_benchmark(dates: Optional[List[str]] = None) -> pd.DataFrame:
+    """Failsafe synthetic baseline benchmark."""
+    d_list = dates if dates else [
+        (datetime.date(2016, 1, 1) + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+        for i in range(3650)
+    ]
+    df = pd.DataFrame({"date": d_list, "close": 1000.0})
+    return compute_benchmark_indicators(df)
+
+
+# Canonical Alias
+resolve_benchmark_series = resolve_benchmark_dataframe

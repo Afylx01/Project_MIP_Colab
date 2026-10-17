@@ -49,11 +49,13 @@ class TensorCubeContainer:
         ema_span_values: List[int],
         sector_names: List[str],
         bench_closes: Optional[np.ndarray] = None,
+        benchmark_name: str = "NIFTY500",
     ):
         self.dates = dates
         self.symbols = symbols
         self.num_dates = len(dates)
         self.num_symbols = len(symbols)
+        self.benchmark_name = benchmark_name
 
         self.schedule_names = ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]
         self.num_schedules = len(self.schedule_names)
@@ -128,6 +130,7 @@ def build_tensor_cube(
     start_date: str = "2007-01-02",
     end_date: Optional[str] = None,
     universe_name: str = "NIFTY750",
+    benchmark_name: str = "NIFTY500",
     lookback_values: Optional[List[int]] = None,
     ema_span_values: Optional[List[int]] = None,
     base_dir: Optional[Path] = None,
@@ -176,19 +179,19 @@ def build_tensor_cube(
     T = len(all_dates)
     print(f"[CubeBuilder] Loaded {len(raw_bars):,} price bars across {T} trading dates.")
 
-    # Load and validate benchmark NIFTY 500
-    benchmark_file = base_path / "data" / "benchmark_nifty500.csv"
-    bench_close_map = {}
-    bench_bull_map = {}
-    if benchmark_file.exists():
-        b_df = pd.read_csv(benchmark_file)
-        b_df["date"] = b_df["date"].astype(str)
-        b_df = b_df.sort_values("date").reset_index(drop=True)
-        valid, _ = validate_benchmark_dataframe(b_df, min_history=20)
-        if valid:
-            b_df = compute_benchmark_indicators(b_df)
-            bench_close_map = dict(zip(b_df["date"], b_df["close"]))
-            bench_bull_map = dict(zip(b_df["date"], b_df["close"] >= b_df["ema_20"]))
+    # Load and validate benchmark (user-selected)
+    print(f"[CubeBuilder] Resolving benchmark series for '{benchmark_name}'...")
+    from core.benchmark_validator import resolve_benchmark_dataframe
+    b_df = resolve_benchmark_dataframe(
+        benchmark_name=benchmark_name,
+        base_dir=base_path,
+        required_dates=all_dates,
+        universe_name=universe_name,
+    )
+    b_df["date"] = b_df["date"].astype(str)
+    b_df = b_df.sort_values("date").reset_index(drop=True)
+    bench_close_map = dict(zip(b_df["date"], b_df["close"]))
+    bench_bull_map = dict(zip(b_df["date"], b_df["close"] >= b_df["ema_20"]))
 
     benchmark_regime = np.array([1 if bench_bull_map.get(d, True) else 0 for d in all_dates], dtype=np.uint8)
     bench_closes = np.array([bench_close_map.get(d, np.nan) for d in all_dates], dtype=np.float32)
@@ -368,6 +371,7 @@ def build_tensor_cube(
         ema_span_values=ema_span_values,
         sector_names=unique_sectors,
         bench_closes=bench_closes,
+        benchmark_name=benchmark_name,
     )
 
     print(f"\n[CubeBuilder] Tensor Cube created: {container.memory_footprint_mb:.2f} MB RAM footprint.")

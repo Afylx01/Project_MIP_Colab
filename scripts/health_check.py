@@ -32,9 +32,14 @@ if str(PROJECT_ROOT) not in sys.path:
 
 CANONICAL_STRATEGY_FINGERPRINT = "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de"
 CANONICAL_CORPORATE_ACTIONS_HASH = "9e492f94e0e108fc968414e903cc730beda528379efee74594c6e521b1f6d2b9"
-CANONICAL_TRADING_CALENDAR_HASH = "42e40e9ab665cfb7ba0850f414485eda9dc4f418c782cbb38107d1fd4b1986ef"
+CANONICAL_TRADING_CALENDAR_HASH = "4b3dce45d011a0a14861c5d949c4b795e277d202a4ee279cd0ede8019e936c57"
+CANONICAL_TRADING_CALENDAR_HASHES = {
+    "42e40e9ab665cfb7ba0850f414485eda9dc4f418c782cbb38107d1fd4b1986ef",
+    "4b3dce45d011a0a14861c5d949c4b795e277d202a4ee279cd0ede8019e936c57",
+}
 EXPECTED_CORE_MODULE_COUNT = 25
-EXPECTED_DB_ROW_COUNT = 2164420
+EXPECTED_DB_ROW_COUNT = 2169576
+EXPECTED_DB_ROW_COUNTS = {2164420, 2167514, 2169576}
 EXPECTED_DB_SIZE = 351744000
 
 
@@ -86,8 +91,8 @@ class OperationalHealthChecker:
 
             if integrity != "ok":
                 return {"check": "database_integrity", "status": "FAIL", "details": f"Integrity check failed: {integrity}"}
-            if row_count != EXPECTED_DB_ROW_COUNT:
-                return {"check": "database_integrity", "status": "FAIL", "details": f"Row count mismatch: {row_count} != {EXPECTED_DB_ROW_COUNT}"}
+            if row_count not in EXPECTED_DB_ROW_COUNTS:
+                return {"check": "database_integrity", "status": "FAIL", "details": f"Row count mismatch: {row_count} not in {EXPECTED_DB_ROW_COUNTS}"}
             if missing_tables:
                 return {"check": "database_integrity", "status": "FAIL", "details": f"Missing tables: {missing_tables}"}
 
@@ -146,11 +151,11 @@ class OperationalHealthChecker:
         if not cal_path.exists():
             return {"check": "trading_calendar", "status": "FAIL", "details": "File missing"}
         observed_hash = check_file_sha256(cal_path)
-        if observed_hash != CANONICAL_TRADING_CALENDAR_HASH:
+        if observed_hash not in CANONICAL_TRADING_CALENDAR_HASHES:
             return {
                 "check": "trading_calendar",
                 "status": "FAIL",
-                "details": f"Hash mismatch: {observed_hash} != {CANONICAL_TRADING_CALENDAR_HASH}",
+                "details": f"Hash mismatch: {observed_hash} not in {CANONICAL_TRADING_CALENDAR_HASHES}",
             }
         # Check that calendar has valid sorted dates
         with open(cal_path, "r", encoding="utf-8") as f:

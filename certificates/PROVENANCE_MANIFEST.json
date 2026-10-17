@@ -5,7 +5,7 @@
   "source_project": "Project_MIP_Pydroid3",
   "destination_project": "MIP_Android",
   "source_scanner_sha256": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-  "migrated_scanner_sha256": "ccd5600f61f0d29583d6019e6f6726d209b7253a855c1d7ca37da2426a591495",
+  "migrated_scanner_sha256": "f69688fde6e6681755d19e964cc4c2553e48988158a4c6b561e252ad07c5b6f0",
   "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "canonical_expected_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "fingerprint_verified": true,
@@ -14,9 +14,9 @@
     {
       "filename": "__init__.py",
       "sha256_source": "f2c326444ac617e9a79f507cc2fb6273074bcb7e75c227fb614b4dc964081cfe",
-      "sha256_migrated": "3a35fc8bcce1c3deafe1242f39cf42480b9a0b9464bb68eb5248f0e39f7ed68f",
-      "status": "identical",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "sha256_migrated": "5a92e83ad39c2c063ebfba40868c4472104859b72a758d52556b8f6826301918",
+      "status": "refactored",
+      "refactor_notes": "Version bump to 2.3.0"
     },
     {
       "filename": "analytical_price.py",
@@ -42,16 +42,16 @@
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "91bbacdecc73de1f6bfac488f8e1f1b647ff2912ec25c4aaf5b0e9a32f1e3a63",
+      "sha256_migrated": "6a67eb54aa0e8640d1b169a8d64320db28186e9f8b7df2be0e925e515991f3e2",
       "status": "refactored",
       "refactor_notes": "Identical to Main MIP pydroid_core source"
     },
     {
       "filename": "benchmark_validator.py",
       "sha256_source": "b937cb2a309dc4e139a4e34194c5f83b1f2f6d202731c1c222de3548dffec36e",
-      "sha256_migrated": "b937cb2a309dc4e139a4e34194c5f83b1f2f6d202731c1c222de3548dffec36e",
-      "status": "identical",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "sha256_migrated": "3502d6fb27a0ad79d8023b8822bd41218cd2da403e4e19486ba2ba736d98cae6",
+      "status": "refactored",
+      "refactor_notes": "Merged benchmark catalog and resolver engine"
     },
     {
       "filename": "breadth.py",
@@ -70,7 +70,7 @@
     {
       "filename": "data_engine.py",
       "sha256_source": "a2836814d38d65315c0a1bc1645f75efcc6ea7b393e565816110b28e78dbd6ae",
-      "sha256_migrated": "c8a7021718603566c50c8f18bfb37c5e1ddac1052b3515ca87297a7f8a57a5ab",
+      "sha256_migrated": "a2c853ae69b5c6ebe8d68832ae05beb7d7c3bcd165437a995a03bc80e8144411",
       "status": "refactored",
       "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
     },
@@ -140,9 +140,9 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "ccd5600f61f0d29583d6019e6f6726d209b7253a855c1d7ca37da2426a591495",
+      "sha256_migrated": "f69688fde6e6681755d19e964cc4c2553e48988158a4c6b561e252ad07c5b6f0",
       "status": "refactored",
-      "refactor_notes": "Excel workbook Telegram dispatch integration"
+      "refactor_notes": "Universal benchmark selection and Excel workbook Telegram dispatch integration"
     },
     {
       "filename": "sector_rotation.py",

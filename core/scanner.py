@@ -64,8 +64,10 @@ class PydroidScanner:
         self,
         base_dir: Optional[Path] = None,
         config: Optional[MIPScannerConfig] = None,
+        benchmark: str = "NIFTY500",
     ):
         self.base_dir = Path(base_dir) if base_dir else get_base_dir()
+        self.benchmark_name = benchmark or "NIFTY500"
         self.config = config or MIPScannerConfig()
         self.config.validate()
         self.benchmark_csv = self.base_dir / "data" / "benchmark_nifty500.csv"
@@ -101,14 +103,19 @@ class PydroidScanner:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] [Scanner] {msg}")
 
-    def load_benchmark(self) -> pd.DataFrame:
-        if not self.benchmark_csv.exists():
-            return pd.DataFrame(columns=["date", "close", "ema_20"])
-        df = pd.read_csv(self.benchmark_csv)
-        df["date"] = df["date"].astype(str)
-        return df
+    def load_benchmark(self, benchmark_override: Optional[str] = None) -> pd.DataFrame:
+        try:
+            from core.benchmark_validator import resolve_benchmark_dataframe
+            bm_name = benchmark_override or getattr(self, "benchmark_name", "NIFTY500")
+            return resolve_benchmark_dataframe(bm_name, base_dir=self.base_dir)
+        except Exception:
+            if not self.benchmark_csv.exists():
+                return pd.DataFrame(columns=["date", "close", "ema_20"])
+            df = pd.read_csv(self.benchmark_csv)
+            df["date"] = df["date"].astype(str)
+            return df
 
-    def evaluate_regime(self, as_of_date: str) -> Dict:
+    def evaluate_regime(self, as_of_date: str, benchmark_override: Optional[str] = None) -> Dict:
         """Evaluates benchmark regime against 20 EMA using institutional fail-closed validator."""
         from .benchmark_validator import evaluate_regime as eval_regime
         try:
@@ -116,12 +123,15 @@ class PydroidScanner:
         except Exception:
             calendar = None
 
+        bm_df = self.load_benchmark(benchmark_override=benchmark_override)
         res = eval_regime(
             as_of_date=as_of_date,
-            benchmark_csv_or_df=self.benchmark_csv,
+            benchmark_csv_or_df=bm_df,
             trading_calendar=calendar,
         )
-        return res.to_dict()
+        res_dict = res.to_dict()
+        res_dict["benchmark_name"] = benchmark_override or getattr(self, "benchmark_name", "NIFTY500")
+        return res_dict
 
     def _record_picks_history(self, target_date: str, top_df: pd.DataFrame, market_bullish: bool):
         """Records weekly picks into SQLite picks_history table for Pick Performance tracking."""
@@ -217,6 +227,7 @@ class PydroidScanner:
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
         use_residual_momentum: bool = False,
+        benchmark: Optional[str] = None,
         **kwargs,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
@@ -352,16 +363,18 @@ class PydroidScanner:
         target_dt = datetime.datetime.strptime(target_date, "%Y-%m-%d")
         start_str = (target_dt - datetime.timedelta(days=effective_lookback_days)).strftime("%Y-%m-%d")
 
+        eff_benchmark = benchmark or getattr(self, "benchmark_name", "NIFTY500")
+
         # 1. Market Regime & Benchmark Evaluation (Fail-Closed with allow_stale_data resilience)
-        if hasattr(self, "auto_fetch") and self.auto_fetch:
+        if hasattr(self, "auto_fetch") and self.auto_fetch and eff_benchmark == "NIFTY500":
             try:
-                bm_df_check = self.load_benchmark()
+                bm_df_check = self.load_benchmark(benchmark_override=eff_benchmark)
                 if bm_df_check.empty or str(bm_df_check["date"].max()) < target_date:
                     self.auto_fetch.sync_benchmark()
             except Exception as e_bmsync:
                 self.log(f"Benchmark auto-sync notice: {e_bmsync}")
 
-        regime_info = self.evaluate_regime(target_date)
+        regime_info = self.evaluate_regime(target_date, benchmark_override=eff_benchmark)
         market_bullish = bool(regime_info.get("is_normal_regime", False))
         bm_status = regime_info.get("status", "UNKNOWN")
         is_bm_healthy = bm_status not in ("INVALID", "STALE", "UNAVAILABLE", "CORRUPT")
@@ -569,7 +582,7 @@ class PydroidScanner:
                 bars_dedup = bars.drop_duplicates(subset=["date", "symbol"])
                 stock_rets = bars_dedup.pivot(index="date", columns="symbol", values="ret_1d").fillna(0.0)
 
-                b_df = self.load_benchmark()
+                b_df = self.load_benchmark(benchmark_override=eff_benchmark)
                 if not b_df.empty and "close" in b_df.columns:
                     b_df["date"] = b_df["date"].astype(str)
                     b_df = b_df.drop_duplicates(subset=["date"]).sort_values("date")
@@ -633,7 +646,7 @@ class PydroidScanner:
         bars["pct_above_ema200"] = ((bars["close"] / bars["ema_200"] - 1.0) * 100.0).round(2)
 
         # Benchmark mapping & Fail-Closed RS Ratio (Strict Point-In-Time)
-        b_df = self.load_benchmark()
+        b_df = self.load_benchmark(benchmark_override=eff_benchmark)
         if not b_df.empty:
             b_df = b_df[b_df["date"].astype(str) <= target_date]
         bm_map = dict(zip(b_df["date"], b_df["close"])) if not b_df.empty else {}
@@ -1040,6 +1053,9 @@ class PydroidScanner:
                 top_df.attrs["excel_path"] = excel_file
             except Exception as e:
                 self.log(f"Warning: Excel workbook compilation failed: {e}")
+
+        top_df.attrs["benchmark"] = eff_benchmark
+        top_df.attrs["benchmark_name"] = eff_benchmark
 
         if auto_download_excel and excel_file and Path(excel_file).exists():
             try:
