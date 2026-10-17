@@ -223,6 +223,7 @@ def run_scanner_flow(
     auto_sync: bool = True,
     use_vol_targeting: bool = False,
     use_delivery_veto: bool = False,
+    use_residual_momentum: bool = False,
 ):
     clear_screen()
     initial_date = get_latest_date()
@@ -270,6 +271,7 @@ def run_scanner_flow(
             allow_stale_data=effective_allow_stale,
             use_vol_targeting=use_vol_targeting,
             use_delivery_veto=use_delivery_veto,
+            use_residual_momentum=use_residual_momentum,
         )
     except (StaleDataError, DataUnavailableError, RuntimeError) as e:
         if interactive and isinstance(e, StaleDataError) and not effective_allow_stale:
@@ -290,6 +292,7 @@ def run_scanner_flow(
                         allow_stale_data=True,
                         use_vol_targeting=use_vol_targeting,
                         use_delivery_veto=use_delivery_veto,
+                        use_residual_momentum=use_residual_momentum,
                     )
                 else:
                     input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
@@ -1420,6 +1423,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Enable dynamic continuous volatility targeting & cash shield")
     parser.add_argument("--use-delivery-veto", action="store_true",
                         help="Enable institutional delivery absorption flow distribution veto")
+    parser.add_argument("--use-residual-momentum", action="store_true",
+                        help="Enable idiosyncratic residual momentum and 21-day reversal guard")
     return parser
 
 
@@ -1453,6 +1458,7 @@ if __name__ == "__main__":
             auto_sync=(not args.no_auto_sync),
             use_vol_targeting=args.use_vol_targeting,
             use_delivery_veto=args.use_delivery_veto,
+            use_residual_momentum=args.use_residual_momentum,
         ),
         2: run_telegram_preview,
         3: run_telegram_dispatch,

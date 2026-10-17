@@ -2,6 +2,7 @@
 ### Standalone Zero-Compiler Edition • Python 3.10+ • ARM64 NEON & x86_64 AVX2 Parallel SIMD Engine
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Afylx01/Project_MIP_Colab/blob/main/notebooks/Project_MIP_Colab.ipynb)
+[![Version: v2.2.0](https://img.shields.io/badge/Version-v2.2.0-blue.svg)](CHANGELOG.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Architecture: ARM64 + x86_64](https://img.shields.io/badge/Architecture-ARM64%20NEON%20%7C%20x86__64%20AVX2-brightgreen.svg)]()
@@ -800,7 +801,20 @@ To run the master test runner across the entire codebase:
 ```bash
 python tests/run_all_tests.py
 ```
-*Current Suite Status:* **290+ tests passed, 0 failures, 0 errors (Exit Code 0).**
+---
+
+## 📜 Version History & Defect Remediation Register
+
+Project MIP follows strict [Semantic Versioning](https://semver.org/) and institutional audit tracking. Every bug fix, optimization, and factor release is verified with deterministic `fail → pass` TDD test logs.
+
+| Version | Release Date | Key Enhancements & Defect Fixes | Verification Status |
+| :--- | :--- | :--- | :--- |
+| **`v2.2.0`** | 2026-10-17 | Screener Residual Momentum (`use_residual_momentum`), Real-Time EOD Guarantee past calendar boundary (DEF-C03), True NIFTY 500 Benchmark Continuity eliminating pre-2020 collapse (DEF-C04). | **100% Passed (339 tests, exit code 0)** |
+| **`v2.1.0`** | 2026-10-16 | Colab Defect Remediation (DEF-C01 to DEF-C07: Universe ALL resolution, RS benchmark staleness recovery, sim_kernel bounds, CorporateAction adjustment_factor). | **100% Passed (335 tests, exit code 0)** |
+| **`v2.0.0`** | 2026-10-15 | Google Colab Port, C99 SIMD Parallel Engine, Vulnerability Audit Remediation (DEF-01 to DEF-22), Alpha Overlays (Vol Targeting, Delivery Absorption Flow Veto). | **100% Passed (328 tests, exit code 0)** |
+| **`v1.0.0`** | 2026-10-13 | Canonical Sealed Institutional Baseline, 25 Core Decoupled Modules, 2.16M Bar Universe DB. | **Sealed Production Baseline** |
+
+> For complete commit diffs, defect blueprints, and mathematical proofs, see [CHANGELOG.md](CHANGELOG.md) and [EVIDENCE_PACKAGE_BUGS_COLAB.md](reports/EVIDENCE_PACKAGE_BUGS_COLAB.md).
 
 ---
 

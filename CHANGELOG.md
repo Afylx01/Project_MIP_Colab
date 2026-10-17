@@ -1,0 +1,98 @@
+# Changelog
+
+All notable changes, fixes, and quantitative upgrades to **Project MIP (Colab & Headless Quantitative Engine)** are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [2.2.0] - 2026-10-17
+
+### Added
+- **Idiosyncratic Residual Momentum in Screener (`use_residual_momentum`)**:
+  - Fully integrated into `core/scanner.py`, `scripts/scanner_hardening.py`, and `main.py` CLI parser (`--use-residual-momentum`).
+  - Added interactive `#@param {type:"boolean"}` toggle in **Cell 2: Live Momentum Screener Cockpit** of `Project_MIP_Colab.ipynb`.
+  - Academic formulation: Blitz, Baltussen & van Vliet (2020) / Robeco idiosyncratic alpha model regressing stock returns against market benchmark returns ($R_{i,t} = \alpha_i + \beta_i R_{m,t} + \epsilon_{i,t}$).
+  - 21-day short-term reversal guard: Excludes recent $t-21$ to $t$ sessions to prevent buying exhaustion pumps.
+  - Standardized Sharpe scoring: Ranks candidates on risk-adjusted residual return ($\frac{\sum \epsilon_i}{\sigma(\epsilon_i) \cdot \sqrt{231}}$).
+  - Composite Momentum Score: Blends 40% canonical Volar + 60% idiosyncratic residual momentum, prioritizing pure company alpha over market beta.
+  - Dedicated TDD contract suite: `tests/test_scanner_residual_momentum.py` (4 tests, 100% passed).
+
+### Fixed
+- **Latest Expected EOD Date Resolution (DEF-C03)**:
+  - Fixed `core/data_engine.py:get_expected_latest_eod()` which was previously capped at the end of the static trading calendar (2026-10-15).
+  - Added dynamic weekday and statutory NSE exchange holiday progression logic. The scanner now automatically evaluates and resolves Friday 2026-10-16 on Saturday 2026-10-17.
+- **Benchmark Series Continuity & Pre-2020 Equity Curve Collapse (DEF-C04)**:
+  - Fixed `brute_force/cube_builder.py:TensorCubeContainer` and `brute_force/runner.py:BruteForceCampaignRunner`.
+  - Replaced the unlisted symbol 0 proxy (`360ONE`, listed in September 2019) with true canonical NIFTY 500 benchmark closes (`data/benchmark_nifty500.csv`).
+  - Eliminated the artificial -99.9% pre-2019 drawdown and 1,200x equity scaling distortion; backtest equity and drawdown curves now render continuously from 2010 to 2026.
+- **Constituent Engine Universe `ALL` Resolution (DEF-C01)**:
+  - Eliminated `BLOCKED` status when scanning universe `ALL` in `scripts/scanner_hardening.py` by resolving active universe tickers directly from SQLite prices table.
+- **Benchmark Staleness Recovery (DEF-C02)**:
+  - Added resilient benchmark synchronization and forward-fill recovery for Relative Strength (RS) ratio calculation when `allow_stale_data=True`, preventing 0 candidate picks.
+- **Pandas `Series.pct_change` FutureWarning (DEF-C05)**:
+  - Added explicit `fill_method=None` and upstream `.ffill()` across calculation engines.
+- **SIMD Simulation Kernel Loop Boundary (DEF-C06)**:
+  - Corrected loop condition in `brute_force/sim_kernel.c` from `r < r_end` to `r <= r_end`, guaranteeing execution of the final rebalance session matching `end_session = sched_indices[r_end]`.
+- **Corporate Action Event Adjustment Factor Alias (DEF-C07)**:
+  - Added `@property adjustment_factor` to `CorporateActionEvent` in `core/analytical_price.py`.
+
+---
+
+## [2.1.0] - 2026-10-16
+
+### Fixed
+- **Bugs Colab Remediation (DEF-C01 to DEF-C07)**:
+  - Full reproducible TDD proof suite in `tests/test_bugs_colab_proof.py`.
+  - Recompiled high-performance C99 SIMD simulation kernel with updated bounds.
+  - Reconciled trading calendar and corporate actions pipeline.
+  - Published comprehensive Evidence Package and Proof Register in `reports/EVIDENCE_PACKAGE_BUGS_COLAB.md`.
+
+---
+
+## [2.0.0] - 2026-10-15
+
+### Added
+- **Google Colab Cloud Architecture**:
+  - Zero-leak standalone repository topology in `Project_MIP_Colab`.
+  - Multi-architecture C99 compiler bridge supporting both x86_64 AVX2 / AVX-512 (Google Colab) and ARM64 NEON (Android S23 / Snapdragon 8 Gen 2).
+  - High-speed NVMe staging layer (`scripts/cloud_sync.py`) eliminating Google Drive FUSE latency penalties.
+  - 5-cell interactive Jupyter Notebook `notebooks/Project_MIP_Colab.ipynb` with Colab Form sliders, IPyWidgets dashboard, and automatic browser downloads.
+- **Next-Gen Institutional Alpha Overlays**:
+  - Feature 1: `nextgen/residual_momentum.py` (Blitz residual momentum factor engine).
+  - Feature 2: `nextgen/vector_engine.py` (2D contiguous matrix analytical acceleration).
+  - Feature 3: `nextgen/volatility_targeting.py` (Continuous EWMA realized volatility targeting and Dynamic Cash Shield).
+  - Feature 4: `nextgen/delivery_flow.py` (Close Location Value and Smart Money Flow Index institutional distribution veto).
+
+### Fixed
+- **Institutional Codebase Vulnerability Remediation (DEF-01 through DEF-22)**:
+  - DEF-01: Split/bonus price adjustment in backtester eliminates artificial -50% to -90% crashes.
+  - DEF-02: `MAX_UNIVERSE_SYMBOLS` expanded from 1024 to 2048 in `sim_kernel.c` eliminating stack smashing on `ALL`.
+  - DEF-03: Dynamic tensor axis resolution in `nextgen_sim.py` correcting 200 EMA lookup.
+  - DEF-04: Persistent session state ledger in `schedule_production_cron.py` eliminating infinite loop dispatch.
+  - DEF-05: Isolation of existing HOLD positions from portfolio rebalance budget in `portfolio.py`.
+  - DEF-07: 50% distress liquidation haircut on delisted/suspended tickers.
+  - DEF-08: Per-run local counter eliminating pthread race conditions in `sim_kernel.c`.
+  - DEF-09: `isnan()` and `isinf()` guards before candidate ingestion in C99 kernel.
+  - DEF-10: Immediate `REJECTED` order status assignment on cash exhaustion.
+  - DEF-11: Sanitized return arrays with non-finite clamping in `volatility_targeting.py`.
+  - DEF-12: Fail-closed buy gate on missing delivery data in `delivery_flow.py`.
+  - DEF-13: Vectorized 2D Rolling Residual Momentum reducing computation from 120s to 2.6s.
+  - DEF-14: `run_scan()` signature parity across scanner modules.
+  - DEF-16: Connection leak eliminated in `_record_picks_history()`.
+  - DEF-17: Bidirectional fill for benchmark missing dates in `market_breadth.py`.
+  - DEF-21: UUID hex suffixes eliminating temporary file collision in cloud sync.
+  - DEF-22: Matplotlib figure leak remediation with guaranteed `plt.close(fig)` cleanup.
+
+---
+
+## [1.0.0] - 2026-10-13
+
+### Added
+- **Production Sealed Release**:
+  - 25 pure-Python core decoupled modules tracked in `certificates/PROVENANCE_MANIFEST.json`.
+  - Immutable production SQLite universe database (`data/universe.db`, 2,164,420 rows, SHA-256 sealed).
+  - Institutional production deployment playbook in `docs/PRODUCTION_DEPLOYMENT_PLAYBOOK.md`.
+  - Automated smoke verifier `scripts/verify_production_readiness.py`.
+  - Cryptographically sealed production readiness certificate `certificates/PRODUCTION_READINESS_CERTIFICATE.json`.

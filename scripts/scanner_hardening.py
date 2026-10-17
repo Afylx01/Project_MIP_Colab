@@ -1076,6 +1076,7 @@ class HardenedScanner(PydroidScanner):
         auto_download_excel: bool = False,
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
+        use_residual_momentum: bool = False,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Hardened execution of screener pipeline:
@@ -1158,7 +1159,7 @@ class HardenedScanner(PydroidScanner):
             with patch.object(cs, "load_bars", side_effect=_sandbox_load_bars), \
                  patch.object(cs, "load_universe_constituents", side_effect=_hardened_load_universe), \
                  patch.object(cs, "get_universe_label", side_effect=_hardened_get_u_label):
-                res = super().run_scan(
+                 res = super().run_scan(
                     as_of_date=as_of_date,
                     universe_mode=universe_mode,
                     top_n=top_n,
@@ -1170,6 +1171,9 @@ class HardenedScanner(PydroidScanner):
                     allow_stale_data=allow_stale_data,
                     send_telegram=send_telegram,
                     auto_download_excel=False,
+                    use_vol_targeting=use_vol_targeting,
+                    use_delivery_veto=use_delivery_veto,
+                    use_residual_momentum=use_residual_momentum,
                 )
         else:
             res = super().run_scan(
@@ -1184,6 +1188,9 @@ class HardenedScanner(PydroidScanner):
                 allow_stale_data=allow_stale_data,
                 send_telegram=send_telegram,
                 auto_download_excel=False,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                use_residual_momentum=use_residual_momentum,
             )
 
         top_df = res[0]

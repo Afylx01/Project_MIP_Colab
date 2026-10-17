@@ -1,7 +1,9 @@
 """
-Project MIP: Standalone Pydroid 3 Quantitative Engine
-Zero-compiler, mobile-native quantitative architecture.
-Directives: DIR-PROD-PYDROID3-PORT-01 (HALT-16), DIR-PROD-PYDROID3-PARITY-01 (HALT-17)
+Project MIP: Institutional Momentum & Alpha Engine (Google Colab & Pydroid 3 Edition)
+Zero-compiler, cloud-native & mobile-native quantitative architecture.
 """
 
-__version__ = "2.0.0-pydroid3"
+__version__ = "2.2.0"
+__release_name__ = "Project MIP Colab Institutional Edition"
+__build__ = "2026.10.17"
+

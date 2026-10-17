@@ -216,6 +216,7 @@ class PydroidScanner:
         auto_download_excel: bool = False,
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
+        use_residual_momentum: bool = False,
         **kwargs,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
@@ -555,6 +556,48 @@ class PydroidScanner:
             lambda s: s.rolling(self.config.volatility_lookback_bars, min_periods=min(251, len(s) - 1)).std(ddof=1) * np.sqrt(252)
         ).clip(lower=self.config.volatility_floor).fillna(self.config.volatility_floor)
         bars["volar_score"] = bars["ret_252"] / bars["vol_252"].clip(lower=self.config.volatility_floor)
+        bars["raw_volar_score"] = bars["volar_score"].copy()
+        bars["residual_mom_score"] = np.nan
+
+        if use_residual_momentum:
+            try:
+                self.log("Computing 2D rolling residual momentum against benchmark...")
+                from nextgen.residual_momentum import compute_rolling_residual_momentum, compute_composite_momentum_score
+
+                # Deduplicate (date, symbol) to ensure safe matrix pivoting
+                bars_dedup = bars.drop_duplicates(subset=["date", "symbol"])
+                stock_rets = bars_dedup.pivot(index="date", columns="symbol", values="ret_1d").fillna(0.0)
+
+                b_df = self.load_benchmark()
+                if not b_df.empty and "close" in b_df.columns:
+                    b_df["date"] = b_df["date"].astype(str)
+                    b_df = b_df.drop_duplicates(subset=["date"]).sort_values("date")
+                    b_df["bm_ret"] = b_df["close"].pct_change(fill_method=None).fillna(0.0)
+                    b_series = pd.Series(b_df.set_index("date")["bm_ret"]).reindex(stock_rets.index).fillna(0.0)
+
+                    res_df = compute_rolling_residual_momentum(
+                        stock_returns=stock_rets,
+                        bench_returns=b_series,
+                        lookback=min(self.config.momentum_lookback_bars, len(stock_rets)),
+                        skip_recent=21,
+                    )
+                    if target_date in res_df.index:
+                        latest_res = res_df.loc[target_date]
+                    elif not res_df.empty:
+                        latest_res = res_df.iloc[-1]
+                    else:
+                        latest_res = pd.Series(0.0, index=stock_rets.columns)
+
+                    bars["residual_mom_score"] = bars["symbol"].map(latest_res).fillna(0.0)
+                    bars["volar_score"] = compute_composite_momentum_score(
+                        volar_scores=bars["raw_volar_score"].to_numpy(),
+                        residual_scores=bars["residual_mom_score"].to_numpy(),
+                        volar_weight=0.40,
+                        residual_weight=0.60,
+                    )
+                    self.log("✓ Residual momentum applied: blended 40% canonical Volar + 60% idiosyncratic residual momentum.")
+            except Exception as e_res:
+                self.log(f"Residual momentum computation notice: {e_res} - falling back to canonical Volar.")
 
         # ATR-14 Calculation
         prev_close = bars.groupby("symbol")["close"].shift(1)
@@ -673,7 +716,12 @@ class PydroidScanner:
 
             if all_p:
                 rcode = ScannerReasonCode.PASS.value
-                diag = f"Qualified: Volar {volar_val:.4f} (Ret: {ret_val*100:.1f}%, Vol: {vol_val*100:.1f}%)"
+                if use_residual_momentum and "residual_mom_score" in snap.columns and pd.notna(row.get("residual_mom_score")):
+                    res_s = float(row.get("residual_mom_score", 0.0))
+                    raw_v = float(row.get("raw_volar_score", volar_val))
+                    diag = f"Qualified: Composite Volar {volar_val:.4f} (Residual: {res_s:.4f}, Raw: {raw_v:.4f}, Ret: {ret_val*100:.1f}%, Vol: {vol_val*100:.1f}%)"
+                else:
+                    diag = f"Qualified: Volar {volar_val:.4f} (Ret: {ret_val*100:.1f}%, Vol: {vol_val*100:.1f}%)"
             elif not f1:
                 rcode = ScannerReasonCode.BELOW_52W_HIGH_THRESHOLD.value
                 diag = f"Close {c_val:.2f} < 80% of 52w High ({h_val:.2f})"
@@ -1037,6 +1085,7 @@ class PydroidScanner:
         top_df.attrs["health_report"] = health_report
         top_df.attrs["scan_quality"] = report_data
         top_df.attrs["db_audit"] = db_audit
+        top_df.attrs["residual_momentum_enabled"] = bool(use_residual_momentum)
         return top_df, breadth_results, sector_results, regime_info, top_etf_df, delivery_df
 
 
@@ -1098,7 +1147,11 @@ def format_screener_tearsheet(
         )
 
     # 3. Top Candidates (Sector Hard Cap & ATR Stop Loss)
-    lines.append(f"\n[3] TOP 20 MOMENTUM CANDIDATES (SECTOR HARD CAP: MAX 2/SECTOR)")
+    res_mom_active = bool(top_df.attrs.get("residual_momentum_enabled")) if hasattr(top_df, "attrs") else False
+    if res_mom_active:
+        lines.append(f"\n[3] TOP MOMENTUM CANDIDATES (RESIDUAL MOMENTUM ACTIVE: 40% VOLAR + 60% IDIOSYNCRATIC ALPHA)")
+    else:
+        lines.append(f"\n[3] TOP 20 MOMENTUM CANDIDATES (SECTOR HARD CAP: MAX 2/SECTOR)")
     lines.append(f"  {'Rank':<5}{'Symbol':<13}{'Close (₹)':<11}{'Stop Loss':<11}{'Sector':<12}{'Volar':<7}{'1Y Ret':<9}{'RRG Quad'}")
     lines.append("  " + "-" * 76)
     for _, row in top_df.iterrows():
