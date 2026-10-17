@@ -60,10 +60,11 @@ If you prefer not using service accounts at all:
 ## 4. Zero-Friction Option: Direct Public Google Drive Mirror (Zero-Setup)
 If you don't have Google Drive or a Service Account configured:
 1. The notebook automatically falls back to downloading the verified pre-compiled `universe.db` (351 MB) directly from our public Google Drive mirror.
-2. Direct link: [Google Drive universe.db](https://drive.google.com/file/d/1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT/view?usp=sharing)
+2. Direct link: [Google Drive universe.db.gz](https://drive.google.com/file/d/19LaJGbeVx2lx9RytT0vig0Srqc6G4Q65/view?usp=drivesdk)
 3. You can also download it manually via terminal:
    ```bash
-   gdown --id 1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT -O data/universe.db
+   gdown --id 19LaJGbeVx2lx9RytT0vig0Srqc6G4Q65 -O data/universe.db.gz
+   gzip -d -k -f data/universe.db.gz
    ```
 
 ---

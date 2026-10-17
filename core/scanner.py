@@ -350,11 +350,22 @@ class PydroidScanner:
         target_dt = datetime.datetime.strptime(target_date, "%Y-%m-%d")
         start_str = (target_dt - datetime.timedelta(days=effective_lookback_days)).strftime("%Y-%m-%d")
 
-        # 1. Market Regime & Benchmark Evaluation (Fail-Closed)
+        # 1. Market Regime & Benchmark Evaluation (Fail-Closed with allow_stale_data resilience)
+        if hasattr(self, "auto_fetch") and self.auto_fetch:
+            try:
+                bm_df_check = self.load_benchmark()
+                if bm_df_check.empty or str(bm_df_check["date"].max()) < target_date:
+                    self.auto_fetch.sync_benchmark()
+            except Exception as e_bmsync:
+                self.log(f"Benchmark auto-sync notice: {e_bmsync}")
+
         regime_info = self.evaluate_regime(target_date)
         market_bullish = bool(regime_info.get("is_normal_regime", False))
         bm_status = regime_info.get("status", "UNKNOWN")
         is_bm_healthy = bm_status not in ("INVALID", "STALE", "UNAVAILABLE", "CORRUPT")
+        if not is_bm_healthy and allow_stale_data and bm_status in ("STALE", "PARTIAL"):
+            self.log(f"WARNING: Benchmark data status is [{bm_status}], but allow_stale_data=True. Proceeding with forward-filled benchmark for RS evaluation.")
+            is_bm_healthy = True
 
         # 2. Loading Bars from SQLite
         self.log(f"Loading bars from SQLite ({start_str} to {target_date})...")
@@ -1124,3 +1135,7 @@ def format_screener_tearsheet(
 
     lines.append("=" * 76)
     return "\n".join(lines)
+
+
+# Institutional Alias
+MomentumScanner = PydroidScanner

@@ -218,7 +218,7 @@ static inline void simulate_single_config(
     RankedCandidate pass_candidates[MAX_UNIVERSE_SYMBOLS];
     int candidate_rank[MAX_UNIVERSE_SYMBOLS];
 
-    for (int r = r_start; r < r_end; r++) {
+    for (int r = r_start; r <= r_end; r++) {
         int sig_date = sched_indices[r];
         int exec_date = sig_date + 1; // Strict t+1 execution
         if (exec_date >= (int)T) exec_date = sig_date;

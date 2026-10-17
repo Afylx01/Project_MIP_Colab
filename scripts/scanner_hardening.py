@@ -120,6 +120,10 @@ class ConstituentReconciliationReport:
     is_changed_from_previous: bool = False
     warning_message: str = ""
 
+    @property
+    def valid_symbols(self) -> Set[str]:
+        return set(self.added_symbols).union(set(self.unchanged_symbols))
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "universe_name": self.universe_name,
@@ -683,6 +687,81 @@ class ConstituentReconciliationEngine:
         backup_file = cached_file.with_suffix(".bak")
 
         prev_symbols, prev_hash = self._load_previous_snapshot(u_key)
+
+        # Handle ALL / ALL_EQUITIES / ALL_STOCKS directly from active SQLite database
+        if u_key in ("ALL", "ALL_EQUITIES", "ALL_STOCKS"):
+            db_symbols = set()
+            try:
+                from core.data_engine import get_connection
+                with get_connection(read_only=True) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT DISTINCT symbol FROM prices")
+                    db_symbols = {str(row[0]).strip().upper() for row in cursor.fetchall() if row[0]}
+            except Exception:
+                db_symbols = set()
+
+            if not db_symbols and prev_symbols:
+                db_symbols = prev_symbols
+
+            if not db_symbols:
+                try:
+                    sec_map_file = self.base_dir / "data" / "symbol_sector_map.json"
+                    if sec_map_file.exists():
+                        with open(sec_map_file, "r", encoding="utf-8") as f:
+                            sec_data = json.load(f)
+                            db_symbols = {str(s).strip().upper() for s in sec_data.keys()}
+                except Exception:
+                    pass
+
+            if db_symbols:
+                added = sorted(list(db_symbols - prev_symbols)) if prev_symbols else []
+                removed = sorted(list(prev_symbols - db_symbols)) if prev_symbols else []
+                unchanged = sorted(list(db_symbols.intersection(prev_symbols))) if prev_symbols else sorted(list(db_symbols))
+                is_changed = bool(added or removed)
+
+                source_status = ConstituentSourceStatus.LIVE_VERIFIED if not offline_only else ConstituentSourceStatus.CACHED_VALID
+                report = ConstituentReconciliationReport(
+                    universe_name="ALL",
+                    source_status=source_status,
+                    source_url="SQLITE_UNIVERSE_DB",
+                    snapshot_date=datetime.date.today().isoformat(),
+                    snapshot_sha256="",
+                    total_constituents=len(db_symbols),
+                    added_symbols=added,
+                    removed_symbols=removed,
+                    unchanged_symbols=unchanged,
+                    is_changed_from_previous=is_changed,
+                    warning_message="" if not offline_only else "Universe ALL resolved from local SQLite database (offline mode)",
+                )
+                self._record_snapshot_idempotent(
+                    u_key,
+                    {
+                        "sha256": "",
+                        "snapshot_date": datetime.date.today().isoformat(),
+                        "source_url": "SQLITE_UNIVERSE_DB",
+                        "status": source_status.value,
+                        "total_count": len(db_symbols),
+                        "symbols": sorted(list(db_symbols)),
+                        "added": added,
+                        "removed": removed,
+                    },
+                )
+                return report
+            elif allow_stale and prev_symbols:
+                return ConstituentReconciliationReport(
+                    universe_name="ALL",
+                    source_status=ConstituentSourceStatus.CACHED_VALID,
+                    source_url="LOCAL_SNAPSHOT_CACHE",
+                    snapshot_date=datetime.date.today().isoformat(),
+                    snapshot_sha256=prev_hash,
+                    total_constituents=len(prev_symbols),
+                    added_symbols=[],
+                    removed_symbols=[],
+                    unchanged_symbols=sorted(list(prev_symbols)),
+                    is_changed_from_previous=False,
+                    warning_message="Database symbols unavailable, loaded from snapshot cache",
+                )
+
         urls = self.OFFICIAL_URLS.get(u_key, [])
 
         cache_exists = cached_file.exists() and cached_file.stat().st_size > 30
@@ -1034,6 +1113,8 @@ class HardenedScanner(PydroidScanner):
                 constituents_set = set(df_c[sym_col].astype(str).str.strip().str.upper())
             except Exception:
                 pass
+        if not constituents_set and const_report.valid_symbols:
+            constituents_set = set(const_report.valid_symbols)
 
         data_reconcile_report = self.data_reconciliation_engine.reconcile_universe_coverage(
             constituents=constituents_set,

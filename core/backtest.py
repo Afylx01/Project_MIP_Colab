@@ -267,7 +267,7 @@ class LightweightBacktester:
                         last_ca_date = h.get("last_ca_date", h["entry_date"])
                         for a in active_actions:
                             if last_ca_date < a.ex_date <= signal_date:
-                                factor = a.adjustment_factor
+                                factor = getattr(a, "adjustment_factor", getattr(a, "factor", 1.0))
                                 if factor > 0 and factor != 1.0:
                                     h["shares"] = int(round(h["shares"] / factor))
                                     h["buy_px"] = round(h["buy_px"] * factor, 2)

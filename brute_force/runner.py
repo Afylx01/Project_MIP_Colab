@@ -44,7 +44,7 @@ class BruteForceCampaignRunner:
         end_date: Optional[str] = None,
         universe_name: str = "NIFTY750",
     ) -> TensorCubeContainer:
-        if self.cube is None or self._cube_universe != universe_name:
+        if self.cube is None or (self._cube_universe is not None and self._cube_universe != universe_name):
             t0 = time.perf_counter()
             self.cube = build_tensor_cube(
                 start_date=start_date,
@@ -78,6 +78,8 @@ class BruteForceCampaignRunner:
         param["end_date_idx"] = e_idx
         param["schedule"] = schedule
         param["schedule_idx"] = SCHEDULE_MAP.get(schedule, 1)
+        param["lookback"] = 252 if 252 in cube.lookback_values else cube.lookback_values[0]
+        param["ema_trend"] = 200 if 200 in cube.ema_span_values else cube.ema_span_values[0]
 
         t0 = time.perf_counter()
         raw_res = self.engine.execute_sweep([param], cube, num_threads=1)
@@ -105,8 +107,15 @@ class BruteForceCampaignRunner:
             for i in range(1, periods):
                 d_prev = active_indices[i - 1]
                 d_curr = active_indices[i]
-                b_prev = float(cube.close_px[d_prev, 0]) if cube.close_px[d_prev, 0] > 0 else 1.0
-                b_curr = float(cube.close_px[d_curr, 0]) if cube.close_px[d_curr, 0] > 0 else 1.0
+                if hasattr(cube, "bench_closes") and cube.bench_closes is not None and cube.bench_closes[d_prev] > 0:
+                    b_prev = float(cube.bench_closes[d_prev])
+                else:
+                    b_prev = float(cube.close_px[d_prev, 0]) if cube.close_px[d_prev, 0] > 0 else 1.0
+
+                if hasattr(cube, "bench_closes") and cube.bench_closes is not None and cube.bench_closes[d_curr] > 0:
+                    b_curr = float(cube.bench_closes[d_curr])
+                else:
+                    b_curr = float(cube.close_px[d_curr, 0]) if cube.close_px[d_curr, 0] > 0 else 1.0
                 bench_factor = 1.0 + 0.35 * (b_curr / b_prev - 1.0)
                 curr_val *= (step_growth * bench_factor)
                 equity_curve.append(curr_val)
@@ -119,10 +128,16 @@ class BruteForceCampaignRunner:
 
         bench_equity = [init_cap]
         if periods > 1:
-            b_base = float(cube.close_px[active_indices[0], 0]) if cube.close_px[active_indices[0], 0] > 0 else 1.0
+            if hasattr(cube, "bench_closes") and cube.bench_closes is not None and cube.bench_closes[active_indices[0]] > 0:
+                b_base = float(cube.bench_closes[active_indices[0]])
+            else:
+                b_base = float(cube.close_px[active_indices[0], 0]) if cube.close_px[active_indices[0], 0] > 0 else 1.0
             for idx in active_indices[1:]:
-                b_now = float(cube.close_px[idx, 0]) if cube.close_px[idx, 0] > 0 else b_base
-                bench_equity.append(init_cap * (b_now / b_base))
+                if hasattr(cube, "bench_closes") and cube.bench_closes is not None and cube.bench_closes[idx] > 0:
+                    b_now = float(cube.bench_closes[idx])
+                else:
+                    b_now = float(cube.close_px[idx, 0]) if cube.close_px[idx, 0] > 0 else b_base
+                bench_equity.append(init_cap * (b_now / max(b_base, 1.0)))
         else:
             bench_equity = [init_cap, init_cap]
 
@@ -263,8 +278,15 @@ class BruteForceCampaignRunner:
             for i in range(1, periods):
                 d_prev = active_indices[i - 1]
                 d_curr = active_indices[i]
-                b_prev = float(cube.close_px[d_prev, 0]) if cube.close_px[d_prev, 0] > 0 else 1.0
-                b_curr = float(cube.close_px[d_curr, 0]) if cube.close_px[d_curr, 0] > 0 else 1.0
+                if hasattr(cube, "bench_closes") and cube.bench_closes is not None and cube.bench_closes[d_prev] > 0:
+                    b_prev = float(cube.bench_closes[d_prev])
+                else:
+                    b_prev = float(cube.close_px[d_prev, 0]) if cube.close_px[d_prev, 0] > 0 else 1.0
+
+                if hasattr(cube, "bench_closes") and cube.bench_closes is not None and cube.bench_closes[d_curr] > 0:
+                    b_curr = float(cube.bench_closes[d_curr])
+                else:
+                    b_curr = float(cube.close_px[d_curr, 0]) if cube.close_px[d_curr, 0] > 0 else 1.0
                 bench_factor = 1.0 + 0.35 * (b_curr / b_prev - 1.0)
                 curr_val *= (step_growth * bench_factor)
                 equity_curve.append(curr_val)
@@ -277,10 +299,16 @@ class BruteForceCampaignRunner:
 
         bench_equity = [init_cap]
         if periods > 1:
-            b_base = float(cube.close_px[active_indices[0], 0]) if cube.close_px[active_indices[0], 0] > 0 else 1.0
+            if hasattr(cube, "bench_closes") and cube.bench_closes is not None and cube.bench_closes[active_indices[0]] > 0:
+                b_base = float(cube.bench_closes[active_indices[0]])
+            else:
+                b_base = float(cube.close_px[active_indices[0], 0]) if cube.close_px[active_indices[0], 0] > 0 else 1.0
             for idx in active_indices[1:]:
-                b_now = float(cube.close_px[idx, 0]) if cube.close_px[idx, 0] > 0 else b_base
-                bench_equity.append(init_cap * (b_now / b_base))
+                if hasattr(cube, "bench_closes") and cube.bench_closes is not None and cube.bench_closes[idx] > 0:
+                    b_now = float(cube.bench_closes[idx])
+                else:
+                    b_now = float(cube.close_px[idx, 0]) if cube.close_px[idx, 0] > 0 else b_base
+                bench_equity.append(init_cap * (b_now / max(b_base, 1.0)))
         else:
             bench_equity = [init_cap, init_cap]
 
@@ -414,3 +442,7 @@ class BruteForceCampaignRunner:
 
         df_merged = pd.concat([df_params, df_res.drop(columns=["param_id"], errors="ignore")], axis=1)
         return df_merged
+
+
+# Institutional Alias for Backward Compatibility
+BruteForceRunner = BruteForceCampaignRunner

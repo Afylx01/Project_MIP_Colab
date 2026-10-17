@@ -5,7 +5,7 @@
   "source_project": "Project_MIP_Pydroid3",
   "destination_project": "MIP_Android",
   "source_scanner_sha256": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-  "migrated_scanner_sha256": "c30665b6ae320a2e6bd8ef3f54faddb8fdbaeea79998258e3ee90b514ecb3a61",
+  "migrated_scanner_sha256": "49b42393f84e190da5fa46916d7735162e5747a8465ff634481738dd09be6986",
   "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "canonical_expected_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "fingerprint_verified": true,
@@ -21,7 +21,7 @@
     {
       "filename": "analytical_price.py",
       "sha256_source": "3031b619ce6f2c6fbe22cf29350e6ecaec10f39757ad19c06376b7115eae0a6a",
-      "sha256_migrated": "6bd787c5a2dada0ee94da44fa4609ee02ec50a32780fdc7902ea3fe8f4231d6a",
+      "sha256_migrated": "3691005c53b83d5d069240a0ff03c5e2c7694af9ce542aab358a124b631a4e47",
       "status": "refactored",
       "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
     },
@@ -35,14 +35,14 @@
     {
       "filename": "auto_fetch.py",
       "sha256_source": "a99103cb6397860f9e3883403b2a69b7c88ccad32b09b7053b604ba29fbfdd29",
-      "sha256_migrated": "299558792fc1990c1cd0731f943d9fdc33ab9820e6f3f1dd353720e89f04763e",
+      "sha256_migrated": "1f73b9215aa366d54216e7983b8014c23aab17fb6619ae4fd694ef65991714bd",
       "status": "refactored",
       "refactor_notes": "Auto-sync mutation firewall pass & Telegram dispatch integration"
     },
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "793f28edc89dfb57375d8030aa264d22e5eb48e4d5a98c489ecd080ecd50807a",
+      "sha256_migrated": "91bbacdecc73de1f6bfac488f8e1f1b647ff2912ec25c4aaf5b0e9a32f1e3a63",
       "status": "refactored",
       "refactor_notes": "Identical to Main MIP pydroid_core source"
     },
@@ -70,7 +70,7 @@
     {
       "filename": "data_engine.py",
       "sha256_source": "a2836814d38d65315c0a1bc1645f75efcc6ea7b393e565816110b28e78dbd6ae",
-      "sha256_migrated": "63a30185de0a226fe1b59374bbe5364413793f9ce87d1e117bc79f83d3d87310",
+      "sha256_migrated": "c8a7021718603566c50c8f18bfb37c5e1ddac1052b3515ca87297a7f8a57a5ab",
       "status": "refactored",
       "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
     },
@@ -140,7 +140,7 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "8a2113cb3f8a35c31139b1f7a42679a847df5d77e1b4d82f1d8741067145eda8",
+      "sha256_migrated": "49b42393f84e190da5fa46916d7735162e5747a8465ff634481738dd09be6986",
       "status": "refactored",
       "refactor_notes": "Excel workbook Telegram dispatch integration"
     },

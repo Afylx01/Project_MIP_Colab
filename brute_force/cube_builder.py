@@ -48,6 +48,7 @@ class TensorCubeContainer:
         lookback_values: List[int],
         ema_span_values: List[int],
         sector_names: List[str],
+        bench_closes: Optional[np.ndarray] = None,
     ):
         self.dates = dates
         self.symbols = symbols
@@ -90,6 +91,11 @@ class TensorCubeContainer:
         self.vol_target_scalar = np.ascontiguousarray(vol_target_scalar, dtype=np.float32)
         self.delivery_veto_plane = np.ascontiguousarray(delivery_veto_plane, dtype=np.uint8)
 
+        if bench_closes is not None:
+            self.bench_closes = np.ascontiguousarray(bench_closes, dtype=np.float32)
+        else:
+            self.bench_closes = np.ones(self.num_dates, dtype=np.float32)
+
         self.lookback_values = lookback_values
         self.ema_span_values = ema_span_values
         self.sector_names = sector_names
@@ -103,6 +109,7 @@ class TensorCubeContainer:
             self.rebalance_indices.nbytes
             + self.benchmark_regime.nbytes
             + self.sector_ids.nbytes
+            + (self.bench_closes.nbytes if hasattr(self, "bench_closes") else 0)
             + self.open_px.nbytes
             + self.close_px.nbytes
             + self.atr_14.nbytes
@@ -225,8 +232,9 @@ def build_tensor_cube(
         daily_ret[1:] = np.where(close_px[:-1] > 0, (close_px[1:] / close_px[:-1]) - 1.0, 0.0)
 
     # Approximate benchmark return as universe median return where benchmark is nan
-    bench_series = pd.Series(bench_closes)
-    b_ret = bench_series.pct_change().fillna(0.0).to_numpy(dtype=np.float32)
+    bench_series = pd.Series(bench_closes).bfill().ffill().fillna(1000.0)
+    bench_closes = bench_series.to_numpy(dtype=np.float32)
+    b_ret = bench_series.pct_change(fill_method=None).fillna(0.0).to_numpy(dtype=np.float32)
     if np.isnan(b_ret).any() or (b_ret == 0.0).mean() > 0.5:
         b_ret = np.nanmedian(daily_ret, axis=1)
 
@@ -359,6 +367,7 @@ def build_tensor_cube(
         lookback_values=lookback_values,
         ema_span_values=ema_span_values,
         sector_names=unique_sectors,
+        bench_closes=bench_closes,
     )
 
     print(f"\n[CubeBuilder] Tensor Cube created: {container.memory_footprint_mb:.2f} MB RAM footprint.")

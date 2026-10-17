@@ -32,8 +32,8 @@ from typing import Optional, Tuple, Dict, Any
 
 from core.data_engine import get_base_dir, get_db_path
 
-PUBLIC_UNIVERSE_DB_FILE_ID = "1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT"
-PUBLIC_UNIVERSE_DB_URL = "https://drive.google.com/file/d/1mnaMfODbDwcdyG5NyQrLCunWKwYir1aT/view?usp=sharing"
+PUBLIC_UNIVERSE_DB_FILE_ID = "19LaJGbeVx2lx9RytT0vig0Srqc6G4Q65"
+PUBLIC_UNIVERSE_DB_URL = "https://drive.google.com/file/d/19LaJGbeVx2lx9RytT0vig0Srqc6G4Q65/view?usp=drivesdk"
 GDRIVE_UNIVERSE_PATH = Path("/content/drive/MyDrive/universe.db.gz")
 LOCAL_NVME_UNIVERSE_PATH = Path("/content/Project_MIP_Colab/data/universe.db")
 

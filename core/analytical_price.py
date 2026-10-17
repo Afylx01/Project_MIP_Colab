@@ -69,6 +69,11 @@ class CorporateActionEvent:
     status: str = "CONFIRMED"
     notes: Optional[str] = None
 
+    @property
+    def adjustment_factor(self) -> float:
+        """Institutional alias for backward adjustment factor."""
+        return float(self.factor)
+
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
         d["action_type"] = self.action_type.value

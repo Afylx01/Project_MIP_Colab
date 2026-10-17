@@ -431,7 +431,8 @@ class PydroidAutoFetch:
         sync_res = {"status": "SKIPPED", "message": "No new data"}
         missing_dates = self.get_missing_trading_dates(target_date)
         if not missing_dates:
-            self.log("No missing dates to fetch.")
+            self.log("No missing dates to fetch for universe prices. Verifying benchmark currency...")
+            bm_sync_res = self.sync_benchmark()
             conn = _de.get_connection(read_only=True, reuse=True)
             cursor = conn.cursor()
             cursor.execute("SELECT MAX(date) FROM prices;")
@@ -439,6 +440,7 @@ class PydroidAutoFetch:
             db_latest = res[0] if res and res[0] else None
             return {
                 "status": AutoFetchStatus.CURRENT.value,
+                "benchmark_status": bm_sync_res.get("status"),
                 "dates_fetched": 0,
                 "actions_applied": 0,
                 "db_latest": db_latest,

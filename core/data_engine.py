@@ -434,15 +434,30 @@ def get_expected_latest_eod(
     cal = load_trading_calendar(cal_path=cal_path)
     if cal:
         cal_set = set(cal)
-        is_today_trading = (cur_date_str in cal_set) and (cur_date_str not in KNOWN_NSE_HOLIDAYS)
+        max_cal_date = cal[-1]
         is_published = (now_ist.hour > 18) or (now_ist.hour == 18 and now_ist.minute >= 30)
 
-        if is_today_trading and is_published:
-            return cur_date_str
+        if cur_date_str <= max_cal_date:
+            is_today_trading = (cur_date_str in cal_set) and (cur_date_str not in KNOWN_NSE_HOLIDAYS)
+            if is_today_trading and is_published:
+                return cur_date_str
 
-        past_dates = [d for d in cal if d < cur_date_str and d not in KNOWN_NSE_HOLIDAYS]
-        if past_dates:
-            return past_dates[-1]
+            past_dates = [d for d in cal if d < cur_date_str and d not in KNOWN_NSE_HOLIDAYS]
+            if past_dates:
+                return past_dates[-1]
+        else:
+            # Calendar ends at max_cal_date (e.g. 2026-10-15); evaluate subsequent weekdays and statutory holidays
+            candidate = now_ist.date()
+            if not (candidate.weekday() < 5 and is_published):
+                candidate -= datetime.timedelta(days=1)
+
+            while candidate.weekday() >= 5 or candidate.strftime("%Y-%m-%d") in KNOWN_NSE_HOLIDAYS:
+                candidate -= datetime.timedelta(days=1)
+
+            candidate_str = candidate.strftime("%Y-%m-%d")
+            if candidate_str >= max_cal_date:
+                return candidate_str
+            return max_cal_date
 
     # Fallback to statutory calendar / holiday set if trading_calendar.txt is unavailable
     candidate = now_ist.date()

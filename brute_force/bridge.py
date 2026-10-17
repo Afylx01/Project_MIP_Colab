@@ -322,8 +322,27 @@ class NativeBruteForceEngine:
             c_params[i].schedule_idx = int(p.get("schedule_idx", SCHEDULE_MONTHLY))
             c_params[i].start_date_idx = int(p.get("start_date_idx", 0))
             c_params[i].end_date_idx = int(p.get("end_date_idx", 0))
-            c_params[i].lookback_idx = int(p.get("lookback_idx", 2)) # Default 252 (idx 2)
-            c_params[i].ema_idx = int(p.get("ema_idx", 3))           # Default 200 (idx 3)
+            # Dynamic resolution of lookback and EMA indices matching cube dimensions
+            max_lb_idx = max(0, len(getattr(cube, "lookback_values", [])) - 1)
+            max_ema_idx = max(0, len(getattr(cube, "ema_span_values", [])) - 1)
+
+            if "lookback" in p and hasattr(cube, "lookback_values") and p["lookback"] in cube.lookback_values:
+                c_params[i].lookback_idx = int(cube.lookback_values.index(p["lookback"]))
+            elif "lookback_idx" in p:
+                c_params[i].lookback_idx = min(max_lb_idx, max(0, int(p["lookback_idx"])))
+            elif hasattr(cube, "lookback_values") and 252 in cube.lookback_values:
+                c_params[i].lookback_idx = int(cube.lookback_values.index(252))
+            else:
+                c_params[i].lookback_idx = min(max_lb_idx, max(0, int(p.get("lookback_idx", 2))))
+
+            if "ema_trend" in p and hasattr(cube, "ema_span_values") and p["ema_trend"] in cube.ema_span_values:
+                c_params[i].ema_idx = int(cube.ema_span_values.index(p["ema_trend"]))
+            elif "ema_idx" in p:
+                c_params[i].ema_idx = min(max_ema_idx, max(0, int(p["ema_idx"])))
+            elif hasattr(cube, "ema_span_values") and 200 in cube.ema_span_values:
+                c_params[i].ema_idx = int(cube.ema_span_values.index(200))
+            else:
+                c_params[i].ema_idx = min(max_ema_idx, max(0, int(p.get("ema_idx", 3))))
             c_params[i].top_n = int(p.get("top_n", 20))
             c_params[i].exit_buffer_rank = int(p.get("exit_buffer_rank", 40))
             c_params[i].max_per_sector = int(p.get("max_per_sector", 2))
