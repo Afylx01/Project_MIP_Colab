@@ -283,7 +283,9 @@ def build_tensor_cube(
         w_factor = float(lb) / float(lb - 1)
         cov_xy = w_factor * (mean_xy - (mean_x * mean_y))
 
-        beta = np.where(var_y > 1e-8, cov_xy / var_y, 1.0)
+        safe_var_y = np.where(var_y > 1e-8, var_y, 1.0)
+        beta = np.where(var_y > 1e-8, cov_xy / safe_var_y, 1.0)
+        beta = np.nan_to_num(beta, nan=1.0, posinf=1.0, neginf=1.0)
         alpha = mean_x - (beta * mean_y)
 
         eps = stock_mat - (alpha + beta * bench_excess[:, None])

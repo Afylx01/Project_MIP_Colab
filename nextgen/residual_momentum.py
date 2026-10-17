@@ -63,7 +63,9 @@ def compute_rolling_residual_momentum(
     bm_excess_mat = np.tile(bench_excess[:, None], (1, N))
 
     cov_mat = rolling_cov.to_numpy()
-    beta = np.where(b_var_mat > 1e-8, cov_mat / b_var_mat, 1.0)
+    safe_b_var = np.where(b_var_mat > 1e-8, b_var_mat, 1.0)
+    beta = np.where(b_var_mat > 1e-8, cov_mat / safe_b_var, 1.0)
+    beta = np.nan_to_num(beta, nan=1.0, posinf=1.0, neginf=1.0)
     alpha = stock_mean.to_numpy() - (beta * b_mean_mat)
 
     # Residual return series: eps_t = R_i,t - (alpha + beta * R_m,t)

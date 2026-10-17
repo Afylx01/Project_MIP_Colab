@@ -33,9 +33,10 @@ from .grid import (
 class BruteForceCampaignRunner:
     """Orchestrates in-memory tensor cubes and multi-threaded C99 execution."""
 
-    def __init__(self, cube: Optional[TensorCubeContainer] = None, force_recompile: bool = False):
+    def __init__(self, cube: Optional[TensorCubeContainer] = None, force_recompile: bool = False, base_dir: Optional[Any] = None):
         self.engine = NativeBruteForceEngine(force_recompile=force_recompile)
         self.cube = cube
+        self.base_dir = Path(base_dir) if base_dir else None
         self._cube_universe = getattr(cube, "universe_name", None) if cube else None
         self._cube_benchmark = getattr(cube, "benchmark_name", None) if cube else None
 
@@ -432,7 +433,7 @@ class BruteForceCampaignRunner:
 
     def run_grid_preset(
         self,
-        preset: str = "tier1",
+        preset: Optional[str] = None,
         universe_name: str = "NIFTY750",
         benchmark: str = "NIFTY500",
         num_threads: int = 8,
@@ -443,10 +444,12 @@ class BruteForceCampaignRunner:
         num_random_durations: int = 6,
         duration_lengths_years: Optional[List[float]] = None,
         progress_callback: Optional[Any] = None,
+        preset_name: Optional[str] = None,
     ) -> pd.DataFrame:
         """Runs institutional pre-packaged optimization matrices (tier1, tier2, tier3, tier4)."""
+        actual_preset = preset or preset_name or "tier1"
         cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
-        preset_clean = preset.lower().replace("-", "").replace("_", "")
+        preset_clean = actual_preset.lower().replace("-", "").replace("_", "")
         has_durations = include_random_durations or ("duration" in preset_clean) or ("window" in preset_clean)
 
         if "tier1" in preset_clean or "baseline" in preset_clean:
@@ -484,7 +487,7 @@ class BruteForceCampaignRunner:
                 num_random_durations=num_random_durations,
                 duration_lengths_years=duration_lengths_years,
             )
-        elif "deep" in preset_clean or "10000" in preset_clean or "10k" in preset_clean:
+        elif "deep" in preset_clean or "10000" in preset_clean or "10k" in preset_clean or "comprehensive" in preset_clean:
             params = generate_tier3_hyperparameter_grid(
                 cube,
                 sample_size=10000,

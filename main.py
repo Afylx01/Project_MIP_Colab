@@ -87,6 +87,18 @@ def print_banner(latest_date: str):
     print(f"{C_GRAY}{'─' * 72}{C_RESET}")
 
 
+PAUSE_ON_RETURN = True
+
+
+def pause_for_menu(prompt: str = "Press Enter to return to menu..."):
+    """Pauses for user confirmation only during interactive TUI execution."""
+    if PAUSE_ON_RETURN and sys.stdin.isatty():
+        try:
+            input(f"\n{C_GRAY}{prompt}{C_RESET}")
+        except (KeyboardInterrupt, EOFError):
+            pass
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # Option [1]: Weekly Momentum Scanner (Full Suite)
 # ═══════════════════════════════════════════════════════════════════════
@@ -298,7 +310,7 @@ def run_scanner_flow(
                         use_residual_momentum=use_residual_momentum,
                     )
                 else:
-                    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+                    pause_for_menu()
                     return
             except (KeyboardInterrupt, EOFError):
                 return
@@ -309,7 +321,7 @@ def run_scanner_flow(
             print(f"{C_YELLOW}{e}{C_RESET}\n")
             if not interactive:
                 sys.exit(1)
-            input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+            pause_for_menu()
             return
 
 
@@ -373,7 +385,7 @@ def run_scanner_flow(
         print(f"{C_RED}⚠ Telegram automated dispatch encountered error: {e}{C_RESET}")
 
     if interactive:
-        input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+        pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -421,7 +433,7 @@ def run_telegram_preview():
     sender.send_message(msg, dry_run=True)
 
     print(f"\n{C_GRAY}Message Length: {len(msg):,} characters (Telegram Limit: 4,096){C_RESET}")
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -437,7 +449,7 @@ def run_telegram_dispatch():
     if not sender.is_configured():
         print(f"{C_RED}✗ Telegram credentials not configured in {BASE_DIR / '.env'}!{C_RESET}")
         print("Please edit .env and provide TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.")
-        input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+        pause_for_menu()
         return
 
     reports_dir = BASE_DIR / "reports"
@@ -493,7 +505,7 @@ def run_telegram_dispatch():
     else:
         print(f"\n{C_RED}✗ Failed to dispatch message to Telegram.{C_RESET}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -528,7 +540,7 @@ def run_visuals_generator():
     print(f"  ✓ Exported: {html_path} ({html_path.stat().st_size:,} bytes)")
 
     print(f"\n{C_GREEN}✓ All visual deliverables exported to reports/{C_RESET}")
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -582,7 +594,7 @@ def run_custom_backtest_flow(benchmark: str = "NIFTY500"):
     print(f"{C_BOLD}{'=' * 68}{C_RESET}")
     print(f"✓ Results saved to reports/backtest_results.json")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -597,7 +609,7 @@ def run_tdd_suite():
     master_runner = BASE_DIR / "tests" / "run_all_tests.py"
     subprocess.run([sys.executable, str(master_runner)])
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -668,7 +680,7 @@ def run_portfolio_orders():
     print(f"  • CSV: {csv_path}")
     print(f"  • TXT: {csv_path.with_suffix('.txt')}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -692,7 +704,7 @@ def run_auto_fetch():
 
     if not missing:
         print(f"\n{C_GREEN}✓ Universe database is already up to date!{C_RESET}")
-        input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+        pause_for_menu()
         return
 
     print(f"\n{C_YELLOW}Options:{C_RESET}")
@@ -731,7 +743,7 @@ def run_auto_fetch():
     else:
         print("Cancelled.")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -763,7 +775,7 @@ def run_sector_sync():
     except Exception as e:
         print(f"\n{C_RED}✗ Sector sync failed: {e}{C_RESET}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -784,19 +796,45 @@ def run_standalone_breadth():
     print(f"{C_BOLD} NIFTY 500 MARKET BREADTH — {latest_date}{C_RESET}")
     print(f"{C_BOLD}{'=' * 60}{C_RESET}")
 
-    regime = breadth.get('regime', 'Unknown')
-    regime_emoji = {'Bullish Expansion': '🟢', 'Selective/Neutral': '🟡', 'Contraction/Defensive': '🔴'}.get(regime, '⚪')
+    regime_raw = breadth.get('regime', 'Unknown')
+    if isinstance(regime_raw, dict):
+        regime_label = regime_raw.get('label', regime_raw.get('key', 'Unknown'))
+        regime_emoji = regime_raw.get('emoji', '⚪')
+    else:
+        regime_label = str(regime_raw)
+        regime_emoji = {'Bullish Expansion': '🟢', 'Selective/Neutral': '🟡', 'Contraction/Defensive': '🔴'}.get(regime_label, '⚪')
 
-    print(f"  Regime:             {regime_emoji} {regime}")
-    print(f"  % > 200 EMA:        {breadth.get('pct_above_ema200', 0):.1f}%")
-    print(f"  % > 50 EMA:         {breadth.get('pct_above_ema50', 0):.1f}%")
-    print(f"  % > 20 EMA:         {breadth.get('pct_above_ema20', 0):.1f}%")
-    print(f"  % Near 52w High:    {breadth.get('pct_near_52w_high_20', 0):.1f}% (within 20%)")
-    print(f"  % Near 52w High:    {breadth.get('pct_near_52w_high_5', 0):.1f}% (within 5%)")
-    print(f"  New 52w Highs:      {breadth.get('new_52w_highs', 0)}")
-    print(f"  New 52w Lows:       {breadth.get('new_52w_lows', 0)}")
-    print(f"  Net Highs-Lows:     {breadth.get('net_highs_lows', 0)}")
-    print(f"  Active Scrips:      {breadth.get('active_scrips', 0)}")
+    print(f"  Regime:             {regime_emoji} {regime_label}")
+    ema_part = breadth.get('ema_participation', {})
+    high_prox = breadth.get('high_proximity', {})
+    net_hl = breadth.get('net_highs_lows', {})
+
+    pct_200 = ema_part.get('pct_above_200_ema', breadth.get('pct_above_ema200', 0.0))
+    pct_50 = ema_part.get('pct_above_50_ema', breadth.get('pct_above_ema50', 0.0))
+    pct_20 = ema_part.get('pct_above_20_ema', breadth.get('pct_above_ema20', 0.0))
+    pct_near_20 = high_prox.get('pct_within_20pct_52wh', breadth.get('pct_near_52w_high_20', 0.0))
+    pct_near_5 = high_prox.get('pct_within_5pct_52wh', breadth.get('pct_near_52w_high_5', 0.0))
+
+    if isinstance(net_hl, dict):
+        new_highs = net_hl.get('new_52w_highs', 0)
+        new_lows = net_hl.get('new_52w_lows', 0)
+        net_highs_lows_val = net_hl.get('net_highs_lows', 0)
+    else:
+        new_highs = breadth.get('new_52w_highs', 0)
+        new_lows = breadth.get('new_52w_lows', 0)
+        net_highs_lows_val = net_hl
+
+    active_scrips = breadth.get('active_scrips', breadth.get('total_universe_symbols', 0))
+
+    print(f"  % > 200 EMA:        {pct_200:.1f}%")
+    print(f"  % > 50 EMA:         {pct_50:.1f}%")
+    print(f"  % > 20 EMA:         {pct_20:.1f}%")
+    print(f"  % Near 52w High:    {pct_near_20:.1f}% (within 20%)")
+    print(f"  % Near 52w High:    {pct_near_5:.1f}% (within 5%)")
+    print(f"  New 52w Highs:      {new_highs}")
+    print(f"  New 52w Lows:       {new_lows}")
+    print(f"  Net Highs-Lows:     {net_highs_lows_val:+d}" if isinstance(net_highs_lows_val, int) else f"  Net Highs-Lows:     {net_highs_lows_val}")
+    print(f"  Active Scrips:      {active_scrips}")
     print(f"{C_BOLD}{'=' * 60}{C_RESET}")
 
     # Save standalone report
@@ -805,7 +843,7 @@ def run_standalone_breadth():
         json.dump(breadth, f, indent=2)
     print(f"\n{C_GREEN}✓ Breadth report saved to {report_path}{C_RESET}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -855,7 +893,7 @@ def run_standalone_sector_rrg():
         json.dump(sector_results, f, indent=2, default=str)
     print(f"\n{C_GREEN}✓ Sector rotation report saved to {report_path}{C_RESET}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -941,7 +979,7 @@ def run_database_audit():
     print(f"  Audit completed in {elapsed:.2f}s")
     print(f"{C_BOLD}{'=' * 65}{C_RESET}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -988,7 +1026,7 @@ def run_etf_scanner_flow():
     top_picks_df.to_csv(csv_path, index=False)
     print(f"\n{C_GREEN}✓ ETF picks exported to: {csv_path}{C_RESET}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1037,7 +1075,7 @@ def run_delivery_analytics_flow():
         df.to_csv(csv_path, index=False)
         print(f"\n{C_GREEN}✓ Delivery metrics exported to: {csv_path}{C_RESET}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1078,7 +1116,7 @@ def run_excel_regenerator_flow():
     else:
         print(f"\n{C_RED}✗ Failed to compile Excel workbook.{C_RESET}")
 
-    input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+    pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1106,7 +1144,7 @@ def run_all_indices_batch_flow(as_of_date: Optional[str] = None, force_refresh: 
         print(f"{C_RED}Error running batch reconciliation: {e}{C_RESET}")
 
     if interactive:
-        input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+        pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1342,7 +1380,7 @@ def run_brute_force_flow(
             print(f"  C99 Kernel Latency:  {C_YELLOW}{res['sim_latency_ms']:.2f} ms{C_RESET}")
             print(f"{C_BOLD}{'=' * 68}{C_RESET}")
 
-            input(f"\n{C_GRAY}Press Enter to continue...{C_RESET}")
+            pause_for_menu("Press Enter to continue...")
 
         elif sub_choice == "2":
             print(f"\n{C_CYAN}── REBALANCE SCHEDULES COMPARISON SWEEP ──{C_RESET}")
@@ -1369,7 +1407,7 @@ def run_brute_force_flow(
                 print(f"{r['schedule'].upper():<14} {r['cagr']:>9.2f}% {r['sharpe']:>8.2f} {r['max_drawdown']:>9.1f}% {int(r['total_trades']):>8} {r['win_rate']:>9.1f}% {r['turnover_annual']:>11.1f}%")
             print(f"{C_BOLD}{'=' * 78}{C_RESET}")
 
-            input(f"\n{C_GRAY}Press Enter to continue...{C_RESET}")
+            pause_for_menu("Press Enter to continue...")
 
         elif sub_choice == "3":
             print(f"\n{C_CYAN}── MACRO ERAS HISTORICAL STRESS-TEST (7 ERAS) ──{C_RESET}")
@@ -1389,7 +1427,7 @@ def run_brute_force_flow(
                 print(f"{r['era']:<12} {desc:<32} {r['cagr']:>9.2f}% {r['sharpe']:>8.2f} {r['max_drawdown']:>9.1f}% {int(r['total_trades']):>8}")
             print(f"{C_BOLD}{'=' * 82}{C_RESET}")
 
-            input(f"\n{C_GRAY}Press Enter to continue...{C_RESET}")
+            pause_for_menu("Press Enter to continue...")
 
         elif sub_choice == "4":
             print(f"\n{C_CYAN}── SYSTEMATIC STRATEGY FILTER ABLATION (FACTOR ATTRIBUTION) ──{C_RESET}")
@@ -1408,7 +1446,7 @@ def run_brute_force_flow(
                 print(f"{r['ablation_variant']:<22} {r['cagr']:>9.2f}% {r['sharpe']:>8.2f} {r['max_drawdown']:>9.1f}% {r['win_rate']:>9.1f}% {r['turnover_annual']:>11.1f}%")
             print(f"{C_BOLD}{'=' * 82}{C_RESET}")
 
-            input(f"\n{C_GRAY}Press Enter to continue...{C_RESET}")
+            pause_for_menu("Press Enter to continue...")
 
         elif sub_choice == "5":
             print(f"\n{C_CYAN}── MONTE CARLO ROLLING WINDOWS & DEFLATED SHARPE RATIO (DSR) ──{C_RESET}")
@@ -1429,13 +1467,13 @@ def run_brute_force_flow(
             print(f"  Fraction Outperforming Index:    {C_BOLD}{(sr_c > 0.45).mean() * 100:.1f}%{C_RESET}")
             print(f"{C_BOLD}{'=' * 72}{C_RESET}")
 
-            input(f"\n{C_GRAY}Press Enter to continue...{C_RESET}")
+            pause_for_menu("Press Enter to continue...")
 
         elif sub_choice == "6":
             print(f"\n{C_CYAN}── EXECUTE COMPLETE 4-TIER OPTIMIZATION MATRIX CAMPAIGN ──{C_RESET}")
             from scripts.run_optimization_matrix import main as run_matrix_campaign
             run_matrix_campaign()
-            input(f"\n{C_GRAY}Press Enter to return to menu...{C_RESET}")
+            pause_for_menu()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1521,12 +1559,14 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Run option directly without menu (1-18)")
     parser.add_argument("--universe", type=str, default="NIFTY500",
                         help="Target universe selection (any of 36 NIFTY indices, e.g. NIFTY500, NIFTY750, NIFTYBank, NIFTYIT, ALL)")
-    parser.add_argument("--date", type=str, default=None,
+    parser.add_argument("--date", "--as-of-date", type=str, default=None, dest="date",
                         help="Target evaluation session date (YYYY-MM-DD)")
     parser.add_argument("--force-refresh", action="store_true",
                         help="Force live constituent download from niftyindices.com bypassing 30-day cache TTL")
     parser.add_argument("--scan-all-universes", action="store_true",
                         help="Execute batch scan and reconciliation across all 36 NIFTY universes")
+    parser.add_argument("--no-interactive", "--non-interactive", action="store_true", dest="no_interactive",
+                        help="Run non-interactively without prompting for input")
     parser.add_argument("--brute-force", action="store_true",
                         help="Execute blazing brute force engine directly (Option 18)")
     parser.add_argument("--brute-force-mode", type=str,
@@ -1562,6 +1602,9 @@ def build_parser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     parser = build_parser()
     args = parser.parse_args()
+
+    if args.option or args.no_interactive or not sys.stdin.isatty():
+        PAUSE_ON_RETURN = False
 
     if args.scan_all_universes:
         run_all_indices_batch_flow(as_of_date=args.date, force_refresh=args.force_refresh, interactive=False)

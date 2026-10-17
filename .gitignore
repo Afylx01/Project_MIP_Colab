@@ -43,6 +43,8 @@ reports/charts/
 reports/deliverables/
 reports/.scanner.lock
 data/bhavcopy_delivery/
+sec_bhavdata_*.csv
+data/benchmark_*.csv
 logs/*.log
 logs/*.log.*
 !reports/.gitkeep

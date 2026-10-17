@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 try:
     import ipywidgets as widgets
     from IPython.display import display, clear_output, HTML
