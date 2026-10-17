@@ -282,7 +282,8 @@ class PydroidScanner:
                         self.log(f"✓ Successfully fetched and saved {dates_fetched} new market session(s) to SQLite universe!")
                         try:
                             from scripts.cloud_sync import push_universe_to_gdrive
-                            p_ok, p_msg = push_universe_to_gdrive(verbose=True)
+                            p_res = push_universe_to_gdrive(verbose=True)
+                            p_ok = p_res[0] if isinstance(p_res, tuple) else bool(p_res)
                             gdrive_backed_up = bool(p_ok)
                         except Exception as e_push:
                             self.log(f"Drive backup notice: {e_push}")

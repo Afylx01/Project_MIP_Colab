@@ -5,7 +5,7 @@
   "source_project": "Project_MIP_Pydroid3",
   "destination_project": "MIP_Android",
   "source_scanner_sha256": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-  "migrated_scanner_sha256": "334e9f160d0c0b4f353aec7167bd4dbfc360ffb2f3cea9654afaa1f601bc87d4",
+  "migrated_scanner_sha256": "ccd5600f61f0d29583d6019e6f6726d209b7253a855c1d7ca37da2426a591495",
   "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "canonical_expected_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "fingerprint_verified": true,
@@ -140,7 +140,7 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "334e9f160d0c0b4f353aec7167bd4dbfc360ffb2f3cea9654afaa1f601bc87d4",
+      "sha256_migrated": "ccd5600f61f0d29583d6019e6f6726d209b7253a855c1d7ca37da2426a591495",
       "status": "refactored",
       "refactor_notes": "Excel workbook Telegram dispatch integration"
     },
