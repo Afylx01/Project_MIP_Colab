@@ -146,6 +146,29 @@ class TestMainBruteForceIntegration(unittest.TestCase):
         self.assertTrue(df.iloc[0]["use_vol_targeting"])
         self.assertTrue(df.iloc[0]["use_delivery_veto"])
 
+    def test_generate_tier3_expanded_factorial_grid(self):
+        """Verify expanded factorial hyperparameter grid generator produces valid large parameter spaces."""
+        from brute_force.grid import generate_tier3_hyperparameter_grid
+        from brute_force.runner import BruteForceCampaignRunner
+        runner = BruteForceCampaignRunner()
+        cube = runner.ensure_cube(universe_name="NIFTY500")
+
+        # Test classic 30,720 matrix
+        grid_classic = generate_tier3_hyperparameter_grid(cube, sample_size=30720, expanded_grid=False)
+        self.assertEqual(len(grid_classic), 30720)
+
+        # Test expanded 61,440 matrix
+        grid_expanded = generate_tier3_hyperparameter_grid(cube, sample_size=61440, expanded_grid=True)
+        self.assertEqual(len(grid_expanded), 61440)
+
+        # Test sampled expanded matrix across 1.7M space
+        grid_sampled = generate_tier3_hyperparameter_grid(cube, sample_size=1000, expanded_grid=True, include_alpha_permutations=True)
+        self.assertEqual(len(grid_sampled), 1000)
+        self.assertIn(grid_sampled[0]["schedule"], ["weekly", "monthly", "quarterly", "half_yearly", "yearly"])
+        self.assertIn("use_residual_mom", grid_sampled[0])
+        self.assertIn("use_vol_targeting", grid_sampled[0])
+        self.assertIn("use_delivery_veto", grid_sampled[0])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

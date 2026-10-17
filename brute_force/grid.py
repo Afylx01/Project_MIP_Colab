@@ -188,53 +188,97 @@ def generate_tier3_hyperparameter_grid(
     cube,
     era_key: str = "2008-2026",
     schedules: List[str] = None,
-    sample_size: int = 128000,
+    sample_size: Optional[int] = 61440,
     filter_flags: Optional[int] = None,
     use_residual_mom: bool = False,
     use_vol_targeting: bool = False,
     use_delivery_veto: bool = False,
+    expanded_grid: bool = False,
+    include_alpha_permutations: bool = False,
 ) -> List[Dict[str, Any]]:
     """
-    Tier 3: Factorial Hyperparameter Grid across Top N, Lookbacks, EMAs, Buffers, Retrace, Sector Caps.
-    Supports optional residual momentum, volatility targeting, and delivery flow overlays.
+    Tier 3: Factorial Hyperparameter Grid across Top N, Lookbacks, EMAs, Buffers, Retrace, Sector Caps, and Alphas.
+    Supports standard 61,440 full factorial matrix or expanded 1,728,000 mega factorial space.
     Produces institutional parameter sensitivity maps.
     """
-    if schedules is None:
-        schedules = ["monthly", "quarterly", "weekly"]
-
     start_dt, end_dt, era_name = MACRO_ERAS[era_key]
     s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_dt], default=0)
     e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= end_dt], default=cube.num_dates - 1)
 
-    flags = CANONICAL_FILTER_FLAGS if filter_flags is None else filter_flags
-    if use_residual_mom:
-        flags |= FILTER_RESIDUAL_MOM
-    if use_vol_targeting:
-        flags |= FILTER_VOL_TARGETING
-    if use_delivery_veto:
-        flags |= FILTER_DELIVERY_VETO
+    is_expanded = expanded_grid or (sample_size is not None and sample_size > 61440) or include_alpha_permutations
 
-    top_n_opts = [5, 10, 15, 20]
-    lookback_opts = list(range(len(LOOKBACK_VALUES)))  # 0, 1, 2, 3
-    ema_opts = list(range(len(EMA_SPAN_VALUES)))       # 0, 1, 2, 3, 4
-    buffer_opts = [10, 20, 30, 40]
-    retrace_opts = [0.70, 0.75, 0.80, 0.85]
-    sector_opts = [1, 2, 3, 99]
-    sizing_opts = ["atr_risk_parity", "equal_weight"]
-
-    full_combos = list(itertools.product(
-        schedules, top_n_opts, lookback_opts, ema_opts, buffer_opts, retrace_opts, sector_opts, sizing_opts
-    ))
-
-    # If full_combos exceeds sample_size, take random sample; else take all or cycle with jitter
-    if sample_size is not None and len(full_combos) > sample_size:
-        random.seed(42)
-        combos = random.sample(full_combos, sample_size)
+    if is_expanded:
+        if schedules is None:
+            schedules = ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]
+        top_n_opts = [5, 10, 15, 20, 25, 30]
+        lookback_opts = list(range(len(LOOKBACK_VALUES)))  # 0, 1, 2, 3
+        ema_opts = list(range(len(EMA_SPAN_VALUES)))       # 0, 1, 2, 3, 4
+        buffer_opts = [10, 15, 20, 25, 30, 40]
+        retrace_opts = [0.65, 0.70, 0.75, 0.80, 0.85, 0.90]
+        sector_opts = [1, 2, 3, 4, 99]
+        sizing_opts = ["atr_risk_parity", "equal_weight"]
+        if include_alpha_permutations:
+            alpha_opts = [
+                (False, False, False),
+                (True, False, False),
+                (False, True, False),
+                (False, False, True),
+                (True, True, False),
+                (True, False, True),
+                (False, True, True),
+                (True, True, True),
+            ]
+        else:
+            alpha_opts = [(use_residual_mom, use_vol_targeting, use_delivery_veto)]
     else:
-        combos = full_combos
+        if schedules is None:
+            schedules = ["monthly", "quarterly", "weekly"]
+        top_n_opts = [5, 10, 15, 20]
+        lookback_opts = list(range(len(LOOKBACK_VALUES)))  # 0, 1, 2, 3
+        ema_opts = list(range(len(EMA_SPAN_VALUES)))       # 0, 1, 2, 3, 4
+        buffer_opts = [10, 20, 30, 40]
+        retrace_opts = [0.70, 0.75, 0.80, 0.85]
+        sector_opts = [1, 2, 3, 99]
+        sizing_opts = ["atr_risk_parity", "equal_weight"]
+        alpha_opts = [(use_residual_mom, use_vol_targeting, use_delivery_veto)]
+
+    lens = [
+        len(schedules),
+        len(top_n_opts),
+        len(lookback_opts),
+        len(ema_opts),
+        len(buffer_opts),
+        len(retrace_opts),
+        len(sector_opts),
+        len(sizing_opts),
+        len(alpha_opts),
+    ]
+    total_combinations = 1
+    for l in lens:
+        total_combinations *= l
+
+    # If sampling requested and less than total space, perform fast indexed random sampling
+    if sample_size is not None and 0 < sample_size < total_combinations:
+        random.seed(42)
+        selected_indices = random.sample(range(total_combinations), sample_size)
+    else:
+        selected_indices = range(total_combinations)
 
     grid = []
-    for pid, (sched, tn, lb_idx, ema_idx, buf, ret, sec, sz) in enumerate(combos):
+    base_flags = CANONICAL_FILTER_FLAGS if filter_flags is None else filter_flags
+
+    for pid, idx in enumerate(selected_indices):
+        rem = idx
+        a_res, a_vol, a_veto = alpha_opts[rem % lens[8]]; rem //= lens[8]
+        sz = sizing_opts[rem % lens[7]]; rem //= lens[7]
+        sec = sector_opts[rem % lens[6]]; rem //= lens[6]
+        ret = retrace_opts[rem % lens[5]]; rem //= lens[5]
+        buf = buffer_opts[rem % lens[4]]; rem //= lens[4]
+        ema_idx = ema_opts[rem % lens[3]]; rem //= lens[3]
+        lb_idx = lookback_opts[rem % lens[2]]; rem //= lens[2]
+        tn = top_n_opts[rem % lens[1]]; rem //= lens[1]
+        sched = schedules[rem % lens[0]]
+
         p = CANONICAL_BASELINE.copy()
         p["param_id"] = pid
         p["tier"] = "TIER_3_GRID"
@@ -254,10 +298,19 @@ def generate_tier3_hyperparameter_grid(
         p["retrace_threshold"] = ret
         p["max_per_sector"] = sec
         p["sizing_mode"] = sz
-        p["filter_flags"] = flags
-        p["use_residual_mom"] = use_residual_mom
-        p["use_vol_targeting"] = use_vol_targeting
-        p["use_delivery_veto"] = use_delivery_veto
+
+        f = base_flags
+        if a_res:
+            f |= FILTER_RESIDUAL_MOM
+        if a_vol:
+            f |= FILTER_VOL_TARGETING
+        if a_veto:
+            f |= FILTER_DELIVERY_VETO
+
+        p["filter_flags"] = f
+        p["use_residual_mom"] = a_res
+        p["use_vol_targeting"] = a_vol
+        p["use_delivery_veto"] = a_veto
         grid.append(p)
     return grid
 

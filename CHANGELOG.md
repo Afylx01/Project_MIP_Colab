@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2026-10-17
 
 ### Added
+- **Massive Factorial Hyperparameter Grid Engine (1.728M Combinations & Mega/Ultra Presets)**:
+  - Expanded Tier 3 parameter search space to evaluate up to **1,728,000 distinct configurations** ($5_{\text{Schedules}} \times 6_{\text{TopN}} \times 4_{\text{Lookback}} \times 5_{\text{EMA}} \times 6_{\text{Buffer}} \times 6_{\text{Retrace}} \times 5_{\text{Sector}} \times 2_{\text{Sizing}} \times 8_{\text{Alphas}}$).
+  - Implemented $O(1)$ high-speed indexed sampling (`random.sample(range(total), sample_size)` with flat integer modulo decomposition), generating 250k or 1M parameter sets instantly without Python list allocation overhead.
+  - Added new presets:
+    - `Tier 3: Mega Factorial Matrix (250,000 runs)` (`--brute-force-mode tier3_mega`)
+    - `Tier 3: Ultra Factorial Matrix (1,000,000 runs)` (`--brute-force-mode tier3_ultra`)
+  - Supported in both CLI (`main.py`) and the interactive Colab Notebook (`notebooks/Project_MIP_Colab.ipynb`).
+- **Optional Alpha Overlays in Brute Force & Parameter Sweeps**:
+  - Integrated `use_residual_momentum`, `use_vol_targeting`, and `use_delivery_veto` as optional toggles and full 3-bit permutation sweeps ($2^3 = 8$ states) across baseline, grid, and custom sweep runners.
+  - Added CLI flags `--use-residual-momentum`, `--use-vol-targeting`, and `--use-delivery-veto` for brute-force execution.
+- **Interactive UI Cockpit Restoration in Cell 3**:
+  - Reverted Cell 3 in `notebooks/Project_MIP_Colab.ipynb` to the interactive `ipywidgets` dashboard ("run cell then select"), eliminating Google Colab Form auto-run constraints.
+  - Added dropdown options and alpha checkboxes for interactive parameter exploration.
 - **Idiosyncratic Residual Momentum in Screener (`use_residual_momentum`)**:
   - Fully integrated into `core/scanner.py`, `scripts/scanner_hardening.py`, and `main.py` CLI parser (`--use-residual-momentum`).
   - Added interactive `#@param {type:"boolean"}` toggle in **Cell 2: Live Momentum Screener Cockpit** of `Project_MIP_Colab.ipynb`.

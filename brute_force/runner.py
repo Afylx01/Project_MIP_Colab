@@ -428,6 +428,26 @@ class BruteForceCampaignRunner:
             )
         elif "tier2" in preset_clean or "ablation" in preset_clean:
             params = generate_tier2_ablation_grid(cube)
+        elif "ultra" in preset_clean or "1000000" in preset_clean or "1m" in preset_clean or "exhaustive" in preset_clean:
+            params = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=1000000,
+                use_residual_mom=use_residual_mom,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                expanded_grid=True,
+                include_alpha_permutations=True,
+            )
+        elif "mega" in preset_clean or "250000" in preset_clean or "250k" in preset_clean:
+            params = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=250000,
+                use_residual_mom=use_residual_mom,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                expanded_grid=True,
+                include_alpha_permutations=False,
+            )
         elif "deep" in preset_clean or "10000" in preset_clean or "10k" in preset_clean:
             params = generate_tier3_hyperparameter_grid(
                 cube,

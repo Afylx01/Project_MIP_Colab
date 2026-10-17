@@ -1179,7 +1179,7 @@ def run_brute_force_flow(
             df = runner.run_sweep(grid)
             print(f"Completed Tier 2 ablation sweep across {len(df)} configurations.")
             return df
-        elif mode in ("comprehensive", "tier3"):
+        elif mode in ("comprehensive", "tier3", "tier3_deep"):
             cube = runner.ensure_cube(universe_name=universe_mode)
             grid = generate_tier3_hyperparameter_grid(
                 cube,
@@ -1189,7 +1189,46 @@ def run_brute_force_flow(
                 use_delivery_veto=use_delivery_veto,
             )
             df = runner.run_sweep(grid)
-            print(f"Completed Tier 3 hyperparameter sweep across {len(df)} configurations.")
+            print(f"Completed Tier 3 Deep hyperparameter sweep across {len(df)} configurations.")
+            return df
+        elif mode == "tier3_full":
+            cube = runner.ensure_cube(universe_name=universe_mode)
+            grid = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=61440,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+            )
+            df = runner.run_sweep(grid)
+            print(f"Completed Tier 3 Full Factorial sweep across {len(df)} configurations.")
+            return df
+        elif mode == "tier3_mega":
+            cube = runner.ensure_cube(universe_name=universe_mode)
+            grid = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=250000,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                expanded_grid=True,
+            )
+            df = runner.run_sweep(grid)
+            print(f"Completed Tier 3 Mega Factorial sweep across {len(df)} configurations.")
+            return df
+        elif mode == "tier3_ultra":
+            cube = runner.ensure_cube(universe_name=universe_mode)
+            grid = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=1000000,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                expanded_grid=True,
+                include_alpha_permutations=True,
+            )
+            df = runner.run_sweep(grid)
+            print(f"Completed Tier 3 Ultra Factorial sweep across {len(df)} configurations.")
             return df
 
     # Interactive Submenu Loop
@@ -1428,7 +1467,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Execute batch scan and reconciliation across all 36 NIFTY universes")
     parser.add_argument("--brute-force", action="store_true",
                         help="Execute blazing brute force engine directly (Option 18)")
-    parser.add_argument("--brute-force-mode", type=str, choices=["baseline", "tier1", "tier2", "comprehensive", "matrix"], default="baseline",
+    parser.add_argument("--brute-force-mode", type=str,
+                        choices=["baseline", "tier1", "tier2", "comprehensive", "tier3", "tier3_deep", "tier3_full", "tier3_mega", "tier3_ultra", "matrix"],
+                        default="baseline",
                         help="Brute force execution mode (default baseline)")
     parser.add_argument("--schedule", type=str, choices=["weekly", "monthly", "quarterly", "half_yearly", "yearly"], default="monthly",
                         help="Rebalance schedule frequency (default monthly)")
