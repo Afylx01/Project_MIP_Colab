@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2026-10-17
 
 ### Added
+- **Modular `colab` Package & Minimal, Clutter-Free Notebook Architecture**:
+  - Extracted all bulky orchestration, UI rendering, tearsheet formatting, matplotlib plotting, and widget event handlers out of `Project_MIP_Colab.ipynb` into a dedicated modular package (`colab/`):
+    - `colab/environment.py`: `setup_colab_environment()` handles environment probing, drive mounting, NVMe staging, and storage latency benchmarking.
+    - `colab/screener.py`: `run_screener_view()` handles live momentum screening, Next-Gen alpha overlay notes, base64 chart rendering, and collapsible HTML tearsheets.
+    - `colab/dashboard.py`: `render_backtest_dashboard()` packages the entire 450-line interactive IPyWidgets backtesting & parallel brute force sweep dashboard into a single 1-line call.
+  - Reduced notebook code cell volume by **91%** (from 762 lines down to 73 clean lines).
+  - Dedicated TDD contract suite: `tests/test_colab_package.py` (5 tests, 100% passed).
 - **Random Time Duration Dimension (Monte Carlo Sub-Period Horizon Sweeping)**:
   - Added the **10th Dimension** to the Factorial Matrix Search Space: `generate_random_time_duration_windows()` in `brute_force/grid.py`.
   - Evaluates parameter sets across randomized multi-year horizons (1y, 2y, 3y, 5y, 7y, 10y, Full 18y) to eliminate regime-specific survivorship bias.
