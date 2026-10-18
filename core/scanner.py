@@ -756,6 +756,8 @@ class PydroidScanner:
                 diag = "Filter validation failure"
 
             reason_counter[rcode] += 1
+            res_score = float(row.get("residual_mom_score", np.nan)) if pd.notna(row.get("residual_mom_score")) else None
+            deliv_action = str(row.get("deliv_action", "APPROVED"))
             candidate_explanations.append(CandidateExplanation(
                 symbol=sym,
                 security_id=sec_id,
@@ -772,6 +774,8 @@ class PydroidScanner:
                 is_qualified=all_p,
                 reason_code=rcode,
                 diagnostic_details=diag,
+                residual_mom_score=res_score,
+                delivery_action=deliv_action,
             ))
 
         # 7. Deterministic 3-Tier Candidate Ranking & Defense-in-Depth Ranking Firewall
@@ -951,6 +955,12 @@ class PydroidScanner:
             reason_counts=dict(reason_counter),
             benchmark_info=regime_info,
             runtime_seconds=scan_runtime,
+            benchmark_name=eff_benchmark,
+            alpha_overlays={
+                "residual_momentum": bool(use_residual_momentum),
+                "vol_targeting": bool(use_vol_targeting),
+                "delivery_veto": bool(use_delivery_veto),
+            },
         )
         self.last_scan_quality = report_data
         self.quality_reporter.export_json(report_data, reports_dir / "scan_quality.json")
@@ -1048,6 +1058,11 @@ class PydroidScanner:
                     bars_df=bars,
                     chart_paths=chart_paths,
                     snap_df=snap,
+                    benchmark=eff_benchmark,
+                    use_residual_momentum=use_residual_momentum,
+                    use_vol_targeting=use_vol_targeting,
+                    use_delivery_veto=use_delivery_veto,
+                    regime_info=regime_info,
                 )
                 self.log(f"Generated 14-sheet Excel workbook: {excel_file}")
                 top_df.attrs["excel_path"] = excel_file
@@ -1116,47 +1131,58 @@ def format_screener_tearsheet(
     delivery_df: Optional[pd.DataFrame] = None,
     universe_label: Optional[str] = None,
     db_audit: Optional[Dict] = None,
+    benchmark: Optional[str] = None,
 ) -> str:
-    """Formats plain-text / ANSI terminal summary tearsheet with full v5.5.1 sections."""
+    """Formats institutional ANSI terminal summary tearsheet with modern box typography and full lineage."""
     u_str = universe_label or top_df.attrs.get("universe_label", "NIFTY 750")
+    eff_bm = benchmark or top_df.attrs.get("benchmark") or regime.get("benchmark_name", "NIFTY500")
+
     lines = []
-    lines.append("=" * 76)
-    lines.append(f" PROJECT MIP: WEEKLY MOMENTUM SCANNER TEARSHEET ({as_of_date})")
-    lines.append("=" * 76)
+    lines.append("┌────────────────────────────────────────────────────────────────────────┐")
+    lines.append("│         PROJECT MIP — QUANTITATIVE MOMENTUM SCANNER TEARSHEET          │")
+    lines.append(f"│                  Institutional Publication Edition  •  {as_of_date:<15}│")
+    lines.append("└────────────────────────────────────────────────────────────────────────┘")
 
     # 0. Database Synchronization Audit
     db_audit_info = db_audit or top_df.attrs.get("db_audit")
     if db_audit_info:
         lines.append(f"\n[0] DATABASE SYNCHRONIZATION AUDIT")
         if db_audit_info.get("is_updated"):
-            lines.append(f"  Audit Status:      UPDATED (Fresh market bars acquired)")
-            lines.append(f"  Rows Added:        +{db_audit_info.get('new_rows_added', 0):,} rows committed to SQLite")
-            lines.append(f"  Date Transition:   {db_audit_info.get('pre_latest_date')} ➔ {db_audit_info.get('post_latest_date')}")
-            lines.append(f"  Total Rows:        {db_audit_info.get('post_row_count', 0):,} rows in prices table")
+            lines.append(f"  Audit Status:        UPDATED (Fresh market bars acquired)")
+            lines.append(f"  Rows Added:          +{db_audit_info.get('new_rows_added', 0):,} rows committed to SQLite")
+            lines.append(f"  Date Transition:     {db_audit_info.get('pre_latest_date')} ➔ {db_audit_info.get('post_latest_date')}")
+            lines.append(f"  Total Rows:          {db_audit_info.get('post_row_count', 0):,} rows in prices table")
             if db_audit_info.get("gdrive_backed_up"):
-                lines.append(f"  Google Drive Sync: ✓ Backup completed to /MyDrive/MIP/universe.db")
+                lines.append(f"  Google Drive Sync:   ✓ Backup completed to /MyDrive/MIP/universe.db")
         else:
-            lines.append(f"  Audit Status:      VERIFIED UP-TO-DATE (No newer session required)")
-            lines.append(f"  Latest Session:    {db_audit_info.get('post_latest_date')}")
-            lines.append(f"  Total Rows:        {db_audit_info.get('post_row_count', 0):,} rows in prices table")
+            lines.append(f"  Audit Status:        VERIFIED UP-TO-DATE (No newer session required)")
+            lines.append(f"  Latest Session:      {db_audit_info.get('post_latest_date')}")
+            lines.append(f"  Total Rows:          {db_audit_info.get('post_row_count', 0):,} rows in prices table")
 
     # 1. Market Regime & Breadth
-    lines.append(f"\n[1] MARKET REGIME & BREADTH")
-    lines.append(f"  Target Universe:   {u_str}")
-    lines.append(f"  Benchmark Regime:  {regime.get('label', 'N/A')}")
+    lines.append(f"\n[1] MARKET REGIME & REFERENCE BENCHMARK")
+    lines.append(f"  Target Universe:     {u_str}")
+    lines.append(f"  Reference Benchmark: {eff_bm}")
+    lines.append(f"  Benchmark Regime:    {regime.get('label', 'N/A')}")
+    if regime.get("bm_close") and regime.get("bm_ema20"):
+        c = float(regime["bm_close"])
+        e = float(regime["bm_ema20"])
+        pct = ((c / max(0.01, e)) - 1.0) * 100
+        lines.append(f"  Benchmark vs 20 EMA: ₹{c:,.2f} vs ₹{e:,.2f} ({pct:+.2f}%)")
+
     b_tp = breadth.get("trend_participation", {})
     b_hp = breadth.get("high_proximity", {})
     b_nhl = breadth.get("net_highs_lows", {})
     b_reg = breadth.get("regime", {})
-    lines.append(f"  Breadth State:     {b_reg.get('label', 'N/A')}")
-    lines.append(f"  Trend Breadth:     >200 EMA: {b_tp.get('pct_above_200_ema', 0.0):.1f}% | >50 EMA: {b_tp.get('pct_above_50_ema', 0.0):.1f}% | >20 EMA: {b_tp.get('pct_above_20_ema', 0.0):.1f}%")
-    lines.append(f"  High Proximity:    Within 20% of 52wH: {b_hp.get('pct_within_20pct_52wh', 0.0):.1f}% | Within 5%: {b_hp.get('pct_within_5pct_52wh', 0.0):.1f}%")
-    lines.append(f"  52-Week Net Highs: +{b_nhl.get('new_52w_highs', 0)} / -{b_nhl.get('new_52w_lows', 0)} (Net: {b_nhl.get('net_highs_lows', 0):+d})")
+    lines.append(f"  Breadth State:       {b_reg.get('label', 'N/A')}")
+    lines.append(f"  Trend Breadth:       >200 EMA: {b_tp.get('pct_above_200_ema', 0.0):.1f}% | >50 EMA: {b_tp.get('pct_above_50_ema', 0.0):.1f}% | >20 EMA: {b_tp.get('pct_above_20_ema', 0.0):.1f}%")
+    lines.append(f"  High Proximity:      Within 20% of 52wH: {b_hp.get('pct_within_20pct_52wh', 0.0):.1f}% | Within 5%: {b_hp.get('pct_within_5pct_52wh', 0.0):.1f}%")
+    lines.append(f"  52-Week Net Highs:   +{b_nhl.get('new_52w_highs', 0)} / -{b_nhl.get('new_52w_lows', 0)} (Net: {b_nhl.get('net_highs_lows', 0):+d})")
 
     # 2. Sector Rotation Summary
     lines.append(f"\n[2] SECTOR ROTATION RANKINGS")
     lines.append(f"  {'Rank':<5}{'Sector':<14}{'1M Ret':<10}{'Alpha 1M':<11}{'>200EMA':<10}{'RRG Quad':<12}{'Top20'}")
-    lines.append("  " + "-" * 70)
+    lines.append("  " + "─" * 70)
     for s in sectors.get("sectors", [])[:6]:
         lines.append(
             f"  {s['rank']:<5}{s['sector']:<14}{s['ret_1m']:+6.2f}%   {s['alpha_1m']:+6.2f}%    "
@@ -1167,24 +1193,35 @@ def format_screener_tearsheet(
     res_mom_active = bool(top_df.attrs.get("residual_momentum_enabled")) if hasattr(top_df, "attrs") else False
     if res_mom_active:
         lines.append(f"\n[3] TOP MOMENTUM CANDIDATES (RESIDUAL MOMENTUM ACTIVE: 40% VOLAR + 60% IDIOSYNCRATIC ALPHA)")
+        lines.append(f"  {'Rank':<5}{'Symbol':<12}{'Close (₹)':<11}{'Stop Loss':<11}{'Sector':<12}{'Volar':<7}{'Res Alpha':<11}{'1Y Ret':<9}{'RRG Quad'}")
+        lines.append("  " + "─" * 84)
+        for _, row in top_df.iterrows():
+            val = float(row.get('ret_1y', 0.0))
+            ret_1y_pct = val if abs(val) > 5.0 or val == 0.0 else val * 100.0
+            sl_val = row.get('stop_loss', row['close'] * 0.94)
+            res_val = f"{float(row['residual_mom_score']):+.3f}" if pd.notna(row.get('residual_mom_score')) else "-"
+            lines.append(
+                f"  {int(row['rank']):<5}{row['symbol']:<12}{row['close']:<11.2f}{sl_val:<11.2f}{row['sector']:<12}"
+                f"{row['volar_score']:<7.2f}{res_val:<11}{ret_1y_pct:+6.1f}%   {row['rrg_quadrant']}"
+            )
     else:
         lines.append(f"\n[3] TOP 20 MOMENTUM CANDIDATES (SECTOR HARD CAP: MAX 2/SECTOR)")
-    lines.append(f"  {'Rank':<5}{'Symbol':<13}{'Close (₹)':<11}{'Stop Loss':<11}{'Sector':<12}{'Volar':<7}{'1Y Ret':<9}{'RRG Quad'}")
-    lines.append("  " + "-" * 76)
-    for _, row in top_df.iterrows():
-        val = float(row.get('ret_1y', 0.0))
-        ret_1y_pct = val if abs(val) > 5.0 or val == 0.0 else val * 100.0
-        sl_val = row.get('stop_loss', row['close'] * 0.94)
-        lines.append(
-            f"  {int(row['rank']):<5}{row['symbol']:<13}{row['close']:<11.2f}{sl_val:<11.2f}{row['sector']:<12}"
-            f"{row['volar_score']:<7.2f}{ret_1y_pct:+6.1f}%   {row['rrg_quadrant']}"
-        )
+        lines.append(f"  {'Rank':<5}{'Symbol':<13}{'Close (₹)':<11}{'Stop Loss':<11}{'Sector':<12}{'Volar':<7}{'1Y Ret':<9}{'RRG Quad'}")
+        lines.append("  " + "─" * 76)
+        for _, row in top_df.iterrows():
+            val = float(row.get('ret_1y', 0.0))
+            ret_1y_pct = val if abs(val) > 5.0 or val == 0.0 else val * 100.0
+            sl_val = row.get('stop_loss', row['close'] * 0.94)
+            lines.append(
+                f"  {int(row['rank']):<5}{row['symbol']:<13}{row['close']:<11.2f}{sl_val:<11.2f}{row['sector']:<12}"
+                f"{row['volar_score']:<7.2f}{ret_1y_pct:+6.1f}%   {row['rrg_quadrant']}"
+            )
 
     # 4. Top 7 ALL-ONE Momentify ETFs
     if top_etf_df is not None and not top_etf_df.empty:
         lines.append(f"\n[4] DEFINEDGE MOMENTIFY ALL-ONE ETF PICKS (TOP 7)")
         lines.append(f"  {'Rank':<5}{'Symbol':<13}{'Price (₹)':<11}{'Volar':<8}{'Target Qty':<12}{'Underlying Asset'}")
-        lines.append("  " + "-" * 70)
+        lines.append("  " + "─" * 70)
         for idx, (_, r) in enumerate(top_etf_df.head(7).iterrows(), 1):
             lines.append(
                 f"  {idx:<5}{r['symbol']:<13}{r['price']:<11.2f}{r['volar_score']:<8.2f}{int(r['target_qty']):<12}{r['underlying']}"
@@ -1196,14 +1233,14 @@ def format_screener_tearsheet(
         if not spikes.empty:
             lines.append(f"\n[5] TOP INSTITUTIONAL DELIVERY SPIKES (₹5Cr+)")
             lines.append(f"  {'Symbol':<14}{'Deliv %':<10}{'Deliv Times':<13}{'Deliv Value':<14}{'Action'}")
-            lines.append("  " + "-" * 64)
+            lines.append("  " + "─" * 64)
             for _, r in spikes.iterrows():
                 dt_str = f"{r['deliv_times']:.1f}x" if pd.notna(r.get('deliv_times')) else "-"
                 lines.append(
                     f"  {r['symbol']:<14}{r['deliv_per']:>6.1f}%    {dt_str:<13}₹{r['delivery_value_cr']:>6.1f} Cr     {r['deliv_action']}"
                 )
 
-    lines.append("=" * 76)
+    lines.append("════════════════════════════════════════════════════════════════════════")
     return "\n".join(lines)
 
 

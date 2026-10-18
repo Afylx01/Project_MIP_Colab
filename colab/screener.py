@@ -83,49 +83,19 @@ def run_screener_view(
     top_df, breadth, sectors, regime, top_etf, deliv = scanner.run_scan(**scan_kwargs)
     scanned_date = top_df.attrs.get("scanned_date") or db_latest
 
-    # Build tearsheet text
-    tearsheet_text = format_screener_tearsheet(top_df, breadth, sectors, regime, scanned_date)
-
-    # Build Next-Gen Alpha Overlays text
-    overlay_text = ""
-    if use_residual_momentum or use_vol_targeting or use_delivery_veto:
-        overlay_text = "\n" + "=" * 76 + "\n 🛡️ NEXT-GEN QUANTITATIVE ALPHA OVERLAYS:\n"
-        if use_residual_momentum:
-            overlay_text += "   • Idiosyncratic Residual Momentum (Blitz et al.): Active (40% Canonical Volar + 60% Idiosyncratic Alpha, 21d Reversal Excluded)\n"
-        if use_delivery_veto:
-            vetoed = top_df.attrs.get("delivery_vetoed_symbols", [])
-            if vetoed:
-                overlay_text += f"   • Microstructure Delivery Veto: Filtered {len(vetoed)} distribution candidate(s): {', '.join(vetoed)}\n"
-            else:
-                overlay_text += "   • Microstructure Delivery Veto: Active (Zero institutional distribution traps detected)\n"
-        if use_vol_targeting:
-            shield = top_df.attrs.get("shield_scalar", 1.0)
-            r_vol = top_df.attrs.get("market_realized_vol", 0.15)
-            overlay_text += f"   • Dynamic Volatility Cash Shield: Exposure scaled to {shield*100:.1f}% Equity / {(1-shield)*100:.1f}% Liquid Cash\n     (Market Realized Vol: {r_vol*100:.1f}% vs Target: 12.0%)\n"
-        overlay_text += "=" * 76 + "\n"
-
-    # Build database audit text
-    db_audit = top_df.attrs.get("db_audit")
-    audit_text = ""
-    if db_audit:
-        if db_audit.get("is_updated"):
-            audit_text = (
-                "\n" + "=" * 76 + "\n"
-                "💾 DATABASE AUDIT: 🟢 UPDATED WITH NEW MARKET SESSIONS!\n"
-                f"  • New Rows Added:  +{db_audit.get('new_rows_added', 0):,} rows committed to SQLite\n"
-                f"  • Date Transition: {db_audit.get('pre_latest_date')} ➔ {db_audit.get('post_latest_date')}\n"
-                f"  • Total Rows:      {db_audit.get('post_row_count', 0):,} rows in prices table\n"
-                + ("  • Google Drive:    ✓ Backed up to /MyDrive/MIP/universe.db.gz\n" if db_audit.get("gdrive_backed_up") else "")
-                + "=" * 76
-            )
-        else:
-            audit_text = (
-                "\n" + "=" * 76 + "\n"
-                "💾 DATABASE AUDIT: 🔵 ALREADY UP-TO-DATE (No new sessions available)\n"
-                f"  • Latest Session:  {db_audit.get('post_latest_date')}\n"
-                f"  • Total Rows:      {db_audit.get('post_row_count', 0):,} rows in prices table\n"
-                + "=" * 76
-            )
+    # Build tearsheet text with full institutional lineage & overlays
+    tearsheet_text = format_screener_tearsheet(
+        top_df=top_df,
+        breadth=breadth,
+        sectors=sectors,
+        regime=regime,
+        as_of_date=scanned_date,
+        top_etf_df=top_etf,
+        delivery_df=deliv,
+        universe_label=universe,
+        db_audit=top_df.attrs.get("db_audit"),
+        benchmark=benchmark,
+    )
 
     # Render Plot to base64 image (Dynamic sizing, prevent figure leak warning)
     chart_html = ""
@@ -134,7 +104,7 @@ def run_screener_view(
         fig = plt.figure(figsize=(10, 4.5), dpi=100)
         plot_data = top_df.head(10).sort_values("volar_score", ascending=True)
         plt.barh(plot_data["symbol"], plot_data["volar_score"], color="#00adb5")
-        plt.title(f"Top 10 Momentum Candidates [{universe}] ({scanned_date})", fontsize=12, fontweight="bold")
+        plt.title(f"Top 10 Momentum Candidates [{universe} vs {benchmark}] ({scanned_date})", fontsize=12, fontweight="bold")
         plt.xlabel("Volar Momentum Score", fontsize=10)
         plt.grid(axis="x", linestyle=":", alpha=0.5)
         plt.tight_layout()
@@ -161,11 +131,8 @@ def run_screener_view(
     # Render collapsible output (Hidden by default, reveals on click)
     full_log_text = (
         f"Market State: Latest Expected EOD: {expected_session} | Database Latest: {db_latest}\n"
-        f"Configuration: Top {top_n} | Excel: {generate_excel} | Telegram: {send_telegram} | Auto-DL: {auto_download_excel}\n\n"
+        f"Configuration: Universe: {universe} | Benchmark: {benchmark} | Top {top_n} | Excel: {generate_excel} | Telegram: {send_telegram} | Auto-DL: {auto_download_excel}\n\n"
         + tearsheet_text
-        + (("\n" + overlay_text) if overlay_text else "")
-        + "\n"
-        + audit_text
         + (f"\n\n{dl_notice}" if dl_notice else "")
     )
 

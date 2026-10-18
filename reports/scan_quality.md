@@ -1,12 +1,13 @@
 # Quantitative Scanner Quality & Lineage Report
 
-**Scan ID:** `SCAN_2026-10-16_1792268592`  
-**Execution Timestamp:** 2026-10-17 20:23:12  
+**Scan ID:** `SCAN_2026-10-16_1792297649`  
+**Execution Timestamp:** 2026-10-18 04:27:29  
 **As-Of Market Date:** 2026-10-16  
+**Reference Benchmark:** `NIFTY500`  
 **Strategy Version:** `MIP-Scanner-1.0`  
 **Scanner Version:** `2.0.0-institutional`  
 **Configuration Hash:** `6c8981f97b010ad4...`  
-**Execution Runtime:** 14.63s  
+**Execution Runtime:** 18.65s  
 
 ---
 
@@ -15,6 +16,15 @@
 - **Allow Actionable Buys:** `True`
 - **Universe Coverage:** 98.0% (49 / 50 symbols)
 - **Benchmark Status:** `BULL` (Regime: `NORMAL`)
+- **Benchmark Level vs 20 EMA:** ₹22,270.05 vs 20 EMA ₹22,256.81
+
+### Next-Gen Alpha Overlays & Risk Controls:
+
+| Overlay Dimension | Status | Formulation / Reference |
+|---|---|---|
+| **Residual Momentum** | `ACTIVE` | Blitz et al. (2011) 40% Volar / 60% Idiosyncratic Alpha |
+| **Dynamic Volatility Cash Shield** | `BYPASS` | Harvey et al. (2018) 12% Realized Target Volatility |
+| **Delivery Flow Absorption Veto** | `BYPASS` | Microstructure Distribution Spikes Veto |
 
 ### Non-Critical Health Warnings:
 - ℹ️ 1 unverified market data anomalies flagged during scan
@@ -44,8 +54,8 @@
 
 ## 3. Top Qualified Candidates
 
-| Rank | Symbol | Sector | Close (₹) | Volar Score | 1Y Return | Filter 1 | Filter 2 | Filter 3 |
+| Rank | Symbol | Sector | Close (₹) | Volar | Res Alpha | 1Y Return | Delivery Action | Status |
 |---|---|---|---|---|---|---|---|---|
-| 1 | **BAJAJ-AUTO** | AUTOMOBILE AND AUTO COMPONENTS | ₹10,405.00 | `0.69` | +15.9% | PASS | PASS | PASS |
-| 2 | **ADANIPORTS** | SERVICES | ₹1,750.80 | `0.60` | +23.0% | PASS | PASS | PASS |
-| 3 | **TECHM** | INFORMATION TECHNOLOGY | ₹1,790.00 | `0.54` | +26.4% | PASS | PASS | PASS |
+| 1 | **BAJAJ-AUTO** | AUTOMOBILE AND AUTO COMPONENTS | ₹10,405.00 | `0.69` | `+0.707` | +15.9% | APPROVED | PASS |
+| 2 | **ADANIPORTS** | SERVICES | ₹1,750.80 | `0.60` | `+0.457` | +23.0% | APPROVED | PASS |
+| 3 | **TECHM** | INFORMATION TECHNOLOGY | ₹1,790.00 | `0.54` | `+0.305` | +26.4% | APPROVED | PASS |

@@ -36,6 +36,8 @@ class CandidateExplanation:
     reason_code: str
     diagnostic_details: str
     bypassed_sector_cap: bool = False
+    residual_mom_score: Optional[float] = None
+    delivery_action: Optional[str] = "APPROVED"
 
 
 class ScanQualityReporter:
@@ -56,6 +58,8 @@ class ScanQualityReporter:
         benchmark_info: Dict[str, Any],
         runtime_seconds: float,
         scan_id: Optional[str] = None,
+        benchmark_name: Optional[str] = None,
+        alpha_overlays: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Assembles full scan quality data structure."""
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -74,6 +78,8 @@ class ScanQualityReporter:
                 "schema_version": self.config.schema_version,
                 "config_hash": self.config.get_config_hash(),
                 "runtime_seconds": round(runtime_seconds, 2),
+                "benchmark_name": benchmark_name or benchmark_info.get("benchmark_name", "NIFTY500"),
+                "alpha_overlays": alpha_overlays or {},
             },
             "universe": {
                 "universe_label": universe_label,
@@ -97,6 +103,8 @@ class ScanQualityReporter:
                     "rs_ratio": round(c.rs_ratio, 4) if c.rs_ratio else None,
                     "ret_252": round(c.ret_252, 4) if c.ret_252 else None,
                     "volar_score": round(c.volar_score, 4) if c.volar_score else None,
+                    "residual_mom_score": round(c.residual_mom_score, 4) if c.residual_mom_score is not None else None,
+                    "delivery_action": c.delivery_action,
                     "rank": c.rank,
                     "is_qualified": c.is_qualified,
                     "reason_code": c.reason_code,
@@ -127,6 +135,7 @@ class ScanQualityReporter:
             f"**Scan ID:** `{lin['scan_id']}`  ",
             f"**Execution Timestamp:** {lin['timestamp']}  ",
             f"**As-Of Market Date:** {lin['as_of_date']}  ",
+            f"**Reference Benchmark:** `{lin.get('benchmark_name', bm.get('benchmark_name', 'NIFTY500'))}`  ",
             f"**Strategy Version:** `{lin['strategy_version']}`  ",
             f"**Scanner Version:** `{lin['scanner_version']}`  ",
             f"**Configuration Hash:** `{lin['config_hash'][:16]}...`  ",
@@ -140,6 +149,22 @@ class ScanQualityReporter:
             f"- **Universe Coverage:** {univ['coverage_pct']}% ({univ['processed_symbols']} / {univ['requested_symbols']} symbols)",
             f"- **Benchmark Status:** `{bm.get('status', 'UNKNOWN')}` (Regime: `{bm.get('regime', 'UNKNOWN')}`)",
         ]
+
+        if bm.get("bm_close") and bm.get("bm_ema20"):
+            lines.append(f"- **Benchmark Level vs 20 EMA:** ₹{bm.get('bm_close', 0.0):,.2f} vs 20 EMA ₹{bm.get('bm_ema20', 0.0):,.2f}")
+
+        overlays = lin.get("alpha_overlays", {})
+        if overlays:
+            lines.extend([
+                f"",
+                f"### Next-Gen Alpha Overlays & Risk Controls:",
+                f"",
+                f"| Overlay Dimension | Status | Formulation / Reference |",
+                f"|---|---|---|",
+                f"| **Residual Momentum** | `{'ACTIVE' if overlays.get('residual_momentum') else 'BYPASS'}` | Blitz et al. (2011) 40% Volar / 60% Idiosyncratic Alpha |",
+                f"| **Dynamic Volatility Cash Shield** | `{'ACTIVE' if overlays.get('vol_targeting') else 'BYPASS'}` | Harvey et al. (2018) 12% Realized Target Volatility |",
+                f"| **Delivery Flow Absorption Veto** | `{'ACTIVE' if overlays.get('delivery_veto') else 'BYPASS'}` | Microstructure Distribution Spikes Veto |",
+            ])
 
         if hlth["reasons"]:
             lines.extend([f"", f"### Critical Health Blocking Reasons:"])
@@ -186,16 +211,18 @@ class ScanQualityReporter:
             f"",
             f"## 3. Top Qualified Candidates",
             f"",
-            f"| Rank | Symbol | Sector | Close (₹) | Volar Score | 1Y Return | Filter 1 | Filter 2 | Filter 3 |",
+            f"| Rank | Symbol | Sector | Close (₹) | Volar | Res Alpha | 1Y Return | Delivery Action | Status |",
             f"|---|---|---|---|---|---|---|---|---|",
         ])
 
         qualified = [c for c in report_data["candidates"] if c["is_qualified"] and c["rank"] is not None]
         qualified.sort(key=lambda x: x["rank"])
         for q in qualified[:25]:
+            res_str = f"{q['residual_mom_score']:+.3f}" if q.get("residual_mom_score") is not None else "N/A"
+            deliv_str = q.get("delivery_action") or "APPROVED"
             lines.append(
                 f"| {q['rank']} | **{q['symbol']}** | {q['sector']} | ₹{q['close']:,.2f} | "
-                f"`{q['volar_score']:.2f}` | {q['ret_252'] * 100:+.1f}% | PASS | PASS | PASS |"
+                f"`{q['volar_score']:.2f}` | `{res_str}` | {q['ret_252'] * 100:+.1f}% | {deliv_str} | PASS |"
             )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)

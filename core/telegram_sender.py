@@ -209,8 +209,9 @@ def format_telegram_alert(
     delivery_df: Optional[pd.DataFrame] = None,
     universe_label: str = "NIFTY 750",
     db_audit: Optional[Dict] = None,
+    benchmark_name: Optional[str] = None,
 ) -> str:
-    """Formats institutional Telegram HTML message with v5.5.1 rich sections."""
+    """Formats institutional Telegram HTML message with v5.5.2 rich sections."""
     tp = breadth.get("trend_participation", {})
     hp = breadth.get("high_proximity", {})
     nhl = breadth.get("net_highs_lows", {})
@@ -220,8 +221,16 @@ def format_telegram_alert(
     if delivery_df is not None and not delivery_df.empty:
         dmap = delivery_df.set_index("symbol").to_dict(orient="index")
 
-    msg = f"🚀 <b>MIP-1 MOMENTUM SCANNER v5.5.1</b>\n"
+    eff_bm = benchmark_name or (top_df.attrs.get("benchmark") if hasattr(top_df, "attrs") else None) or regime.get("benchmark_name", "NIFTY 500")
+
+    msg = f"🚀 <b>PROJECT MIP — MOMENTUM DESK v5.5.2</b>\n"
     msg += f"📅 <b>Date:</b> <code>{as_of_date}</code> | <b>Universe:</b> <code>{universe_label}</code>\n"
+    msg += f"📊 <b>Benchmark:</b> <code>{eff_bm}</code> ({regime.get('label', 'N/A')})\n"
+    if regime.get("bm_close") and regime.get("bm_ema20"):
+        c = float(regime["bm_close"])
+        e = float(regime["bm_ema20"])
+        pct = ((c / max(0.01, e)) - 1.0) * 100
+        msg += f"📈 <b>Benchmark 20 EMA:</b> ₹{c:,.1f} vs ₹{e:,.1f} ({pct:+.2f}%)\n"
 
     # Database synchronization status
     audit_data = db_audit or (top_df.attrs.get("db_audit") if hasattr(top_df, "attrs") else None)
@@ -232,8 +241,17 @@ def format_telegram_alert(
         else:
             msg += f"💾 <b>Database:</b> 🔵 Up-to-date (<code>{audit_data.get('post_latest_date')}</code> | {audit_data.get('post_row_count', 0):,} rows)\n"
 
-    msg += f"🛡️ <b>Benchmark Regime:</b> {regime.get('label', 'N/A')}\n"
-    msg += f"📊 <b>Market Breadth:</b> {b_reg.get('label', 'N/A')}\n\n"
+    res_mom_on = bool(top_df.attrs.get("residual_momentum_enabled")) if hasattr(top_df, "attrs") else False
+    overlays_badges = []
+    if res_mom_on:
+        overlays_badges.append("Residual Alpha (40/60 Split)")
+    if delivery_df is not None and not delivery_df.empty:
+        overlays_badges.append("Delivery Veto (Active)")
+    if overlays_badges:
+        msg += f"🛡️ <b>ALPHA OVERLAYS & RISK SHIELD:</b>\n"
+        msg += f"• <code>{' | '.join(overlays_badges)}</code>\n\n"
+    else:
+        msg += "\n"
 
     # Breadth Metrics
     msg += f"📈 <b>BREADTH & TREND PARTICIPATION</b>\n"
@@ -250,8 +268,8 @@ def format_telegram_alert(
         msg += f"{s['rank']:<4}{s['sector']:<11}{s['ret_1m']:+5.1f}%  {s['alpha_1m']:+5.1f}%  {s['breadth_200_pct']:4.0f}%\n"
     msg += "</pre>\n"
 
-    # Top 10 Stocks with TradingView hyperlinks and delivery tags
-    msg += f"🏆 <b>TOP MOMENTUM STOCKS (Volar Ranking)</b>\n"
+    # Top 10 Stocks with TradingView hyperlinks, residual alpha, and delivery tags
+    msg += f"🏆 <b>TOP MOMENTUM STOCKS ({'Residual Alpha' if res_mom_on else 'Volar'} Ranking)</b>\n"
     for idx, (_, r) in enumerate(top_df.head(10).iterrows(), 1):
         sym = r["symbol"]
         px = float(r.get("close", 0.0))
@@ -263,13 +281,19 @@ def format_telegram_alert(
         d_info = dmap.get(sym, {})
         d_per = d_info.get("deliv_per")
         d_times = d_info.get("deliv_times")
+        act = d_info.get("deliv_action", "")
+        act_badge = " 🟢" if "ACCUMULATION" in act else (" 🔴" if "DISTRIBUTION" in act else "")
         d_str = ""
         if d_per is not None and pd.notna(d_per):
-            d_str = f" | Deliv: <code>{d_per:.0f}%</code>"
+            d_str = f" | Deliv: <code>{d_per:.0f}%</code>{act_badge}"
             if d_times is not None and pd.notna(d_times) and d_times >= 1.5:
                 d_str += f" (<b>{d_times:.1f}x</b>)"
 
-        msg += f"<code>{idx:02d}.</code> <a href=\"{tv_url}\"><b>{sym}</b></a> — ₹{px:,.1f} | Volar: <code>{volar:.2f}</code> | 1Y: <code>{ret_1y:+.1f}%</code>{d_str}\n"
+        res_str = ""
+        if pd.notna(r.get("residual_mom_score")):
+            res_str = f" | Res: <code>{float(r['residual_mom_score']):+.2f}</code>"
+
+        msg += f"<code>{idx:02d}.</code> <a href=\"{tv_url}\"><b>{sym}</b></a> — ₹{px:,.1f} | Volar: <code>{volar:.2f}</code>{res_str} | 1Y: <code>{ret_1y:+.1f}%</code>{d_str}\n"
 
     # Top 5 Momentify ALL-ONE ETFs
     if top_etf_df is not None and not top_etf_df.empty:

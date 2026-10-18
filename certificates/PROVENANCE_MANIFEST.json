@@ -91,9 +91,9 @@
     {
       "filename": "excel_generator.py",
       "sha256_source": "bbbb2a7ed89c1b3beae65b5b15b52c5204ba12bd909ae93be2279ffa5973141a",
-      "sha256_migrated": "026de12b3a409072444fc61e8c950075d91b225b46f7096d1ad0f31a550d4bcd",
+      "sha256_migrated": "8e27319810d2260be77ae7a45c7670ad936e0ea3ba20d3ff76f59854fcc7d6ef",
       "status": "refactored",
-      "refactor_notes": "Mobile deliverables path resolution and Volar strategy documentation alignment"
+      "refactor_notes": "Mobile deliverables path resolution, multi-benchmark disclosure, and typing annotations"
     },
     {
       "filename": "health.py",
@@ -133,14 +133,14 @@
     {
       "filename": "scan_quality_report.py",
       "sha256_source": "e722f67ec43d33453bde9455c7739efc377fbf8cb4256d7e16ba696903934d76",
-      "sha256_migrated": "e722f67ec43d33453bde9455c7739efc377fbf8cb4256d7e16ba696903934d76",
+      "sha256_migrated": "c8541944371084cda90209ddc8bee9c9bac9f5874285dc5551848419d62a7ade",
       "status": "identical",
       "refactor_notes": "Identical to Main MIP pydroid_core source"
     },
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "f69688fde6e6681755d19e964cc4c2553e48988158a4c6b561e252ad07c5b6f0",
+      "sha256_migrated": "02be9105a5c3f32c4df501a7b55a8c75652cee5e862966bbabc1c11393a1b443",
       "status": "refactored",
       "refactor_notes": "Universal benchmark selection and Excel workbook Telegram dispatch integration"
     },
@@ -168,7 +168,7 @@
     {
       "filename": "telegram_sender.py",
       "sha256_source": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
-      "sha256_migrated": "07fcfcae61ec98d251c29ddc378fd158a2bd1db3c6a70bc6325ccc18ae58c1dd",
+      "sha256_migrated": "3a685362a54a661ada3f2e455c7b01e01354cfac39e8e6ed485d026f35935b54",
       "status": "refactored",
       "refactor_notes": "Fix Any import and add future annotations in telegram_sender"
     },

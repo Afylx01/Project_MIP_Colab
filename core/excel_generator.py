@@ -17,12 +17,13 @@ Generates the complete 12-sheet institutional Excel workbook:
  12. Configuration (System calibration and engine specifications)
  13. Charts (High-resolution, proportional embedded visual graphics)
 """
+from __future__ import annotations
 
 import os
 import shutil
 import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 import numpy as np
 
@@ -74,6 +75,11 @@ class InstitutionalExcelGenerator:
         bars_df: Optional[pd.DataFrame] = None,
         chart_paths: Optional[Dict[str, Path]] = None,
         snap_df: Optional[pd.DataFrame] = None,
+        benchmark: str = "NIFTY500",
+        use_residual_momentum: bool = True,
+        use_vol_targeting: bool = False,
+        use_delivery_veto: bool = True,
+        regime_info: Optional[Dict[str, Any]] = None,
     ) -> Path:
         """Assembles and formats all 14 sheets into the destination Excel file."""
         u_slug = str(universe_label).strip().replace(" ", "").replace("(", "").replace(")", "").replace("-", "_")
@@ -100,20 +106,32 @@ class InstitutionalExcelGenerator:
 
         # 1. Build DataFrame tabs
         dash_meta, dash_rot, dash_rrg, dash_stk, dash_etf, layout = self._build_dashboard_frames(
-            as_of_date, screener_df, top_candidates_df, breadth_data, sector_data, top_etf_df, market_bullish, universe_label
+            as_of_date, screener_df, top_candidates_df, breadth_data, sector_data, top_etf_df, market_bullish, universe_label,
+            benchmark=benchmark, use_residual_momentum=use_residual_momentum, use_vol_targeting=use_vol_targeting,
+            use_delivery_veto=use_delivery_veto, regime_info=regime_info
         )
         rat_df = self._build_strategy_rationale_df(screener_df)
         sec_df = self._build_sector_rotation_df(sector_data, screener_df)
         ind_df = self._build_industry_ranking_df(sector_data, screener_df)
         hist_df = self._build_industry_history_df(as_of_date, bars_df)
-        stock_df = self._build_stock_ranking_df(screener_df, delivery_df, sector_data)
-        cand_df = self._build_candidates_df(top_candidates_df, delivery_df, market_bullish, sector_data)
+        stock_df = self._build_stock_ranking_df(
+            screener_df, delivery_df, sector_data, benchmark=benchmark,
+            use_residual_momentum=use_residual_momentum, use_delivery_veto=use_delivery_veto
+        )
+        cand_df = self._build_candidates_df(
+            top_candidates_df, delivery_df, market_bullish, sector_data, benchmark=benchmark,
+            use_residual_momentum=use_residual_momentum, use_delivery_veto=use_delivery_veto
+        )
         deliv_sheet_df = self._build_highest_delivery_df(delivery_df, screener_df)
         etf_sheet_df = self._build_etf_ranking_df(etf_ranking_df)
         perf_sum, perf_det = self._build_picks_performance_df()
         breadth_hist_df = self._build_breadth_history_df(as_of_date, bars_df, universe_label)
         raw_metrics_df = self._build_raw_metrics_df(snap_df)
-        config_df = self._build_config_df(as_of_date, excel_path, universe_label)
+        config_df = self._build_config_df(
+            as_of_date, excel_path, universe_label, benchmark=benchmark,
+            use_residual_momentum=use_residual_momentum, use_vol_targeting=use_vol_targeting,
+            use_delivery_veto=use_delivery_veto, regime_info=regime_info
+        )
 
         # 2. Write raw sheets using pd.ExcelWriter
         with pd.ExcelWriter(str(excel_path), engine="openpyxl") as writer:
@@ -156,7 +174,12 @@ class InstitutionalExcelGenerator:
             chart_paths=chart_paths,
             universe_label=universe_label,
             breadth_data=breadth_data,
-            top_candidates_df=top_candidates_df
+            top_candidates_df=top_candidates_df,
+            benchmark=benchmark,
+            use_residual_momentum=use_residual_momentum,
+            use_vol_targeting=use_vol_targeting,
+            use_delivery_veto=use_delivery_veto,
+            regime_info=regime_info,
         )
 
         # Copy to canonical path and deliverables
@@ -171,7 +194,22 @@ class InstitutionalExcelGenerator:
 
         return excel_path
 
-    def _build_dashboard_frames(self, as_of_date, screener_df, top_candidates_df, breadth_data, sector_data, top_etf_df, market_bullish, universe_label="NIFTY 500"):
+    def _build_dashboard_frames(
+        self,
+        as_of_date,
+        screener_df,
+        top_candidates_df,
+        breadth_data,
+        sector_data,
+        top_etf_df,
+        market_bullish,
+        universe_label="NIFTY 500",
+        benchmark="NIFTY500",
+        use_residual_momentum=True,
+        use_vol_targeting=False,
+        use_delivery_veto=True,
+        regime_info=None,
+    ):
         tp = breadth_data.get("trend_participation", {})
         hp = breadth_data.get("high_proximity", {})
         nhl = breadth_data.get("net_highs_lows", {})
@@ -180,8 +218,30 @@ class InstitutionalExcelGenerator:
         meta_items = [
             ("Scan Date", as_of_date),
             ("Market Regime", regime_label),
+            ("Reference Benchmark", f"{benchmark} (Reference Index & Regime Anchor)"),
             ("Target Universe", f"{universe_label} Survivorship-Free PIT Universe"),
             ("Ranking Metric", "Volar Score (Smooth Return / Realized Annualized Volatility)"),
+        ]
+
+        if regime_info and "bm_close" in regime_info and "bm_ema20" in regime_info:
+            c = float(regime_info['bm_close'])
+            e = float(regime_info['bm_ema20'])
+            pct = ((c / max(0.01, e)) - 1.0) * 100
+            meta_items.append(("Benchmark vs 20 EMA", f"₹{c:,.2f} vs ₹{e:,.2f} ({pct:+.2f}%)"))
+
+        overlays_summary = []
+        if use_residual_momentum:
+            overlays_summary.append("Residual Momentum (40% Volar / 60% Idiosyncratic Alpha)")
+        if use_vol_targeting:
+            bm_vol_str = f" | Realized Vol: {regime_info.get('bm_vol', 0.15)*100:.1f}%" if (regime_info and 'bm_vol' in regime_info) else ""
+            overlays_summary.append(f"Vol Target Shield (12% Target{bm_vol_str})")
+        if use_delivery_veto:
+            overlays_summary.append("Delivery Veto (5D Spikes with Negative Return)")
+        if not overlays_summary:
+            overlays_summary.append("Bypass (100% Canonical Volar)")
+
+        meta_items.extend([
+            ("Alpha Overlays", " | ".join(overlays_summary)),
             ("Target Holdings", "Top 20 Scrips (Empirical Institutional Sweet Spot)"),
             ("Sector Hard Cap", "Max 2 Stocks per Sector (Strict Anti-Clustering Rule)"),
             ("Position Sizing Mode", "ATR-14 Volatility Risk Parity (1% Risk Budget per Trade)"),
@@ -189,8 +249,8 @@ class InstitutionalExcelGenerator:
             ("Market Breadth (>50 EMA)", f"{tp.get('pct_above_50_ema', 0.0):.1f}%"),
             ("Near 52w High (Within 20%)", f"{hp.get('pct_within_20pct_52wh', 0.0):.1f}%"),
             ("52w Net Highs", f"+{nhl.get('new_52w_highs', 0)} / -{nhl.get('new_52w_lows', 0)} (Net: {nhl.get('net_highs_lows', 0):+d})"),
-            ("Strategy Rationale", "See 'Strategy Rationale' tab for empirical 5-year factorial proofs"),
-        ]
+            ("Strategy Rationale", "See 'Strategy Rationale' tab for empirical factorial proofs & academic citations"),
+        ])
         dash_meta = pd.DataFrame(meta_items, columns=["System Dimension", "Parameter / Value"])
 
         # Sectors
@@ -229,16 +289,19 @@ class InstitutionalExcelGenerator:
         cands = top_candidates_df.head(20) if not top_candidates_df.empty else screener_df.head(20)
         for idx, (_, r) in enumerate(cands.iterrows(), 1):
             sym = r["symbol"]
-            stk_rows.append({
+            row_dict = {
                 "Rank": idx,
                 "Symbol": sym,
                 "Sector": r.get("sector", "OTHER"),
                 "Close Price": round(float(r.get("close", 0.0)), 2),
                 "Volar Score": round(float(r.get("volar_score", 0.0)), 3),
-                "1Y Ret %": round(float(r.get("ret_1y", 0.0) if abs(float(r.get("ret_1y", 0.0))) > 5.0 or float(r.get("ret_1y", 0.0)) == 0.0 else float(r.get("ret_1y", 0.0)) * 100), 1),
-                "RRG": r.get("rrg_quadrant", "WEAKENING"),
-                "TradingView": f"https://in.tradingview.com/chart/?symbol=NSE:{sym}",
-            })
+            }
+            if use_residual_momentum:
+                row_dict["Res Alpha"] = round(float(r.get("residual_mom_score", 0.0)), 3) if pd.notna(r.get("residual_mom_score")) else "-"
+            row_dict["1Y Ret %"] = round(float(r.get("ret_1y", 0.0) if abs(float(r.get("ret_1y", 0.0))) > 5.0 or float(r.get("ret_1y", 0.0)) == 0.0 else float(r.get("ret_1y", 0.0)) * 100), 1)
+            row_dict["RRG"] = r.get("rrg_quadrant", "WEAKENING")
+            row_dict["TradingView"] = f"https://in.tradingview.com/chart/?symbol=NSE:{sym}"
+            stk_rows.append(row_dict)
         dash_stk = pd.DataFrame(stk_rows) if stk_rows else pd.DataFrame(columns=["Rank", "Symbol", "Sector", "Close Price", "Volar Score", "1Y Ret %", "RRG", "TradingView"])
 
         # Top 7 ETFs
@@ -304,7 +367,13 @@ class InstitutionalExcelGenerator:
             ("Disqualified Setting", "Why People Try It", "Fatal Flaw Identified in Backtesting", "Verdict"),
             ("5-Stock Portfolio", "Greed for hyper-concentration", "High idiosyncratic risk: a single bad stock crushes the portfolio. Max drawdown hits -41.52%.", "TRASH (Reckless Concentration)"),
             ("Quarterly Rebalancing", "Desire to minimize brokerage", "Momentum in India decays after 40-60 days. Holds declining stocks for 3 months, halving CAGR.", "TRASH (Decaying Momentum)"),
-            ("52-Week High Proximity", "Classic retail breakout indicator", "Triggers 568% annual turnover on false breakouts; underperforms buy-and-hold index.", "TRASH (High Churn / Low Alpha)")
+            ("52-Week High Proximity", "Classic retail breakout indicator", "Triggers 568% annual turnover on false breakouts; underperforms buy-and-hold index.", "TRASH (High Churn / Low Alpha)"),
+            ("=== 4. NEXT-GENERATION INSTITUTIONAL ALPHA OVERLAYS (ACADEMIC LITERATURE) ===", "", "", ""),
+            ("Overlay / Dimension", "Institutional Precedent & Paper", "Mathematical Formulation", "Empirical Value-Add (Sharpe & Drawdown)"),
+            ("Idiosyncratic Residual Momentum", "Blitz, Huij & Martens (2011, J. Empirical Finance); Blitz et al. (2020)", "R_i,t = alpha_i + beta_i * R_m,t + eps_i,t. Residual alpha removes market factor risk.", "Eliminates time-varying beta whipsaws and halves momentum drawdowns during market reversals."),
+            ("EWMA Volatility Cash Shield", "Harvey, Hoyle, Russell et al. (2018); Moreira & Muir (2017, J. Finance)", "Target Vol = 12.0%. Cash allocation scales dynamically when benchmark realized volatility surges.", "Limits severe tail-risk losses during market regime transitions while remaining fully invested in tranquil bull markets."),
+            ("Microstructure Delivery Veto", "NSE Security-Wise Delivery Volume Analysis; Institutional Flow Studies", "Vetoes candidates with >1.5x 5-day delivery surge accompanied by negative daily returns.", "Protects against institutional distribution traps where smart money unloads positions into retail breakout liquidity."),
+            ("Universal Multi-Benchmark Selection", "SEBI / Institutional Custom Mandate Compliance", "Calculates Relative Strength & Regime Gating against user-selected reference benchmarks (NIFTY 50, 750, Sectors).", "Aligns portfolio hurdles precisely with the investor's opportunity set or sectoral mandate.")
         ]
         return pd.DataFrame(rows, columns=["Parameter / Factor", "Setting / Evidence", "Quant Rationale (ELI5)", "Empirical Proof / Verdict"])
 
@@ -436,7 +505,7 @@ class InstitutionalExcelGenerator:
         hist = hist.rename(columns={"date": "Date", "sector": "Sector"})
         return hist.sort_values(by=["Date", "Sector"], ascending=[False, True]).reset_index(drop=True)
 
-    def _build_stock_ranking_df(self, screener_df, delivery_df, sector_data=None):
+    def _build_stock_ranking_df(self, screener_df, delivery_df, sector_data=None, benchmark="NIFTY500", use_residual_momentum=True, use_delivery_veto=True):
         dmap = {}
         if delivery_df is not None and not delivery_df.empty:
             dmap = delivery_df.set_index("symbol").to_dict(orient="index")
@@ -481,16 +550,22 @@ class InstitutionalExcelGenerator:
 
             dd = round(float(r.get("drawdown_from_high", 0.0) or (1.0 - px / max(0.01, float(r.get("high_252", px)))) * 100), 1)
 
+            res_alpha = round(float(r.get("residual_mom_score", 0.0)), 4) if pd.notna(r.get("residual_mom_score")) else np.nan
+            deliv_action = d_info.get("deliv_action", "⚪ NEUTRAL")
+
             rows.append({
                 "Rank (MIP-1)": idx,
                 "Rank (Industry-Aware)": idx,
                 "Symbol": sym,
+                "Benchmark": benchmark,
                 "Industry": ind,
                 "Price": round(px, 2),
                 "252D Return %": ret_1y_pct,
                 "Volar Score": round(volar, 4),
+                "Residual Alpha": res_alpha,
                 "From 52w High %": dd,
                 "Vs EMA-200 %": round(pct_ema200, 1),
+                "Delivery Action": deliv_action,
                 "Delivery %": round(float(d_info.get("deliv_per", d_info.get("delivery_pct", np.nan))), 1) if pd.notna(d_info.get("deliv_per", d_info.get("delivery_pct", np.nan))) else np.nan,
                 "Delivery Qty": int(d_info.get("deliv_qty", d_info.get("delivery_qty", 0))) if pd.notna(d_info.get("deliv_qty", d_info.get("delivery_qty", np.nan))) else np.nan,
                 "Delivery Times (5D)": round(float(d_info.get("deliv_times", d_info.get("delivery_multiple_5d", np.nan))), 1) if pd.notna(d_info.get("deliv_times", d_info.get("delivery_multiple_5d", np.nan))) else np.nan,
@@ -499,6 +574,7 @@ class InstitutionalExcelGenerator:
                 "Turnover 30d (₹Cr, display-only)": to_30_cr,
                 "Liquidity Flag (display-only)": liq,
                 "Sanity Flag (display-only)": san,
+                "RS vs Benchmark": round(float(r.get("rs_ratio_raw", r.get("rrg_rs_ratio", 100.0))), 2),
                 "RS Ratio": round(float(r.get("rs_ratio_raw", r.get("rrg_rs_ratio", 100.0))), 2),
                 "RS EMA": round(float(r.get("rs_ema_200", 100.0)), 2),
                 "Ann Vol %": round(float(r.get("vol_252", 0.0)) * 100.0 if float(r.get("vol_252", 0.0)) < 2.0 else float(r.get("vol_252", 0.0)), 1),
@@ -513,7 +589,7 @@ class InstitutionalExcelGenerator:
             })
         return pd.DataFrame(rows)
 
-    def _build_candidates_df(self, top_candidates_df, delivery_df, market_bullish, sector_data=None):
+    def _build_candidates_df(self, top_candidates_df, delivery_df, market_bullish, sector_data=None, benchmark="NIFTY500", use_residual_momentum=True, use_delivery_veto=True):
         dmap = {}
         if delivery_df is not None and not delivery_df.empty:
             dmap = delivery_df.set_index("symbol").to_dict(orient="index")
@@ -565,10 +641,13 @@ class InstitutionalExcelGenerator:
                     tier = f"HOLD (BEAR - {tier})"
 
             status = "HOLD (BEAR - 100% CASH)" if is_bear else "NEW BUY"
+            res_alpha = round(float(r.get("residual_mom_score", 0.0)), 4) if pd.notna(r.get("residual_mom_score")) else np.nan
+            deliv_action = d_info.get("deliv_action", "⚪ NEUTRAL")
 
             rows.append({
                 "Rank": idx,
                 "Symbol": sym,
+                "Benchmark": benchmark,
                 "Industry": ind,
                 "Price": round(px, 2),
                 "MIP-1 Status": status,
@@ -577,11 +656,14 @@ class InstitutionalExcelGenerator:
                 "Risk Budget (₹)": round(qty * (px - sl), 2) if qty > 0 else 0.0,
                 "Target Qty (₹1L Portfolio)": qty,
                 "Target Value (₹)": round(qty * px, 2),
+                "Delivery Action": deliv_action,
                 "Delivery %": round(float(d_info.get("deliv_per", d_info.get("delivery_pct", np.nan))), 1) if pd.notna(d_info.get("deliv_per", d_info.get("delivery_pct", np.nan))) else np.nan,
                 "Delivery Qty": int(d_info.get("deliv_qty", d_info.get("delivery_qty", 0))) if pd.notna(d_info.get("deliv_qty", d_info.get("delivery_qty", np.nan))) else np.nan,
                 "Delivery Times (5D)": round(float(d_info.get("deliv_times", d_info.get("delivery_multiple_5d", np.nan))), 1) if pd.notna(d_info.get("deliv_times", d_info.get("delivery_multiple_5d", np.nan))) else np.nan,
                 "Delivery Value (₹Cr)": round(float(d_info.get("delivery_value_cr", np.nan)), 2) if pd.notna(d_info.get("delivery_value_cr", np.nan)) else np.nan,
                 "Volar": round(volar, 4),
+                "Residual Alpha": res_alpha,
+                "RS vs Benchmark": round(float(r.get("rs_ratio_raw", 1.0)), 4),
                 "Extension": ext,
                 "Liquidity": liq,
                 "Sanity": san,
@@ -890,21 +972,38 @@ class InstitutionalExcelGenerator:
         b_hist = b_hist.rename(columns={"date": "Date"})
         return b_hist.sort_values(by="Date", ascending=False).reset_index(drop=True)
 
-    def _build_config_df(self, as_of_date, excel_path, universe_label="NIFTY 500"):
+    def _build_config_df(
+        self,
+        as_of_date,
+        excel_path,
+        universe_label="NIFTY 500",
+        benchmark="NIFTY500",
+        use_residual_momentum=True,
+        use_vol_targeting=False,
+        use_delivery_veto=True,
+        regime_info=None,
+    ):
+        bm_vol_str = f" | Realized Benchmark Vol: {regime_info.get('bm_vol', 0.15)*100:.1f}%" if (regime_info and 'bm_vol' in regime_info) else ""
         rows = [
-            ("Scanner Version", "v5.5.1 (Institutional Quant Edition — Empirical Optimal Settings & Strategy Rationale)"),
+            ("Scanner Version", "v5.5.2 (Institutional Quant Edition — Empirical Optimal Settings & Academic Lineage)"),
             ("Storage Mode", "Zero-Compiler SQLite3 (universe.db) + Indexed Parity"),
-            ("Universe(s)", f"{universe_label}  (NIFTY 500 Recommended Liquid Sphere)"),
-            ("Empirical Reference", "Calibrated via 150-cell grid backtest (2021-2026). See 'Strategy Rationale' sheet."),
+            ("Universe(s)", f"{universe_label} (Survivorship-Free PIT Sphere)"),
+            ("Reference Benchmark", f"{benchmark} (User-Selected Reference Index & Regime Gate)"),
+            ("Empirical Reference", "Calibrated via multi-schedule full factorial grid. See 'Strategy Rationale' sheet."),
             ("Ranking Metric (MIP-1)", "volar"),
             ("N Stocks", 20),
             ("Retracement %", 20),
             ("EMA Period", 200),
             ("RS Filter", True),
             ("Market Filter MA", 20),
-            ("Market Filter Benchmark", "^NSEI (regime filter uses the RS benchmark — original MIP-1 behavior)"),
+            ("Market Filter Benchmark", f"{benchmark} (User-Selected Reference Benchmark)"),
             ("Momentum (Volar) Lookback", 252),
-            ("RS Benchmark", "^NSEI"),
+            ("RS Benchmark", str(benchmark)),
+            ("--- NEXT-GEN QUANTITATIVE ALPHA OVERLAYS ---", "---"),
+            ("Residual Momentum Overlay", "ACTIVE (40% Canonical Volar + 60% Idiosyncratic Alpha, 21d Reversal Excluded)" if use_residual_momentum else "BYPASS (100% Canonical Volar)"),
+            ("Dynamic Volatility Cash Shield", f"ACTIVE (Target Vol: 12.0%{bm_vol_str})" if use_vol_targeting else "BYPASS (100% Equity Allocation)"),
+            ("Institutional Delivery Veto", "ACTIVE (Filters >1.5x 5D delivery spikes with negative return)" if use_delivery_veto else "BYPASS (Unfiltered)"),
+            ("Universal Benchmark Resolver", f"Loaded via core.benchmark_validator (Catalog: {benchmark})"),
             ("Data Source", "Zero-Compiler SQLite3 + NSE Bhavcopy archives (Pure-Python Zero-CLI)"),
             ("Deep Seed Start", "2024-01-01"),
             ("Corporate-Action Watchdog (NEW v5.4.4)", "overlapping closes checked before anti-join; stable ratio≠1 (split/div) or unstable ratio → full-history refetch per symbol"),
@@ -957,6 +1056,11 @@ class InstitutionalExcelGenerator:
         universe_label: str = "NIFTY 500",
         breadth_data: Optional[dict] = None,
         top_candidates_df: Optional[pd.DataFrame] = None,
+        benchmark: str = "NIFTY500",
+        use_residual_momentum: bool = True,
+        use_vol_targeting: bool = False,
+        use_delivery_veto: bool = True,
+        regime_info: Optional[Dict[str, Any]] = None,
     ):
         """Applies institutional Bloomberg/FactSet typography, card layouts, formatting, and embedded charts."""
         wb = openpyxl.load_workbook(str(excel_path))
@@ -992,7 +1096,11 @@ class InstitutionalExcelGenerator:
 
                     # Intelligent Number Formatting & Semantic Color Coding
                     if isinstance(val, (int, float)):
-                        if "%" in h_val or "return" in h_val or "alpha" in h_val or "excess" in h_val:
+                        if "residual alpha" in h_val:
+                            cell.alignment = Alignment(horizontal="right", vertical="center")
+                            cell.number_format = '+0.000;-0.000;0.000'
+                            cell.font = Font(name="Arial", size=9.5, color="047857" if val >= 0 else "BE123C", bold=(abs(val) >= 1.0))
+                        elif "%" in h_val or "return" in h_val or "alpha 1m" in h_val or "alpha 3m" in h_val or "excess" in h_val:
                             cell.alignment = Alignment(horizontal="right", vertical="center")
                             cell.number_format = '+#,##0.0"%";-#,##0.0"%";"0.0%"'
                             cell.font = Font(name="Arial", size=9.5, color="047857" if val >= 0 else "BE123C", bold=(abs(val) >= 5.0))
@@ -1096,7 +1204,7 @@ class InstitutionalExcelGenerator:
         regime_txt = "BULL (Trend Aligned: Entries Active)" if market_bullish else "BEAR (Defensive Cash Protection Active)"
         regime_fill = GREEN_COLOR if market_bullish else RED_COLOR
         ws_dash.merge_cells("A2:K2")
-        ws_dash["A2"] = f"Scan Date: {as_of_date}  |  Target Universe: {universe_label}  |  Market Regime: {regime_txt}"
+        ws_dash["A2"] = f"Scan Date: {as_of_date}  |  Target Universe: {universe_label}  |  Benchmark: {benchmark}  |  Market Regime: {regime_txt}"
         ws_dash["A2"].font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
         ws_dash["A2"].fill = PatternFill("solid", fgColor=regime_fill)
         ws_dash["A2"].alignment = Alignment(horizontal="left", vertical="center")
@@ -1115,11 +1223,19 @@ class InstitutionalExcelGenerator:
             top_sym = top_candidates_df.iloc[0]["symbol"]
             top_volar = float(top_candidates_df.iloc[0].get("volar_score", 0.0))
 
+        bm_sub = f"{benchmark} vs 20 EMA Gate"
+        if regime_info and "bm_close" in regime_info and "bm_ema20" in regime_info:
+            bm_sub = f"{benchmark} (₹{regime_info['bm_close']:,.0f} vs 20EMA ₹{regime_info['bm_ema20']:,.0f})"
+
+        card4_sub = f"ATR-14 Risk Parity | {'RESIDUAL' if use_residual_momentum else 'VOLAR'}"
+        if use_delivery_veto:
+            card4_sub += " | Veto: ON"
+
         kpi_cards = [
-            ("A4", "B6", "MARKET REGIME", "🟢 BULL REGIME" if market_bullish else "🔴 BEAR (100% CASH)", "NIFTY 500 vs 20 EMA Gate", FILL_GREEN if market_bullish else FILL_RED, "065F46" if market_bullish else "991B1B"),
+            ("A4", "B6", "MARKET REGIME", "🟢 BULL REGIME" if market_bullish else "🔴 BEAR (100% CASH)", bm_sub, FILL_GREEN if market_bullish else FILL_RED, "065F46" if market_bullish else "991B1B"),
             ("C4", "E6", "TREND BREADTH (>200 EMA)", f"{p200_val:.1f}% ({b_tp.get('count_above_200_ema', 0)} Scrips)", f"50 EMA: {b_tp.get('pct_above_50_ema', 0.0):.1f}% | 20 EMA: {b_tp.get('pct_above_20_ema', 0.0):.1f}%", FILL_BLUE, "1E40AF"),
             ("F4", "H6", "52-WEEK NET HIGHS", f"+{b_nhl.get('new_52w_highs', 0)} / -{b_nhl.get('new_52w_lows', 0)} (Net: {net_highs:+d})", f"Within 20% of 52wH: {b_hp.get('pct_within_20pct_52wh', 0.0):.1f}%", FILL_GREEN if net_highs >= 0 else FILL_RED, "065F46" if net_highs >= 0 else "991B1B"),
-            ("I4", "K6", "TOP VOLAR CANDIDATE", f"{top_sym} ({top_volar:.2f})", "ATR-14 Volatility Risk Parity", FILL_AMBER, "92400E"),
+            ("I4", "K6", "TOP VOLAR CANDIDATE", f"{top_sym} ({top_volar:.2f})", card4_sub, FILL_AMBER, "92400E"),
         ]
 
         ws_dash.row_dimensions[4].height = 20

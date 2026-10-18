@@ -70,9 +70,11 @@ class AlertDispatcher:
         checks_passed = health.get("checks_passed", 0)
         checks_total = health.get("checks_total", 0)
 
+        benchmark = telemetry.get("benchmark", telemetry.get("benchmark_name", "NIFTY500"))
+
         lines = [
             f"<b>🚀 Project MIP Momentum Scanner Alert</b>",
-            f"<b>Target Date:</b> {target_date} | <b>Universe:</b> {universe}",
+            f"<b>Target Date:</b> {target_date} | <b>Universe:</b> {universe} | <b>Benchmark:</b> {benchmark}",
             f"<b>Status:</b> {pipeline_status} (⏱️ {runtime}s | 💾 {peak_ram} MB RSS)",
             f"<b>Operational Health:</b> {health_status} ({checks_passed}/{checks_total} checks verified)",
         ]
