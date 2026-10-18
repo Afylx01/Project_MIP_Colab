@@ -100,6 +100,19 @@ class NSEDeliveryManager:
                 return pd.DataFrame()
 
             clean_df = pd.DataFrame()
+            # Standardize column aliases
+            aliases = {
+                "% DLY QT TO TRADED QTY": "DELIV_PER",
+                "DLY_QT_TO_TRD_QTY": "DELIV_PER",
+                "TRADED_QTY": "TTL_TRD_QNTY",
+                "TOTAL_TRADED_QTY": "TTL_TRD_QNTY",
+                "CLOSE": "CLOSE_PRICE",
+                "PREVCLOSE": "PREV_CLOSE",
+            }
+            for alt_name, std_name in aliases.items():
+                if alt_name in df.columns and std_name not in df.columns:
+                    df[std_name] = df[alt_name]
+
             clean_df["symbol"] = df["SYMBOL"].astype(str).str.strip()
             clean_df["series"] = df["SERIES"].astype(str).str.strip()
 
@@ -142,7 +155,8 @@ class NSEDeliveryManager:
                 concat_prior = pd.concat(prior_dfs, ignore_index=True)
                 avg_5d = concat_prior.groupby("symbol")["deliv_qty"].mean().to_dict()
                 clean_df["deliv_5d_avg"] = clean_df["symbol"].map(avg_5d).round(0)
-                clean_df["deliv_times"] = (clean_df["deliv_qty"] / clean_df["deliv_5d_avg"]).round(1)
+                safe_avg = clean_df["deliv_5d_avg"].replace(0.0, np.nan)
+                clean_df["deliv_times"] = (clean_df["deliv_qty"] / safe_avg).fillna(1.0).round(1)
             else:
                 clean_df["deliv_5d_avg"] = np.nan
                 clean_df["deliv_times"] = np.nan

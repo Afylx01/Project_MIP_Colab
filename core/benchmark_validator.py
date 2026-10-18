@@ -614,11 +614,25 @@ def _align_and_fill_dates(df: pd.DataFrame, dates: List[str]) -> pd.DataFrame:
     missing = [d for d in dates if d not in date_set]
 
     if missing:
-        extra_rows = pd.DataFrame({"date": missing})
-        df = pd.concat([df, extra_rows], ignore_index=True)
-        df.sort_values("date", inplace=True)
-        df.reset_index(drop=True, inplace=True)
-        df["close"] = df["close"].ffill().bfill().fillna(1000.0)
+        min_existing = df["date"].min()
+        pre_missing = [d for d in missing if d < min_existing]
+        if pre_missing:
+            base_n500 = _get_app_base_dir() / "data" / "benchmark_nifty500.csv"
+            if base_n500.exists():
+                try:
+                    n500_df = pd.read_csv(base_n500)
+                    df = _bridge_with_reference(df, n500_df)
+                except Exception:
+                    pass
+
+        date_set = set(df["date"].values)
+        remaining_missing = [d for d in dates if d not in date_set]
+        if remaining_missing:
+            extra_rows = pd.DataFrame({"date": remaining_missing})
+            df = pd.concat([df, extra_rows], ignore_index=True)
+            df.sort_values("date", inplace=True)
+            df.reset_index(drop=True, inplace=True)
+            df["close"] = df["close"].ffill().bfill().fillna(1000.0)
         df = compute_benchmark_indicators(df)
 
     # Filter to requested dates
@@ -634,18 +648,24 @@ def _load_ticker_from_db(symbol: str, base_dir: Path) -> Optional[pd.DataFrame]:
     db_path = base_dir / "data" / "universe.db"
     if not db_path.exists():
         return None
+    conn = None
     try:
         import sqlite3
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         q = "SELECT date, close FROM prices WHERE symbol = ? ORDER BY date ASC;"
         df = pd.read_sql_query(q, conn, params=(symbol,))
-        conn.close()
         if not df.empty and "date" in df.columns and "close" in df.columns:
             df["date"] = df["date"].astype(str)
             df["close"] = df["close"].astype(float)
             return df
     except Exception:
         pass
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
     return None
 
 
@@ -710,6 +730,7 @@ def _build_universe_proxy_series(universe_name: str = "NIFTY500", base_dir: Opti
     base_path = Path(base_dir) if base_dir else _get_app_base_dir()
     db_path = base_path / "data" / "universe.db"
     
+    conn = None
     try:
         import sqlite3
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
@@ -721,7 +742,6 @@ def _build_universe_proxy_series(universe_name: str = "NIFTY500", base_dir: Opti
         placeholders = ",".join(["?"] * len(symbols))
         q_prices = f"SELECT date, close FROM prices WHERE symbol IN ({placeholders}) ORDER BY date ASC;"
         px_df = pd.read_sql_query(q_prices, conn, params=symbols)
-        conn.close()
 
         if not px_df.empty:
             piv = px_df.pivot(index="date", columns="symbol", values="close")
@@ -731,6 +751,12 @@ def _build_universe_proxy_series(universe_name: str = "NIFTY500", base_dir: Opti
             return compute_benchmark_indicators(proxy_df)
     except Exception:
         pass
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
     
     return _build_synthetic_flat_benchmark()
 

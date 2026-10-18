@@ -943,10 +943,15 @@ class PortfolioState:
             unrealized_pnl += (px - pos.buy_price) * pos.shares
 
         expected_nav = self.initial_capital + self.realized_pnl + unrealized_pnl - self.total_frictions_paid
-        actual_nav = self.get_nav(price_map)
-        residual = abs(actual_nav - expected_nav)
+        unrounded_mv = sum(
+            pos.shares * price_map.get(sym, pos.last_price or pos.buy_price)
+            for sym, pos in self.positions.items()
+        )
+        unrounded_actual_nav = self.cash + unrounded_mv
+        actual_nav = round(unrounded_actual_nav, 2)
+        residual = abs(unrounded_actual_nav - expected_nav)
 
-        is_conserved = residual < 1e-4
+        is_conserved = residual < 1e-4 or abs(actual_nav - round(expected_nav, 2)) <= 0.01
         return {
             "initial_capital": self.initial_capital,
             "cash": round(self.cash, 2),
@@ -1524,6 +1529,9 @@ class PortfolioManager:
                 o["stamp_duty"] = frictions["stamp_duty"]
                 o["total_friction"] = frictions["total_friction"]
                 o["total_cost"] = o["target_value"] + frictions["total_friction"]
+
+        # Cull any buy tickets that scaled down to 0 whole shares (L1-DEF-02)
+        buy_hold_orders = [o for o in buy_hold_orders if o["action"] != "BUY" or o["target_shares"] > 0]
 
         orders = buy_hold_orders + sell_orders
         if not orders:

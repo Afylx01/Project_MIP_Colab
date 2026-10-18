@@ -498,8 +498,13 @@ class PydroidAutoFetch:
         db_path = _de.get_db_path()
         try:
             bak_path = db_path.with_suffix(".db.bak")
-            with sqlite3.connect(db_path) as src_conn, sqlite3.connect(bak_path) as dst_conn:
+            src_conn = sqlite3.connect(db_path)
+            dst_conn = sqlite3.connect(bak_path)
+            try:
                 src_conn.backup(dst_conn)
+            finally:
+                dst_conn.close()
+                src_conn.close()
             self.log(f"Created pre-update database backup via SQLite backup API: {bak_path.name}")
         except Exception as e_bak:
             self.log(f"Warning: Could not create pre-update backup: {e_bak}")
@@ -751,3 +756,19 @@ class PydroidAutoFetch:
             if "tmp_bench_csv" in locals() and tmp_bench_csv.exists():
                 tmp_bench_csv.unlink()
             return {"status": "FAILED", "code": "UNHANDLED_EXCEPTION", "message": str(e)}
+
+
+def backup_database(db_path: Union[str, Path]) -> Optional[str]:
+    """Creates a hot backup of SQLite database using backup API with verified closure."""
+    src_path = Path(db_path)
+    if not src_path.exists():
+        return None
+    bak_path = src_path.with_suffix(".db.bak")
+    src_conn = sqlite3.connect(src_path)
+    dst_conn = sqlite3.connect(bak_path)
+    try:
+        src_conn.backup(dst_conn)
+        return str(bak_path)
+    finally:
+        dst_conn.close()
+        src_conn.close()

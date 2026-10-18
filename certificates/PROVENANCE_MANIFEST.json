@@ -14,16 +14,16 @@
     {
       "filename": "__init__.py",
       "sha256_source": "f2c326444ac617e9a79f507cc2fb6273074bcb7e75c227fb614b4dc964081cfe",
-      "sha256_migrated": "5a92e83ad39c2c063ebfba40868c4472104859b72a758d52556b8f6826301918",
+      "sha256_migrated": "20f461c03f4e9e54f45dc8db8dc7077a9771a5a2fdf9482e669cb9477e205e7b",
       "status": "refactored",
-      "refactor_notes": "Version bump to 2.3.0"
+      "refactor_notes": "Version bump to 2.4.0"
     },
     {
       "filename": "analytical_price.py",
       "sha256_source": "3031b619ce6f2c6fbe22cf29350e6ecaec10f39757ad19c06376b7115eae0a6a",
-      "sha256_migrated": "3691005c53b83d5d069240a0ff03c5e2c7694af9ce542aab358a124b631a4e47",
+      "sha256_migrated": "ca0cc87c0cf8e7240bcff37427bbe740c6edbe53b42a66acd8c7c359ef936fa0",
       "status": "refactored",
-      "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
+      "refactor_notes": "Loop 3 institutional defect remediation"
     },
     {
       "filename": "anomaly.py",
@@ -35,30 +35,30 @@
     {
       "filename": "auto_fetch.py",
       "sha256_source": "a99103cb6397860f9e3883403b2a69b7c88ccad32b09b7053b604ba29fbfdd29",
-      "sha256_migrated": "1f73b9215aa366d54216e7983b8014c23aab17fb6619ae4fd694ef65991714bd",
+      "sha256_migrated": "2c8675c8e130cb016ac983ac65a7e679c5120e42ac9eeea2895ffd04fe6b73f4",
       "status": "refactored",
       "refactor_notes": "Auto-sync mutation firewall pass & Telegram dispatch integration"
     },
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "6a67eb54aa0e8640d1b169a8d64320db28186e9f8b7df2be0e925e515991f3e2",
+      "sha256_migrated": "46c15fdab39c6a0af673cce50668c2c4a6998fcc6a45f9fab594423234d907ab",
       "status": "refactored",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "refactor_notes": "Loop 3 institutional defect remediation"
     },
     {
       "filename": "benchmark_validator.py",
       "sha256_source": "b937cb2a309dc4e139a4e34194c5f83b1f2f6d202731c1c222de3548dffec36e",
-      "sha256_migrated": "3502d6fb27a0ad79d8023b8822bd41218cd2da403e4e19486ba2ba736d98cae6",
+      "sha256_migrated": "9d732e9f8e794d375b73c0c95eb7f83b8b8238b2e58d3fa1c239f01f3a414ada",
       "status": "refactored",
       "refactor_notes": "Merged benchmark catalog and resolver engine"
     },
     {
       "filename": "breadth.py",
       "sha256_source": "85c7d449929dd569081ca25ca370a72f736d00bc18a18be336aab6550c8a38a7",
-      "sha256_migrated": "1e57f6b8bc7c4b312619562d27d5f55640dd84c66521c49c47bd9c0b823d2f6b",
+      "sha256_migrated": "0197dabc0658a1ee8725984e5ddc0d2ce7ecbf0c970f10c9dfb84a4ee9d9d5b2",
       "status": "refactored",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "refactor_notes": "Loop 3 institutional defect remediation"
     },
     {
       "filename": "config.py",
@@ -70,16 +70,16 @@
     {
       "filename": "data_engine.py",
       "sha256_source": "a2836814d38d65315c0a1bc1645f75efcc6ea7b393e565816110b28e78dbd6ae",
-      "sha256_migrated": "a2c853ae69b5c6ebe8d68832ae05beb7d7c3bcd165437a995a03bc80e8144411",
+      "sha256_migrated": "3bc4de3f868e46d41abed6404b2e18205e65ee753828ba671216110506b9d5b9",
       "status": "refactored",
-      "refactor_notes": "Stage 2 universe integrity and point-in-time correctness hardening"
+      "refactor_notes": "Loop 3 institutional defect remediation"
     },
     {
       "filename": "delivery.py",
       "sha256_source": "4f0220d22d9f39c9b95048246d05b09f85ce966b62c60b7624a832f70b08e2f7",
-      "sha256_migrated": "4f0220d22d9f39c9b95048246d05b09f85ce966b62c60b7624a832f70b08e2f7",
+      "sha256_migrated": "944ed7fd15c5fb3440853909a736ebce3f440424f09b3e618620e9b826916660",
       "status": "identical",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "refactor_notes": "Loop 2 institutional defect remediation"
     },
     {
       "filename": "etf_engine.py",
@@ -91,9 +91,9 @@
     {
       "filename": "excel_generator.py",
       "sha256_source": "bbbb2a7ed89c1b3beae65b5b15b52c5204ba12bd909ae93be2279ffa5973141a",
-      "sha256_migrated": "8e27319810d2260be77ae7a45c7670ad936e0ea3ba20d3ff76f59854fcc7d6ef",
+      "sha256_migrated": "bc232ea3db0577052c39433ad706003e45acf6ad2e253e24db77abb41c174478",
       "status": "refactored",
-      "refactor_notes": "Mobile deliverables path resolution, multi-benchmark disclosure, and typing annotations"
+      "refactor_notes": "Loop 2 institutional defect remediation"
     },
     {
       "filename": "health.py",
@@ -112,9 +112,9 @@
     {
       "filename": "portfolio.py",
       "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
-      "sha256_migrated": "ee0c53c697577f81952097335a09031a2b1de41bfd0030f4d70b616252bfaebe",
+      "sha256_migrated": "fe342d88272c6e397286ac8c9223a03b008e0f8c7b6cd4178f75ec617f2a86ba",
       "status": "refactored",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "refactor_notes": "Loop 3 institutional defect remediation"
     },
     {
       "filename": "reason_codes.py",
@@ -140,9 +140,9 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "02be9105a5c3f32c4df501a7b55a8c75652cee5e862966bbabc1c11393a1b443",
+      "sha256_migrated": "2252ebbbce44a594ab60166fee180a46de42e8eab53c5070ee741c78f6917bad",
       "status": "refactored",
-      "refactor_notes": "Universal benchmark selection and Excel workbook Telegram dispatch integration"
+      "refactor_notes": "Loop 2 institutional defect remediation"
     },
     {
       "filename": "sector_rotation.py",
@@ -168,9 +168,9 @@
     {
       "filename": "telegram_sender.py",
       "sha256_source": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
-      "sha256_migrated": "3a685362a54a661ada3f2e455c7b01e01354cfac39e8e6ed485d026f35935b54",
+      "sha256_migrated": "d14975c2c62d9392b2acd2bded76d6bafe2a3b39eca99d6aefd767a12c8162d2",
       "status": "refactored",
-      "refactor_notes": "Fix Any import and add future annotations in telegram_sender"
+      "refactor_notes": "Loop 2 institutional defect remediation"
     },
     {
       "filename": "validation.py",

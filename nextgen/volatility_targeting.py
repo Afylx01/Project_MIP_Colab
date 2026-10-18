@@ -30,7 +30,8 @@ def compute_ewma_realized_volatility(
     Computes Exponentially Weighted Moving Average (EWMA) realized variance & annualized volatility.
     sigma_t^2 = lambda * sigma_{t-1}^2 + (1 - lambda) * R_t^2
     """
-    vals = np.nan_to_num(returns_series.to_numpy(dtype=np.float64), nan=0.0)
+    vals = np.nan_to_num(returns_series.to_numpy(dtype=np.float64), nan=0.0, posinf=0.0, neginf=0.0)
+    vals = np.clip(vals, -0.50, 0.50)
     T = len(vals)
     var_ewma = np.zeros(T, dtype=np.float64)
 
@@ -89,7 +90,8 @@ def compute_dynamic_cash_shield_scalar(
     vol_scalar = np.clip(target_vol / max(realized_vol, 0.01), min_exposure, max_exposure)
     b_clamped = np.clip(breadth_ratio, 0.10, 1.0)
     composite_scalar = float(vol_scalar * np.sqrt(b_clamped))
-    return float(np.clip(composite_scalar, min_exposure, max_exposure))
+    dynamic_min = min_exposure * np.sqrt(b_clamped)
+    return float(np.clip(composite_scalar, dynamic_min, max_exposure))
 
 
 def scale_position_quantities_by_shield(
@@ -106,5 +108,5 @@ def scale_position_quantities_by_shield(
     clamped_scalar = min(1.0, max(0.0, shield_scalar))
     scaled = {}
     for sym, q in nominal_quantities.items():
-        scaled[sym] = int(math.floor(q * clamped_scalar))
+        scaled[sym] = int(math.trunc(q * clamped_scalar))
     return scaled

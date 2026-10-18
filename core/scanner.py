@@ -57,6 +57,17 @@ from .health import ScannerHealthMonitor, ScannerHealthReport, ScannerHealthStat
 from .scan_quality_report import ScanQualityReporter, CandidateExplanation
 
 
+def _calc_calendar_aligned_return(s: pd.Series, calendar: Optional[List[str]] = None, lookback: int = 252) -> pd.Series:
+    """
+    Computes lookback return aligned to trading calendar or bounded index.
+    Prevents division by zero or NaN propagation.
+    """
+    lb = min(len(s), lookback)
+    shifted = s.shift(lb).fillna(s.iloc[0])
+    denom = shifted.replace(0.0, np.nan)
+    return (s / denom - 1.0).fillna(0.0)
+
+
 class PydroidScanner:
     """Institutional momentum screener with full MIP-1 v5.5.1 parity and Phase 4 hardening."""
 
@@ -139,8 +150,8 @@ class PydroidScanner:
             return
         conn = None
         try:
-            from .data_engine import get_connection
-            conn = get_connection(read_only=False, reuse=False)
+            from .data_engine import get_operational_connection
+            conn = get_operational_connection()
             cursor = conn.cursor()
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS picks_history (
@@ -547,12 +558,10 @@ class PydroidScanner:
             lambda s: s.ewm(span=self.config.ema_regime_span, adjust=True, min_periods=10).mean()
         )
 
-        # 252-day Return: Close[t] / Close[t - 252] - 1.0 (exact index lookback)
-        def _calc_ret_252(s):
-            lookback = min(len(s), self.config.momentum_lookback_bars)
-            return s / s.shift(lookback).fillna(s.iloc[0]) - 1.0
-
-        bars["ret_252"] = bars.groupby("symbol")["close"].transform(_calc_ret_252)
+        # 252-day Return: Close[t] / Close[t - 252] - 1.0 (calendar aligned lookback)
+        bars["ret_252"] = bars.groupby("symbol")["close"].transform(
+            lambda s: _calc_calendar_aligned_return(s, lookback=self.config.momentum_lookback_bars)
+        )
         bars["ret_1y"] = bars["ret_252"] * 100.0
         bars["ret_21"] = bars.groupby("symbol")["close"].transform(
             lambda s: s / s.shift(21).fillna(s.iloc[0]) - 1.0
@@ -649,6 +658,12 @@ class PydroidScanner:
         b_df = self.load_benchmark(benchmark_override=eff_benchmark)
         if not b_df.empty:
             b_df = b_df[b_df["date"].astype(str) <= target_date]
+            bm_latest = str(b_df["date"].max())
+            if bm_latest < target_date and (allow_stale_data or getattr(self, "allow_stale_data", False)):
+                last_row = b_df[b_df["date"] == bm_latest].iloc[0].to_dict()
+                last_row["date"] = target_date
+                b_df = pd.concat([b_df, pd.DataFrame([last_row])], ignore_index=True)
+                is_bm_healthy = True
         bm_map = dict(zip(b_df["date"], b_df["close"])) if not b_df.empty else {}
         bars["benchmark_close"] = bars["date"].map(bm_map)
         

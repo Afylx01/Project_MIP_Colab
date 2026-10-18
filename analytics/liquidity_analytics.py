@@ -66,11 +66,14 @@ def compute_liquidity_profile(
     if bars_df is not None and not bars_df.empty and "volume" in bars_df.columns:
         for sym in df["symbol"]:
             sym_bars = bars_df[bars_df["symbol"] == sym]
-            if len(sym_bars) >= 5:
-                recent_vols = sym_bars["volume"].tail(30)
-                recent_closes = sym_bars["close"].tail(30)
-                adv = float(recent_vols.mean())
-                adtv_cr = float((recent_vols * recent_closes).mean() / 1e7)
+            vols_clean = sym_bars["volume"].tail(30).dropna()
+            closes_clean = sym_bars["close"].tail(30).dropna()
+            if len(vols_clean) >= 5:
+                adv_val = float(vols_clean.mean()) if not vols_clean.empty else 100_000.0
+                prod_series = (vols_clean * closes_clean).dropna()
+                adtv_cr_val = float(prod_series.mean() / 1e7) if not prod_series.empty else (adv_val * float(closes_clean.mean()) / 1e7 if not closes_clean.empty else 5.0)
+                adv = adv_val if (math.isfinite(adv_val) and adv_val > 0) else 100_000.0
+                adtv_cr = adtv_cr_val if (math.isfinite(adtv_cr_val) and adtv_cr_val > 0) else 5.0
             else:
                 adv = 100_000.0
                 adtv_cr = 5.0
@@ -79,8 +82,7 @@ def compute_liquidity_profile(
     else:
         # Fallback estimation if bars_df not provided
         for _, row in df.iterrows():
-            # If delivery_qty exists in row
-            deliv_q = float(row.get("delivery_qty", 0.0) or 0.0)
+            deliv_q = float(row.get("deliv_qty", row.get("delivery_qty", 0.0)) or 0.0)
             px = float(row.get("close", 100.0) or 100.0)
             if deliv_q > 0:
                 est_adv = deliv_q * 2.5  # Typical delivery % is 40%, so total vol ~ 2.5x delivery
@@ -148,3 +150,7 @@ def compute_liquidity_profile(
         "strategy_capacity_crores": strategy_capacity_crores,
         "detailed_table": df,
     }
+
+
+# Standard alias
+analyze_liquidity = compute_liquidity_profile

@@ -20,6 +20,7 @@ import datetime
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Tuple, Any
+import numpy as np
 import pandas as pd
 
 
@@ -64,8 +65,8 @@ class PreTradeComplianceAuditor:
                 data = json.loads(self.ca_registry_path.read_text(encoding="utf-8"))
                 if isinstance(data, list):
                     return data
-                elif isinstance(data, dict) and "corporate_actions" in data:
-                    return data["corporate_actions"]
+                elif isinstance(data, dict):
+                    return data.get("actions", data.get("corporate_actions", []))
             except Exception:
                 return []
         return []
@@ -181,10 +182,11 @@ class PreTradeComplianceAuditor:
                 ex_str = ca.get("ex_date", "")
                 sym = ca.get("symbol", "")
                 if ex_str and sym in set(actionable_df["symbol"]):
-                    ex_dt = datetime.datetime.strptime(ex_str, "%Y-%m-%d").date()
-                    diff_days = abs((ex_dt - as_of_dt).days)
-                    if diff_days <= 4:
-                        ca_violations.append(f"{sym} (Ex-Date: {ex_str}, {ca.get('action_type', 'ACTION')})")
+                    ex_str_clean = ex_str[:10]
+                    as_of_str_clean = as_of_date[:10]
+                    bus_days = abs(int(np.busday_count(min(as_of_str_clean, ex_str_clean), max(as_of_str_clean, ex_str_clean))))
+                    if bus_days <= 3:
+                        ca_violations.append(f"{sym} (Ex-Date: {ex_str_clean}, {ca.get('action_type', 'ACTION')}, Distance: {bus_days} sessions)")
         except Exception:
             pass
 
@@ -263,9 +265,20 @@ class PreTradeComplianceAuditor:
             reports_dir = self.base_dir / "reports"
             reports_dir.mkdir(parents=True, exist_ok=True)
             out_path = reports_dir / f"compliance_manifest_{as_of_date}.json"
-            try:
-                out_path.write_text(json.dumps(manifest.to_dict(), indent=2), encoding="utf-8")
-            except Exception:
-                pass
+            self.export_manifest(manifest, out_path)
 
         return manifest
+
+    def export_manifest(self, manifest: ComplianceManifest, out_path: Path) -> Path:
+        """Atomically writes compliance manifest to disk via temporary swap."""
+        out_path = Path(out_path)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = out_path.with_suffix(f".tmp_{os.getpid()}_{datetime.datetime.now().microsecond}")
+        try:
+            tmp_path.write_text(json.dumps(manifest.to_dict(), indent=2), encoding="utf-8")
+            os.replace(tmp_path, out_path)
+            return out_path
+        except Exception:
+            if tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
+            raise

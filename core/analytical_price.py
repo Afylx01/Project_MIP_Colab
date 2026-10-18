@@ -266,18 +266,31 @@ class AnalyticalPriceEngine:
             # Verify dislocation at ex-date transition is resolved
             df_adj["_ratio"] = df_adj["close"] / df_adj["close"].shift(1)
             for act in preserving_actions:
-                act_rows = df_adj[df_adj["date"] == act.ex_date]
-                if not act_rows.empty and float(act_rows["_ratio"].iloc[0]) <= 0.60:
-                    diag["is_blocked_unresolved"] = True
-                    diag["unresolved_reason"] = f"Residual dislocation for {act.symbol} on {act.ex_date} after factor adjustment"
-                    return df_adj.drop(columns=["_ratio"], errors="ignore"), diag
+                post_rows = df_adj[df_adj["date"] >= act.ex_date]
+                if not post_rows.empty:
+                    effective_ex_date = post_rows["date"].iloc[0]
+                    act_rows = df_adj[df_adj["date"] == effective_ex_date]
+                    if not act_rows.empty:
+                        r_val = float(act_rows["_ratio"].iloc[0])
+                        if r_val <= 0.60 or r_val >= 1.6667:
+                            diag["is_blocked_unresolved"] = True
+                            diag["unresolved_reason"] = f"Residual dislocation for {act.symbol} on {effective_ex_date} after factor adjustment"
+                            return df_adj.drop(columns=["_ratio"], errors="ignore"), diag
 
-            # Check active lookback window for any unexplained drops
+            # Check active lookback window for any unexplained drops or spikes
+            known_action_dates = set()
+            for a in actions:
+                post = df_adj[df_adj["date"] >= a.ex_date]
+                if not post.empty:
+                    known_action_dates.add(post["date"].iloc[0])
+                else:
+                    known_action_dates.add(a.ex_date)
             active_tail = df_adj.tail(min_clean_bars)
-            bad_drops = active_tail[active_tail["_ratio"] <= 0.60]
+            is_anom = (active_tail["_ratio"] <= 0.60) | (active_tail["_ratio"] >= 1.6667)
+            bad_drops = active_tail[is_anom & (~active_tail["date"].isin(known_action_dates))]
             if not bad_drops.empty:
                 diag["is_blocked_unresolved"] = True
-                diag["unresolved_reason"] = f"Unresolved structural drop in lookback window on {bad_drops['date'].iloc[0]}"
+                diag["unresolved_reason"] = f"Unresolved structural dislocation in lookback window on {bad_drops['date'].iloc[0]}"
                 return df_adj.drop(columns=["_ratio"], errors="ignore"), diag
 
             return df_adj.drop(columns=["_ratio"], errors="ignore"), diag
@@ -288,12 +301,13 @@ class AnalyticalPriceEngine:
         if len(df) >= 2:
             df["_ratio"] = df["close"] / df["close"].shift(1)
             active_tail = df.tail(min_clean_bars)
-            bad_drops = active_tail[active_tail["_ratio"] <= 0.60]
+            is_anom = (active_tail["_ratio"] <= 0.60) | (active_tail["_ratio"] >= 1.6667)
+            bad_drops = active_tail[is_anom]
             if not bad_drops.empty:
-                # Structural price drop > 40% with no corporate action record -> Fail Closed
+                # Structural price jump/drop with no corporate action record -> Fail Closed
                 diag["treatment"] = "UNRESOLVED_CRASH"
                 diag["is_blocked_unresolved"] = True
-                diag["unresolved_reason"] = f"Unresolved structural drop of {(1.0 - bad_drops['_ratio'].iloc[0])*100:.1f}% on {bad_drops['date'].iloc[0]}"
+                diag["unresolved_reason"] = f"Unresolved structural dislocation of {bad_drops['_ratio'].iloc[0]:.2f}x on {bad_drops['date'].iloc[0]}"
                 return df.drop(columns=["_ratio"], errors="ignore"), diag
             df = df.drop(columns=["_ratio"], errors="ignore")
 

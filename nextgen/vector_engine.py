@@ -15,7 +15,8 @@ def compute_matrix_rolling_high(high_mat: np.ndarray, window: int = 252) -> np.n
     Matches pandas.DataFrame.rolling(window, min_periods=50).max().
     """
     df = pd.DataFrame(high_mat)
-    res = df.rolling(window, min_periods=min(50, window)).max().to_numpy(dtype=np.float32)
+    eff_min = max(1, min(50, window, len(df)))
+    res = df.rolling(window, min_periods=eff_min).max().to_numpy(dtype=np.float32)
     return res
 
 
@@ -25,7 +26,8 @@ def compute_matrix_ema(close_mat: np.ndarray, span: int = 200) -> np.ndarray:
     Matches pandas.DataFrame.ewm(span=span, adjust=True, min_periods=50).mean().
     """
     df = pd.DataFrame(close_mat)
-    res = df.ewm(span=span, adjust=True, min_periods=min(50, span)).mean().to_numpy(dtype=np.float32)
+    eff_min = max(1, min(50, span, len(df)))
+    res = df.ewm(span=span, adjust=True, min_periods=eff_min).mean().to_numpy(dtype=np.float32)
     return res
 
 
@@ -60,7 +62,8 @@ def compute_matrix_volatility(close_mat: np.ndarray, window: int = 252) -> np.nd
     returns[1:] = np.where(close_mat[:-1] > 0, (close_mat[1:] / close_mat[:-1]) - 1.0, 0.0)
 
     df_ret = pd.DataFrame(returns)
-    vol = df_ret.rolling(window, min_periods=min(50, window)).std().to_numpy(dtype=np.float32) * np.sqrt(252.0)
+    eff_min = max(2, min(50, window, len(df_ret)))
+    vol = df_ret.rolling(window, min_periods=eff_min).std().to_numpy(dtype=np.float32) * np.sqrt(252.0)
     vol = np.clip(np.nan_to_num(vol, nan=0.05), 0.05, 10.0)
     return vol
 

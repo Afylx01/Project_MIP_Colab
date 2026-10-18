@@ -81,11 +81,17 @@ def run_screener_view(
 
     print(f"⏳ Executing momentum scan on {universe} vs Benchmark [{benchmark}] (Top {top_n})...")
     top_df, breadth, sectors, regime, top_etf, deliv = scanner.run_scan(**scan_kwargs)
-    scanned_date = top_df.attrs.get("scanned_date") or db_latest
+    scanned_date = (top_df.attrs.get("scanned_date") if hasattr(top_df, "attrs") else None) or db_latest
+
+    # Fail-Closed Defensive Regime Notice when 0 candidates qualify (L1-DEF-16)
+    if top_df is None or top_df.empty:
+        reg_label = regime.get("label", "DEFENSIVE") if isinstance(regime, dict) else "DEFENSIVE"
+        print(f"\n🛡️ CASH SHIELD ACTIVE: 0 candidates qualified for {universe} as of {scanned_date}.")
+        print(f"   Benchmark Regime: {reg_label} | Portfolio Posture: 100% Cash Conservation.")
 
     # Build tearsheet text with full institutional lineage & overlays
     tearsheet_text = format_screener_tearsheet(
-        top_df=top_df,
+        top_df=top_df if top_df is not None else pd.DataFrame(),
         breadth=breadth,
         sectors=sectors,
         regime=regime,
@@ -93,7 +99,7 @@ def run_screener_view(
         top_etf_df=top_etf,
         delivery_df=deliv,
         universe_label=universe,
-        db_audit=top_df.attrs.get("db_audit"),
+        db_audit=top_df.attrs.get("db_audit") if hasattr(top_df, "attrs") else {},
         benchmark=benchmark,
     )
 

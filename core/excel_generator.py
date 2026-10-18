@@ -1217,11 +1217,12 @@ class InstitutionalExcelGenerator:
         p200_val = b_tp.get("pct_above_200_ema", 0.0)
         net_highs = b_nhl.get("net_highs_lows", 0)
 
-        top_sym = "WELCORP"
-        top_volar = 5.21
         if top_candidates_df is not None and not top_candidates_df.empty:
-            top_sym = top_candidates_df.iloc[0]["symbol"]
+            top_sym = str(top_candidates_df.iloc[0]["symbol"])
             top_volar = float(top_candidates_df.iloc[0].get("volar_score", 0.0))
+        else:
+            top_sym = "CASH SHIELD (0 BUYS)"
+            top_volar = 0.00
 
         bm_sub = f"{benchmark} vs 20 EMA Gate"
         if regime_info and "bm_close" in regime_info and "bm_ema20" in regime_info:
@@ -1325,23 +1326,31 @@ class InstitutionalExcelGenerator:
             ws_cand = wb["Top Candidates"]
             ws_cand.sheet_properties.tabColor = GREEN_COLOR
             style_generic_sheet(ws_cand, [1], freeze="A2")
-            try:
-                # Add color scale on Volar Score (Col O is column 15)
-                rule_volar = ColorScaleRule(start_type='min', start_color='FFFFFF', end_type='max', end_color='86EFAC')
-                ws_cand.conditional_formatting.add(f"O2:O{ws_cand.max_row}", rule_volar)
-            except Exception:
-                pass
+            if ws_cand.max_row >= 2:
+                try:
+                    volar_col_letter = None
+                    for col_idx in range(1, ws_cand.max_column + 1):
+                        val = str(ws_cand.cell(1, col_idx).value or "").strip().lower()
+                        if val in ("volar", "volar score"):
+                            volar_col_letter = get_column_letter(col_idx)
+                            break
+                    if volar_col_letter:
+                        rule_volar = ColorScaleRule(start_type='min', start_color='FFFFFF', end_type='max', end_color='86EFAC')
+                        ws_cand.conditional_formatting.add(f"{volar_col_letter}2:{volar_col_letter}{ws_cand.max_row}", rule_volar)
+                except Exception:
+                    pass
 
         if "Sector Rotation" in wb.sheetnames:
             ws_sec = wb["Sector Rotation"]
             ws_sec.sheet_properties.tabColor = "0D9488"  # Teal
             style_generic_sheet(ws_sec, [1], freeze="A2")
-            try:
-                rule_alpha = ColorScaleRule(start_type='min', start_color='FCA5A5', mid_type='num', mid_value=0.0, mid_color='FFFFFF', end_type='max', end_color='86EFAC')
-                ws_sec.conditional_formatting.add(f"E2:E{ws_sec.max_row}", rule_alpha)  # 1M %
-                ws_sec.conditional_formatting.add(f"H2:H{ws_sec.max_row}", rule_alpha)  # Excess 1M %
-            except Exception:
-                pass
+            if ws_sec.max_row >= 2:
+                try:
+                    rule_alpha = ColorScaleRule(start_type='min', start_color='FCA5A5', mid_type='num', mid_value=0.0, mid_color='FFFFFF', end_type='max', end_color='86EFAC')
+                    ws_sec.conditional_formatting.add(f"E2:E{ws_sec.max_row}", rule_alpha)  # 1M %
+                    ws_sec.conditional_formatting.add(f"H2:H{ws_sec.max_row}", rule_alpha)  # Excess 1M %
+                except Exception:
+                    pass
 
         if "Industry Ranking" in wb.sheetnames:
             wb["Industry Ranking"].sheet_properties.tabColor = "0284C7"  # Cyan
@@ -1352,13 +1361,22 @@ class InstitutionalExcelGenerator:
             style_generic_sheet(wb["Industry History 30d"], [1], freeze="A2")
 
         if "Stock Ranking" in wb.sheetnames:
-            wb["Stock Ranking"].sheet_properties.tabColor = "1D4ED8"
-            style_generic_sheet(wb["Stock Ranking"], [1], freeze="A2")
-            try:
-                rule_v = ColorScaleRule(start_type='min', start_color='FFFFFF', end_type='max', end_color='86EFAC')
-                wb["Stock Ranking"].conditional_formatting.add(f"G2:G{wb['Stock Ranking'].max_row}", rule_v)  # Volar Score (Col G)
-            except Exception:
-                pass
+            ws_sr = wb["Stock Ranking"]
+            ws_sr.sheet_properties.tabColor = "1D4ED8"
+            style_generic_sheet(ws_sr, [1], freeze="A2")
+            if ws_sr.max_row >= 2:
+                try:
+                    volar_col_letter = None
+                    for col_idx in range(1, ws_sr.max_column + 1):
+                        val = str(ws_sr.cell(1, col_idx).value or "").strip().lower()
+                        if val in ("volar", "volar score"):
+                            volar_col_letter = get_column_letter(col_idx)
+                            break
+                    if volar_col_letter:
+                        rule_v = ColorScaleRule(start_type='min', start_color='FFFFFF', end_type='max', end_color='86EFAC')
+                        ws_sr.conditional_formatting.add(f"{volar_col_letter}2:{volar_col_letter}{ws_sr.max_row}", rule_v)
+                except Exception:
+                    pass
 
         if "Highest Delivery" in wb.sheetnames:
             wb["Highest Delivery"].sheet_properties.tabColor = AMBER_COLOR

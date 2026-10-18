@@ -317,12 +317,33 @@ def sync_universe_from_gdrive(
                 log(f"Direct stream download notice: {e_stream}")
 
         if downloaded:
-            if is_gzipped_file(tmp_dl):
-                log("Decompressing gzipped stream to local NVMe storage...")
-                decompress_file(tmp_dl, dest)
-                tmp_dl.unlink()
-            else:
-                tmp_dl.replace(dest)
+            try:
+                if is_gzipped_file(tmp_dl):
+                    log("Decompressing gzipped stream to local NVMe storage...")
+                    decompress_file(tmp_dl, dest)
+                    tmp_dl.unlink(missing_ok=True)
+                else:
+                    tmp_dl.replace(dest)
+
+                # Verify SQLite header and integrity check (L3-DEF-10)
+                with open(dest, "rb") as f_check:
+                    header = f_check.read(16)
+                    if header != b"SQLite format 3\x00":
+                        raise ValueError(f"Invalid SQLite database header: {header}")
+
+                import sqlite3
+                test_conn = sqlite3.connect(f"file:{dest}?mode=ro", uri=True)
+                check_res = test_conn.execute("PRAGMA quick_check;").fetchone()
+                test_conn.close()
+                if not check_res or check_res[0] != "ok":
+                    raise ValueError(f"SQLite PRAGMA quick_check failed: {check_res}")
+            except Exception as e_verify:
+                log(f"Integrity check failed on downloaded database: {e_verify}. Cleaning up.")
+                if tmp_dl.exists():
+                    tmp_dl.unlink(missing_ok=True)
+                if dest.exists():
+                    dest.unlink(missing_ok=True)
+                return False, "CORRUPT_DATABASE_DOWNLOAD", {"error": str(e_verify)}
 
             elapsed = time.time() - t0
             log(f"✓ Google Drive download complete in {elapsed:.2f}s! ({dest.stat().st_size / (1024*1024):.1f} MB)")

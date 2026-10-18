@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0] - 2026-10-18
+
+### Added
+- **Institutional Analytics, Attribution & Compliance Suite**:
+  - `cache/fast_cache.py`: Dual-tier Apache Arrow / Parquet and NumPy caching with cryptographic fingerprint invalidation, SQLite WAL tracking, and auto-eviction.
+  - `analytics/institutional_risk.py`: Ulcer Index, Ulcer Performance Index (Martin / UPI), Burke Ratio, Omega Ratio, Gain-to-Pain Ratio, Tail Ratio (P95/P05), Historical VaR (95%, 99%), Expected Shortfall (CVaR), and systematic vs specific risk decomposition.
+  - `analytics/factor_attribution.py`: Single-period Brinson-Fachler sector allocation, stock selection, and interaction effect decomposition with Menchero (2000) exact multi-period logarithmic linking.
+  - `analytics/liquidity_analytics.py`: ADV-30, ADTV-30 (₹ Cr), Order ADV participation rate, Days to Liquidate (10% volume cap), BlackRock Aladdin liquidity categorization, and Almgren-Chriss strategy capacity estimation.
+  - `compliance/pretrade_audit.py`: Automated pre-trade institutional compliance engine verifying SEBI single-stock (10%) and sector (25%) limits, minimum liquidity floors, corporate action blackout windows, and zero-borrowing constraints with cryptographically signed JSON manifests.
+  - `reporting/interactive_tearsheet.py`: Standalone, publication-grade interactive HTML tearsheet with Dark Obsidian / Light Ivory theme toggle and executive KPI cards.
+  - `reporting/deliverables_bundle.py`: Zipped production packaging bundle with CRC-32 integrity validation.
+  - `scripts/dispatch_institutional_pipeline.py`: Consolidated single-entry CLI dispatcher for end-to-end production pipelines.
+
+### Fixed & Remediated (52 Latent Defects Across 3 Autonomous Loops)
+- **Outer Loop 1 (16 Defects Remediated - L1-DEF-01 to L1-DEF-16)**:
+  - Fixed double split adjustment phantom profit in `core/backtest.py`.
+  - Pruned zero-share BUY tickets scaling down below whole shares in `core/portfolio.py`.
+  - Sanitized infinite residual momentum scores in `nextgen/residual_momentum.py` & `brute_force/cube_builder.py`.
+  - Wrapped SQLite queries in deterministic cursor and connection cleanup blocks across `core/data_engine.py` and `core/auto_fetch.py`.
+  - Expanded `MAX_HOLDINGS` to 128 in C99 `sim_kernel.c` and guarded `bridge.py` against buffer overflows.
+  - Added atomic tempfile replacement writes in `compliance/pretrade_audit.py` and `reporting/interactive_tearsheet.py`.
+  - Handled stale `.scanner.lock` deadlocks probing active PID liveness in `main.py`.
+- **Outer Loop 2 (14 Defects Remediated - L2-DEF-01 to L2-DEF-14)**:
+  - Fixed Menchero logarithmic linking zero-spread arithmetic (`Rp == Rb`) and non-held benchmark conventions in `analytics/factor_attribution.py`.
+  - Bounded EWMA realized volatility and breadth decay floor in `nextgen/volatility_targeting.py`.
+  - Protected database immutability by routing picks history writes to `data/operational.db` in `core/data_engine.py`.
+  - Resolved corporate action ex-dates falling on non-trading days to next valid market session in `core/analytical_price.py`.
+  - Added Sortino and Calmar ratio bounding sentinels (99.9) on zero downside/drawdown profiles in `brute_force/sim_kernel.c`.
+  - Added 4000-character line-boundary message chunking in `core/telegram_sender.py` to prevent payload dropping.
+- **Outer Loop 3 (22 Defects Remediated - L3-DEF-01 to L3-DEF-22)**:
+  - Bounded Martin (UPI), Burke, Omega, and Gain-to-Pain ratios on zero-drawdown and flat profiles in `analytics/institutional_risk.py`.
+  - Vector indicator tensor clamping for short histories ($T < 50$) in `nextgen/vector_engine.py`.
+  - Symmetrical `math.trunc()` for negative position quantity scaling in `nextgen/volatility_targeting.py`.
+  - Added 52-week high/low seasoning guards preventing unseasoned IPO dual-triggers in `core/breadth.py`.
+  - Reconciled sub-paise Indian tax/friction rounding ($\le 0.01$) against unrounded NAV in `core/portfolio.py`.
+  - Fixed cache manifest multi-process race conditions and WAL mutation tracking in `cache/fast_cache.py`.
+  - Chunked symbol queries $> 900$ in `core/data_engine.py` to eliminate SQLite variable limit overflows.
+  - Aligned memory stride for `sector_ids` (`uint8_t` in ctypes bridge and C kernel) in `brute_force/bridge.py` and `sim_kernel.c`.
+  - Added `pthread_create` return code verification and active thread tracking in `brute_force/sim_kernel.c`.
+  - Upgraded internal simulation accumulators to 64-bit IEEE 754 `double` in `brute_force/sim_kernel.c` to prevent multi-decade drift.
+  - Added reverse stock split / consolidation jump detection ($\ge 1.6667$) in `core/analytical_price.py`.
+  - Guaranteed `trade_log.csv` schema export even on zero trades in `core/backtest.py`.
+  - Exchange business session distance (`np.busday_count`) for corporate action blackout in `compliance/pretrade_audit.py`.
+  - Added `testzip()` CRC32 validation in `reporting/deliverables_bundle.py`.
+  - Argument parser support for `--include-random-durations` and `'rapid'` mode in `main.py`.
+  - Constructor keyword argument flexibility and module-level `run_custom_backtest` in `brute_force/runner.py`.
+
 ## [2.3.0] - 2026-10-17
 
 ### Added

@@ -37,8 +37,8 @@ def calculate_comprehensive_risk_suite(
     Dict containing comprehensive institutional metrics.
     """
     r = np.asarray(returns, dtype=np.float64)
-    # Filter out NaNs
-    r = r[~np.isnan(r)]
+    # Filter out NaNs and Infs (sanitize returns vector)
+    r = r[np.isfinite(r)]
 
     if len(r) == 0:
         return {}
@@ -85,7 +85,11 @@ def calculate_comprehensive_risk_suite(
     # UI = sqrt( mean( (Drawdown * 100)^2 ) )
     dd_pct = drawdowns * 100.0
     ulcer_index = float(np.sqrt(np.mean(dd_pct ** 2))) if len(dd_pct) > 0 else 0.0
-    ulcer_performance_index = float((cagr - rf_rate) / (ulcer_index / 100.0)) if ulcer_index > 1e-4 else 0.0
+    excess_cagr = cagr - rf_rate
+    if ulcer_index > 1e-4:
+        ulcer_performance_index = float(excess_cagr / (ulcer_index / 100.0))
+    else:
+        ulcer_performance_index = 999.0 if excess_cagr > 0.0 else (0.0 if abs(excess_cagr) <= 1e-6 else -999.0)
 
     # 7. Discrete Drawdown Episodes & Burke Ratio
     # Identify distinct drawdown valley troughs
@@ -105,8 +109,11 @@ def calculate_comprehensive_risk_suite(
     if in_dd:
         drawdown_episodes.append(abs(current_trough))
 
-    burke_denominator = float(np.sqrt(sum(d ** 2 for d in drawdown_episodes))) if drawdown_episodes else 1e-6
-    burke_ratio = float((cagr - rf_rate) / burke_denominator) if burke_denominator > 1e-6 else 0.0
+    burke_denominator = float(np.sqrt(sum(d ** 2 for d in drawdown_episodes))) if drawdown_episodes else 0.0
+    if burke_denominator > 1e-6:
+        burke_ratio = float(excess_cagr / burke_denominator)
+    else:
+        burke_ratio = 999.0 if excess_cagr > 0.0 else (0.0 if abs(excess_cagr) <= 1e-6 else -999.0)
 
     # Drawdown Duration (sessions)
     max_dd_duration = 0
@@ -131,13 +138,24 @@ def calculate_comprehensive_risk_suite(
     threshold = rf_rate / annualization_factor
     upside_excess = np.maximum(r - threshold, 0.0)
     downside_excess = np.maximum(threshold - r, 0.0)
+    sum_upside = float(np.sum(upside_excess))
     sum_downside = float(np.sum(downside_excess))
-    omega_ratio = float(np.sum(upside_excess) / sum_downside) if sum_downside > 1e-8 else 999.0
+    if sum_downside > 1e-8:
+        omega_ratio = float(sum_upside / sum_downside)
+    elif sum_upside > 1e-8:
+        omega_ratio = 999.0
+    else:
+        omega_ratio = 0.0
 
     # Gain-to-Pain (Schwager)
     positive_gains = float(np.sum(np.maximum(r, 0.0)))
     negative_losses = float(np.sum(np.abs(np.minimum(r, 0.0))))
-    gain_to_pain_ratio = float(positive_gains / negative_losses) if negative_losses > 1e-8 else 999.0
+    if negative_losses > 1e-8:
+        gain_to_pain_ratio = float(positive_gains / negative_losses)
+    elif positive_gains > 1e-8:
+        gain_to_pain_ratio = 999.0
+    else:
+        gain_to_pain_ratio = 0.0
 
     # Tail Ratio: 95th percentile / abs(5th percentile)
     p95 = float(np.percentile(r, 95.0))
@@ -168,7 +186,7 @@ def calculate_comprehensive_risk_suite(
         valid_len = min(len(r), len(bm))
         r_sub = r[:valid_len]
         bm_sub = bm[:valid_len]
-        mask = (~np.isnan(r_sub)) & (~np.isnan(bm_sub))
+        mask = np.isfinite(r_sub) & np.isfinite(bm_sub)
         r_clean = r_sub[mask]
         bm_clean = bm_sub[mask]
 

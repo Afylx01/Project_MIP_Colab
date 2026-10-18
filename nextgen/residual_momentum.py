@@ -80,7 +80,10 @@ def compute_rolling_residual_momentum(
     shifted_eps = eps_df.shift(skip_recent)
     eps_sum = shifted_eps.rolling(effective_lb, min_periods=min(30, effective_lb)).sum().to_numpy()
 
-    res_score = np.nan_to_num(eps_sum / (eps_std * np.sqrt(effective_lb)), nan=0.0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        res_raw = eps_sum / (eps_std * np.sqrt(effective_lb))
+    res_clean = np.nan_to_num(res_raw, nan=0.0, posinf=0.0, neginf=0.0)
+    res_score = np.clip(res_clean, -5.0, 5.0)
     return pd.DataFrame(res_score, index=stock_returns.index, columns=stock_returns.columns)
 
 

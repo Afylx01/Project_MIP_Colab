@@ -56,8 +56,11 @@ class BrinsonFachlerEngine:
         for sec in all_sectors:
             wp = portfolio_weights.get(sec, 0.0)
             wb = benchmark_weights.get(sec, 0.0)
-            rp = portfolio_returns.get(sec, 0.0)
-            rb = benchmark_returns.get(sec, 0.0)
+            # Institutional Zero-Weight Convention:
+            # If sector not in benchmark (wb == 0), rb defaults to total benchmark return R_B
+            rb = benchmark_returns.get(sec, total_bm_return if wb == 0.0 else 0.0)
+            # If sector not in portfolio (wp == 0), rp defaults to benchmark sector return rb
+            rp = portfolio_returns.get(sec, rb if wp == 0.0 else 0.0)
 
             # Brinson-Fachler formulation:
             # Allocation: (wp - wb) * (rb - R_B)
@@ -100,7 +103,12 @@ class BrinsonFachlerEngine:
         if T == 0:
             return pd.DataFrame()
         if T == 1:
-            return period_attributions[0]
+            df0 = period_attributions[0].copy()
+            df0["cumulative_allocation"] = df0.get("allocation_effect", 0.0)
+            df0["cumulative_selection"] = df0.get("selection_effect", 0.0)
+            df0["cumulative_interaction"] = df0.get("interaction_effect", 0.0)
+            df0["cumulative_total_active"] = df0.get("total_active_return", 0.0)
+            return df0
 
         # Calculate Menchero k_t factors
         k_factors = []
@@ -114,15 +122,18 @@ class BrinsonFachlerEngine:
             k_factors.append(kt)
 
         # Compound cumulative returns
-        cum_rp = float(np.prod([1.0 + r for r in portfolio_total_returns]) - 1.0)
-        cum_rb = float(np.prod([1.0 + r for r in benchmark_total_returns]) - 1.0)
+        cum_rp = float(np.prod([max(0.0, 1.0 + r) for r in portfolio_total_returns]) - 1.0)
+        cum_rb = float(np.prod([max(0.0, 1.0 + r) for r in benchmark_total_returns]) - 1.0)
         total_active_spread = cum_rp - cum_rb
 
-        denom = sum(
-            k_factors[t] * (portfolio_total_returns[t] - benchmark_total_returns[t])
-            for t in range(T)
-        )
-        K_scale = (total_active_spread / denom) if abs(denom) > 1e-8 else 1.0
+        if abs(total_active_spread) < 1e-12:
+            K_scale = 0.0
+        else:
+            denom = sum(
+                k_factors[t] * (portfolio_total_returns[t] - benchmark_total_returns[t])
+                for t in range(T)
+            )
+            K_scale = (total_active_spread / denom) if abs(denom) > 1e-12 else (1.0 + cum_rb)
 
         # Aggregate across all sectors
         sector_totals: Dict[str, Dict[str, float]] = {}

@@ -50,7 +50,8 @@ def compute_delivery_absorption_flow(
     """
     clv = compute_close_location_value(close, high, low)
     deliv_val_cr = (delivery_qty * close) / 1e7
-    baseline = max(median_delivery_val_cr, 0.50)  # Floor at ₹50 Lakhs baseline
+    base_val = median_delivery_val_cr if (math.isfinite(median_delivery_val_cr) and median_delivery_val_cr > 0) else 10.0
+    baseline = max(base_val, 0.50)  # Floor at ₹50 Lakhs baseline
     multiple = deliv_val_cr / baseline
     daf = multiple * clv
     return float(daf)

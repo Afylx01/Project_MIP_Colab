@@ -225,8 +225,11 @@ def build_tensor_cube(
 
     atr_14 = np.zeros((T, N), dtype=np.float32)
     cumsum_tr = np.cumsum(tr, axis=0)
-    atr_14[14:] = (cumsum_tr[14:] - cumsum_tr[:-14]) / 14.0
-    atr_14[:14] = cumsum_tr[:14] / np.arange(1, 15)[:, None]
+    if T >= 14:
+        atr_14[14:] = (cumsum_tr[14:] - cumsum_tr[:-14]) / 14.0
+    init_len = min(14, T)
+    if init_len > 0:
+        atr_14[:init_len] = cumsum_tr[:init_len] / np.arange(1, init_len + 1)[:, None]
     atr_14 = np.where(atr_14 > 0, atr_14, close_px * 0.03)
 
     # Precompute daily returns for Volar & Residual Momentum
@@ -294,7 +297,10 @@ def build_tensor_cube(
 
         shifted_eps = df_eps.shift(skip_recent)
         eps_sum = shifted_eps.rolling(effective_lb, min_periods=min(30, effective_lb)).sum().to_numpy()
-        res_mom_cubes[l_idx] = np.nan_to_num(eps_sum / (eps_std * np.sqrt(effective_lb)), nan=0.0).astype(np.float32)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            res_raw = eps_sum / (eps_std * np.sqrt(effective_lb))
+        res_clean = np.nan_to_num(res_raw, nan=0.0, posinf=0.0, neginf=0.0)
+        res_mom_cubes[l_idx] = np.clip(res_clean, -5.0, 5.0).astype(np.float32)
 
     # Precompute EMAs across spans
     num_ema = len(ema_span_values)

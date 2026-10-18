@@ -54,6 +54,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+data/.cache/
+*.npz
 .coverage
 htmlcov/
 venv/

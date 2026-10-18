@@ -93,49 +93,100 @@ def get_connection(read_only: bool = True, reuse: bool = True) -> sqlite3.Connec
     return conn
 
 
+def get_operational_db_path() -> Path:
+    """Returns path to mutable operational database (picks_history, audit ledgers)."""
+    return get_base_dir() / "data" / "operational.db"
+
+
+def ensure_operational_schema(conn: sqlite3.Connection) -> None:
+    """Enforces relational constraints on operational database."""
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS picks_history (
+                pick_date TEXT,
+                symbol TEXT,
+                rank INTEGER,
+                industry TEXT,
+                regime TEXT,
+                signal_type TEXT,
+                status TEXT,
+                entry_price REAL,
+                ret_1w REAL,
+                ret_1m REAL,
+                ret_3m REAL,
+                ret_6m REAL,
+                ret_1y REAL,
+                exit_date TEXT,
+                exit_price REAL,
+                exit_reason TEXT,
+                PRIMARY KEY (pick_date, symbol)
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_picks_hist_date ON picks_history(pick_date);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_picks_hist_sym ON picks_history(symbol);")
+        conn.commit()
+    finally:
+        cursor.close()
+
+
+def get_operational_connection() -> sqlite3.Connection:
+    """Returns read-write connection to isolated operational database, preserving universe.db immutability."""
+    op_path = get_operational_db_path()
+    op_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(op_path), check_same_thread=False)
+    conn.execute("PRAGMA journal_mode = WAL;")
+    conn.execute("PRAGMA synchronous = NORMAL;")
+    ensure_operational_schema(conn)
+    return conn
+
+
 def ensure_database_schema(conn: sqlite3.Connection) -> None:
     """Enforces relational constraints, unique indexes, and audit ledgers."""
     cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS prices (
-            date TEXT NOT NULL,
-            symbol TEXT NOT NULL,
-            open REAL,
-            high REAL,
-            low REAL,
-            close REAL,
-            volume REAL,
-            is_delisted INTEGER DEFAULT 0
-        );
-    """)
-    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_prices_sym_date_unique ON prices (symbol, date);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_prices_date ON prices (date);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_prices_sym ON prices (symbol);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_prices_sym_date ON prices (symbol, date DESC);")
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS applied_corporate_actions (
-            symbol TEXT NOT NULL,
-            ex_date TEXT NOT NULL,
-            type TEXT NOT NULL,
-            factor REAL,
-            amount REAL,
-            applied_at TEXT NOT NULL,
-            PRIMARY KEY (symbol, ex_date, type)
-        );
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS picks_history (
-            pick_date TEXT NOT NULL,
-            symbol TEXT NOT NULL,
-            entry_price REAL,
-            exit_price REAL,
-            ret_since REAL,
-            last_px_date TEXT,
-            status TEXT DEFAULT 'ACTIVE',
-            PRIMARY KEY (pick_date, symbol)
-        );
-    """)
-    conn.commit()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS prices (
+                date TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                open REAL,
+                high REAL,
+                low REAL,
+                close REAL,
+                volume REAL,
+                is_delisted INTEGER DEFAULT 0
+            );
+        """)
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_prices_sym_date_unique ON prices (symbol, date);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_prices_date ON prices (date);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_prices_sym ON prices (symbol);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_prices_sym_date ON prices (symbol, date DESC);")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS applied_corporate_actions (
+                symbol TEXT NOT NULL,
+                ex_date TEXT NOT NULL,
+                type TEXT NOT NULL,
+                factor REAL,
+                amount REAL,
+                applied_at TEXT NOT NULL,
+                PRIMARY KEY (symbol, ex_date, type)
+            );
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS picks_history (
+                pick_date TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                entry_price REAL,
+                exit_price REAL,
+                ret_since REAL,
+                last_px_date TEXT,
+                status TEXT DEFAULT 'ACTIVE',
+                PRIMARY KEY (pick_date, symbol)
+            );
+        """)
+        conn.commit()
+    finally:
+        cursor.close()
 
 
 def load_applied_corporate_actions(
@@ -196,42 +247,45 @@ def load_applied_corporate_actions(
     # 2. SQLite Ledger Overlay
     conn = get_connection()
     cursor = conn.cursor()
-    query = "SELECT symbol, ex_date, type, factor, amount, applied_at FROM applied_corporate_actions WHERE 1=1"
-    params = []
-    if start_date:
-        query += " AND ex_date >= ?"
-        params.append(start_date)
-    if end_date:
-        query += " AND ex_date <= ?"
-        params.append(end_date)
-    if symbols:
-        placeholders = ",".join(["?"] * len(symbols))
-        query += f" AND symbol IN ({placeholders})"
-        params.extend([s.strip().upper() for s in symbols])
-
-    query += " ORDER BY ex_date ASC, symbol ASC"
     try:
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        for r in rows:
-            sym = str(r[0]).strip().upper()
-            ex = str(r[1])[:10]
-            key = (sym, ex)
-            if key not in seen_keys:
-                seen_keys.add(key)
-                res.append({
-                    "symbol": sym,
-                    "ex_date": ex,
-                    "effective_date": ex,
-                    "type": r[2],
-                    "action_type": r[2],
-                    "action_nature": "UNKNOWN",
-                    "factor": r[3],
-                    "amount": r[4],
-                    "applied_at": r[5],
-                })
-    except sqlite3.OperationalError:
-        pass
+        query = "SELECT symbol, ex_date, type, factor, amount, applied_at FROM applied_corporate_actions WHERE 1=1"
+        params = []
+        if start_date:
+            query += " AND ex_date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND ex_date <= ?"
+            params.append(end_date)
+        if symbols:
+            placeholders = ",".join(["?"] * len(symbols))
+            query += f" AND symbol IN ({placeholders})"
+            params.extend([s.strip().upper() for s in symbols])
+
+        query += " ORDER BY ex_date ASC, symbol ASC"
+        try:
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            for r in rows:
+                sym = str(r[0]).strip().upper()
+                ex = str(r[1])[:10]
+                key = (sym, ex)
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    res.append({
+                        "symbol": sym,
+                        "ex_date": ex,
+                        "effective_date": ex,
+                        "type": r[2],
+                        "action_type": r[2],
+                        "action_nature": "UNKNOWN",
+                        "factor": r[3],
+                        "amount": r[4],
+                        "applied_at": r[5],
+                    })
+        except sqlite3.OperationalError:
+            pass
+    finally:
+        cursor.close()
 
     return sorted(res, key=lambda a: (a["ex_date"], a["symbol"]))
 
@@ -240,26 +294,35 @@ def get_latest_date() -> str:
     """Returns the latest available trading date in universe.db (YYYY-MM-DD)."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT MAX(date) FROM prices;")
-    res = cursor.fetchone()
-    return res[0] if res and res[0] else ""
+    try:
+        cursor.execute("SELECT MAX(date) FROM prices;")
+        res = cursor.fetchone()
+        return res[0] if res and res[0] else ""
+    finally:
+        cursor.close()
 
 
 def get_date_range() -> Tuple[str, str]:
     """Returns (min_date, max_date)."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT MIN(date), MAX(date) FROM prices;")
-    res = cursor.fetchone()
-    return (res[0], res[1]) if res else ("", "")
+    try:
+        cursor.execute("SELECT MIN(date), MAX(date) FROM prices;")
+        res = cursor.fetchone()
+        return (res[0], res[1]) if res else ("", "")
+    finally:
+        cursor.close()
 
 
 def get_symbols() -> List[str]:
     """Returns sorted list of all unique symbols in the database."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT DISTINCT symbol FROM prices ORDER BY symbol ASC;")
-    return [row[0] for row in cursor.fetchall()]
+    try:
+        cursor.execute("SELECT DISTINCT symbol FROM prices ORDER BY symbol ASC;")
+        return [row[0] for row in cursor.fetchall()]
+    finally:
+        cursor.close()
 
 
 def load_bars(
@@ -281,6 +344,17 @@ def load_bars(
     if end_date:
         conditions.append("date <= ?")
         params.append(str(end_date))
+    if symbols and len(symbols) > 900:
+        chunks = [symbols[i:i + 900] for i in range(0, len(symbols), 900)]
+        dfs = []
+        for chunk in chunks:
+            df_chunk = load_bars(start_date=start_date, end_date=end_date, symbols=chunk, include_delisted=include_delisted)
+            if not df_chunk.empty:
+                dfs.append(df_chunk)
+        if not dfs:
+            return pd.DataFrame(columns=['date', 'symbol', 'open', 'high', 'low', 'close', 'volume', 'is_delisted'])
+        return pd.concat(dfs, ignore_index=True).sort_values(by=["date", "symbol"]).reset_index(drop=True)
+
     if symbols:
         placeholders = ",".join("?" for _ in symbols)
         conditions.append(f"symbol IN ({placeholders})")
@@ -317,28 +391,30 @@ def load_symbol_history(
     """
     db_conn = conn or get_connection()
     cursor = db_conn.cursor()
+    try:
+        if end_date:
+            query = """
+                SELECT date, symbol, open, high, low, close, volume, is_delisted
+                FROM prices
+                WHERE symbol = ? AND date <= ?
+                ORDER BY date DESC
+                LIMIT ?;
+            """
+            params = (symbol, str(end_date), int(lookback_bars))
+        else:
+            query = """
+                SELECT date, symbol, open, high, low, close, volume, is_delisted
+                FROM prices
+                WHERE symbol = ?
+                ORDER BY date DESC
+                LIMIT ?;
+            """
+            params = (symbol, int(lookback_bars))
 
-    if end_date:
-        query = """
-            SELECT date, symbol, open, high, low, close, volume, is_delisted
-            FROM prices
-            WHERE symbol = ? AND date <= ?
-            ORDER BY date DESC
-            LIMIT ?;
-        """
-        params = (symbol, str(end_date), int(lookback_bars))
-    else:
-        query = """
-            SELECT date, symbol, open, high, low, close, volume, is_delisted
-            FROM prices
-            WHERE symbol = ?
-            ORDER BY date DESC
-            LIMIT ?;
-        """
-        params = (symbol, int(lookback_bars))
-
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+    finally:
+        cursor.close()
 
     if not as_dataframe:
         # Return reversed raw tuples: (date, symbol, open, high, low, close, volume, is_delisted)
@@ -492,67 +568,69 @@ def resolve_latest_valid_eod(
     base = Path(base_dir) if base_dir else get_base_dir()
     db_conn = get_connection(read_only=True, reuse=True)
     cursor = db_conn.cursor()
+    try:
+        if as_of_date is not None:
+            target = str(as_of_date).strip()[:10]
+            cursor.execute("SELECT COUNT(DISTINCT symbol), COUNT(*) FROM prices WHERE date = ?;", (target,))
+            row = cursor.fetchone()
+            sym_count = row[0] if row else 0
+            row_count = row[1] if row else 0
+            if sym_count < 20 or row_count < 20:
+                return False, "", {
+                    "status": "DATE_UNAVAILABLE",
+                    "error": f"Requested date '{target}' has insufficient/no data in SQLite (symbols={sym_count}, rows={row_count})",
+                    "requested_date": target,
+                }
+            return True, target, {
+                "status": "EXPLICIT_DATE_VALIDATED",
+                "date": target,
+                "symbol_count": sym_count,
+                "row_count": row_count,
+            }
 
-    if as_of_date is not None:
-        target = str(as_of_date).strip()[:10]
-        cursor.execute("SELECT COUNT(DISTINCT symbol), COUNT(*) FROM prices WHERE date = ?;", (target,))
+        # Unspecified date mode:
+        cursor.execute("SELECT MAX(date) FROM prices;")
+        res = cursor.fetchone()
+        db_latest = str(res[0]) if res and res[0] else ""
+        if not db_latest:
+            return False, "", {
+                "status": "DATABASE_EMPTY",
+                "error": "SQLite prices table is empty. No valid EOD dates exist.",
+            }
+
+        cursor.execute("SELECT COUNT(DISTINCT symbol), COUNT(*) FROM prices WHERE date = ?;", (db_latest,))
         row = cursor.fetchone()
         sym_count = row[0] if row else 0
         row_count = row[1] if row else 0
-        if sym_count < 20 or row_count < 20:
-            return False, "", {
-                "status": "DATE_UNAVAILABLE",
-                "error": f"Requested date '{target}' has insufficient/no data in SQLite (symbols={sym_count}, rows={row_count})",
-                "requested_date": target,
+        if sym_count < 50:
+            return False, db_latest, {
+                "status": "DATA_CORRUPT",
+                "error": f"Latest date '{db_latest}' has only {sym_count} symbols (minimum 50 required).",
+                "db_latest": db_latest,
             }
-        return True, target, {
-            "status": "EXPLICIT_DATE_VALIDATED",
-            "date": target,
-            "symbol_count": sym_count,
-            "row_count": row_count,
-        }
 
-    # Unspecified date mode:
-    cursor.execute("SELECT MAX(date) FROM prices;")
-    res = cursor.fetchone()
-    db_latest = str(res[0]) if res and res[0] else ""
-    if not db_latest:
-        return False, "", {
-            "status": "DATABASE_EMPTY",
-            "error": "SQLite prices table is empty. No valid EOD dates exist.",
-        }
+        expected_session = get_expected_latest_eod()
+        is_stale = (db_latest < expected_session)
 
-    cursor.execute("SELECT COUNT(DISTINCT symbol), COUNT(*) FROM prices WHERE date = ?;", (db_latest,))
-    row = cursor.fetchone()
-    sym_count = row[0] if row else 0
-    row_count = row[1] if row else 0
-    if sym_count < 50:
-        return False, db_latest, {
-            "status": "DATA_CORRUPT",
-            "error": f"Latest date '{db_latest}' has only {sym_count} symbols (minimum 50 required).",
-            "db_latest": db_latest,
-        }
+        if is_stale and not allow_stale:
+            return False, db_latest, {
+                "status": "STALE_DATA_BLOCKED",
+                "db_latest": db_latest,
+                "expected_session": expected_session,
+                "error": f"LATEST MARKET DATA UNAVAILABLE: Database latest EOD ({db_latest}) is older than expected session ({expected_session}).",
+            }
 
-    expected_session = get_expected_latest_eod()
-    is_stale = (db_latest < expected_session)
-
-    if is_stale and not allow_stale:
-        return False, db_latest, {
-            "status": "STALE_DATA_BLOCKED",
+        return True, db_latest, {
+            "status": "VALIDATED",
+            "date": db_latest,
             "db_latest": db_latest,
             "expected_session": expected_session,
-            "error": f"LATEST MARKET DATA UNAVAILABLE: Database latest EOD ({db_latest}) is older than expected session ({expected_session}).",
+            "symbol_count": sym_count,
+            "row_count": row_count,
+            "is_stale": is_stale,
         }
-
-    return True, db_latest, {
-        "status": "VALIDATED",
-        "date": db_latest,
-        "db_latest": db_latest,
-        "expected_session": expected_session,
-        "symbol_count": sym_count,
-        "row_count": row_count,
-        "is_stale": is_stale,
-    }
+    finally:
+        cursor.close()
 
 
 
@@ -744,17 +822,20 @@ def get_universe_statistics() -> Dict[str, Any]:
     """Returns database summary statistics."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM prices;")
-    total_rows = cursor.fetchone()[0]
+    try:
+        cursor.execute("SELECT COUNT(*) FROM prices;")
+        total_rows = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(DISTINCT symbol) FROM prices;")
-    unique_symbols = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(DISTINCT symbol) FROM prices;")
+        unique_symbols = cursor.fetchone()[0]
 
-    cursor.execute("SELECT MIN(date), MAX(date) FROM prices;")
-    min_date, max_date = cursor.fetchone()
+        cursor.execute("SELECT MIN(date), MAX(date) FROM prices;")
+        min_date, max_date = cursor.fetchone()
 
-    cursor.execute("SELECT COUNT(*) FROM prices WHERE is_delisted = 1;")
-    delisted_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM prices WHERE is_delisted = 1;")
+        delisted_count = cursor.fetchone()[0]
+    finally:
+        cursor.close()
 
     db_path = get_db_path()
     file_size_mb = db_path.stat().st_size / (1024 * 1024) if db_path.exists() else 0.0

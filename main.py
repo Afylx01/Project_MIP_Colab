@@ -1224,6 +1224,20 @@ def run_brute_force_flow(
             df = runner.run_sweep(grid)
             print(f"Completed Tier 2 ablation sweep across {len(df)} configurations.")
             return df
+        elif mode == "rapid":
+            cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
+            grid = generate_tier3_hyperparameter_grid(
+                cube,
+                sample_size=810,
+                use_residual_mom=use_residual_momentum,
+                use_vol_targeting=use_vol_targeting,
+                use_delivery_veto=use_delivery_veto,
+                include_random_durations=include_random_durations,
+                num_random_durations=num_random_durations,
+            )
+            df = runner.run_sweep(grid)
+            print(f"Completed Tier 3 Rapid hyperparameter sweep across {len(df)} configurations.")
+            return df
         elif mode in ("comprehensive", "tier3", "tier3_deep"):
             cube = runner.ensure_cube(universe_name=universe_mode, benchmark=benchmark)
             grid = generate_tier3_hyperparameter_grid(
@@ -1570,7 +1584,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--brute-force", action="store_true",
                         help="Execute blazing brute force engine directly (Option 18)")
     parser.add_argument("--brute-force-mode", type=str,
-                        choices=["baseline", "tier1", "tier2", "comprehensive", "tier3", "tier3_deep", "tier3_full", "tier3_mega", "tier3_ultra", "tier3_deep_durations", "tier3_mega_durations", "tier3_ultra_durations", "matrix"],
+                        choices=["baseline", "tier1", "tier2", "rapid", "comprehensive", "tier3", "tier3_deep", "tier3_full", "tier3_mega", "tier3_ultra", "tier3_deep_durations", "tier3_mega_durations", "tier3_ultra_durations", "matrix"],
                         default="baseline",
                         help="Brute force execution mode (default baseline)")
     parser.add_argument("--schedule", type=str, choices=["weekly", "monthly", "quarterly", "half_yearly", "yearly"], default="monthly",
@@ -1669,19 +1683,36 @@ if __name__ == "__main__":
             use_residual_momentum=args.use_residual_momentum,
             use_vol_targeting=args.use_vol_targeting,
             use_delivery_veto=args.use_delivery_veto,
+            include_random_durations=args.include_random_durations,
+            num_random_durations=args.num_random_durations,
         ),
     }
 
     if args.option and args.option in option_map:
         lock_file = BASE_DIR / "reports" / ".scanner.lock"
         if args.option in (1, 17):
+            (BASE_DIR / "reports").mkdir(parents=True, exist_ok=True)
+            if lock_file.exists():
+                try:
+                    content = lock_file.read_text(encoding="utf-8").strip()
+                    old_pid = int(content)
+                    try:
+                        os.kill(old_pid, 0)
+                        # Process is still actively running
+                        print(f"{C_RED}Error: Another scanner process is actively running (PID: {old_pid}, lock: {lock_file}){C_RESET}")
+                        sys.exit(1)
+                    except (ProcessLookupError, OSError):
+                        print(f"{C_YELLOW}⚠ Detected stale .scanner.lock from dead PID {old_pid}. Breaking lock.{C_RESET}")
+                        lock_file.unlink(missing_ok=True)
+                except (ValueError, OSError):
+                    lock_file.unlink(missing_ok=True)
+
             try:
-                (BASE_DIR / "reports").mkdir(parents=True, exist_ok=True)
                 fd = os.open(str(lock_file), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
                 os.write(fd, str(os.getpid()).encode("utf-8"))
                 os.close(fd)
             except FileExistsError:
-                print(f"{C_RED}Error: Another scanner process is already running (lock: {lock_file}){C_RESET}")
+                print(f"{C_RED}Error: Another scanner process acquired lock concurrently (lock: {lock_file}){C_RESET}")
                 sys.exit(1)
         try:
             option_map[args.option]()

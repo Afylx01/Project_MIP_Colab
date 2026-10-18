@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import json
+import time
 import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -74,19 +75,25 @@ class InstitutionalTearsheetGenerator:
                 sl = float(r.get("stop_loss", px * 0.92))
                 volar = float(r.get("volar_score", 0.0))
                 res_alpha = float(r.get("residual_alpha", 0.0) or 0.0)
-                status = str(r.get("signal_type", "BUY"))
-                reason = str(r.get("reason_code", "PASS"))
-                deliv_act = str(r.get("delivery_action", "APPROVED"))
+                import html
+                status_raw = str(r.get("signal_type", "BUY"))
+                reason_raw = str(r.get("reason_code", "PASS"))
+                deliv_act_raw = str(r.get("delivery_action", "APPROVED"))
+                sym_esc = html.escape(str(sym))
+                sec_esc = html.escape(str(sec))
+                status = html.escape(status_raw)
+                reason = html.escape(reason_raw)
+                deliv_act = html.escape(deliv_act_raw)
 
-                badge_class = "badge-buy" if "BUY" in status else "badge-hold"
+                badge_class = "badge-buy" if "BUY" in status_raw else "badge-hold"
                 res_class = "color-pos" if res_alpha >= 0 else "color-neg"
                 tv_url = f"https://in.tradingview.com/chart/?symbol=NSE:{sym}"
 
                 row_html = f"""
                 <tr>
                     <td class="font-bold">{rank}</td>
-                    <td><a href="{tv_url}" target="_blank" class="sym-link">{sym} ↗</a></td>
-                    <td>{sec}</td>
+                    <td><a href="{tv_url}" target="_blank" class="sym-link">{sym_esc} ↗</a></td>
+                    <td>{sec_esc}</td>
                     <td class="num">₹{px:,.2f}</td>
                     <td class="num font-bold">{qty:,}</td>
                     <td class="num font-bold">₹{val:,.2f}</td>
@@ -283,5 +290,7 @@ class InstitutionalTearsheetGenerator:
 </body>
 </html>
 """
-        output_path.write_text(html_content, encoding="utf-8")
+        tmp_path = output_path.with_suffix(f".tmp_{os.getpid()}_{time.time_ns()}")
+        tmp_path.write_text(html_content, encoding="utf-8")
+        tmp_path.replace(output_path)
         return output_path

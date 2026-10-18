@@ -149,6 +149,14 @@ SCHEDULE_MAP = {
 }
 
 
+def _as_contiguous_ptr(arr: Optional[np.ndarray], dtype=np.float32) -> int:
+    """Ensures array is C-contiguous in memory and returns its ctypes pointer address."""
+    if arr is None:
+        return 0
+    c_arr = np.ascontiguousarray(arr, dtype=dtype)
+    return int(c_arr.ctypes.data)
+
+
 # 48-byte Result Struct matching C99 SimulationSummary
 class CSimulationSummary(ctypes.Structure):
     _fields_ = [
@@ -343,7 +351,10 @@ class NativeBruteForceEngine:
                 c_params[i].ema_idx = int(cube.ema_span_values.index(200))
             else:
                 c_params[i].ema_idx = min(max_ema_idx, max(0, int(p.get("ema_idx", 3))))
-            c_params[i].top_n = int(p.get("top_n", 20))
+            raw_top_n = int(p.get("top_n", 20))
+            if raw_top_n > 128:
+                raise ValueError(f"INVALID_TOP_N: {raw_top_n} exceeds C99 sim_kernel MAX_HOLDINGS (128).")
+            c_params[i].top_n = raw_top_n
             c_params[i].exit_buffer_rank = int(p.get("exit_buffer_rank", 40))
             c_params[i].max_per_sector = int(p.get("max_per_sector", 2))
             c_params[i].sizing_mode = 0 if p.get("sizing_mode", "atr_risk_parity") == "atr_risk_parity" else 1
@@ -401,19 +412,31 @@ class NativeBruteForceEngine:
                 c_cube.schedule_offsets[s] = 0
                 c_cube.schedule_lengths[s] = 0
 
-        c_cube.rebalance_indices = cube.rebalance_indices.ctypes.data
-        c_cube.benchmark_regime = cube.benchmark_regime.ctypes.data
-        c_cube.sector_ids = cube.sector_ids.ctypes.data
-        c_cube.open_px = cube.open_px.ctypes.data
-        c_cube.close_px = cube.close_px.ctypes.data
-        c_cube.atr_14 = cube.atr_14.ctypes.data
-        c_cube.volar_cubes = cube.volar_cubes.ctypes.data
-        c_cube.res_mom_cubes = cube.res_mom_cubes.ctypes.data if hasattr(cube, "res_mom_cubes") and cube.res_mom_cubes is not None else cube.volar_cubes.ctypes.data
-        c_cube.high_cubes = cube.high_cubes.ctypes.data
-        c_cube.ema_cubes = cube.ema_cubes.ctypes.data
-        c_cube.rs_pass_cubes = cube.rs_pass_cubes.ctypes.data
-        c_cube.vol_target_scalar = cube.vol_target_scalar.ctypes.data if hasattr(cube, "vol_target_scalar") and cube.vol_target_scalar is not None else 0
-        c_cube.delivery_veto_plane = cube.delivery_veto_plane.ctypes.data if hasattr(cube, "delivery_veto_plane") and cube.delivery_veto_plane is not None else 0
+        # Memory pinning and C-contiguous safety (L2-DEF-11)
+        _pinned = []
+        def _pin_and_get_ptr(arr, dtype):
+            if arr is None:
+                return 0
+            c_arr = np.ascontiguousarray(arr, dtype=dtype)
+            _pinned.append(c_arr)
+            return int(c_arr.ctypes.data)
+
+        c_cube.rebalance_indices = _pin_and_get_ptr(cube.rebalance_indices, np.int32)
+        c_cube.benchmark_regime = _pin_and_get_ptr(cube.benchmark_regime, np.uint8)
+        c_cube.sector_ids = _pin_and_get_ptr(cube.sector_ids, np.uint8)
+        c_cube.open_px = _pin_and_get_ptr(cube.open_px, np.float32)
+        c_cube.close_px = _pin_and_get_ptr(cube.close_px, np.float32)
+        c_cube.atr_14 = _pin_and_get_ptr(cube.atr_14, np.float32)
+        c_cube.volar_cubes = _pin_and_get_ptr(cube.volar_cubes, np.float32)
+        res_mom = cube.res_mom_cubes if hasattr(cube, "res_mom_cubes") and cube.res_mom_cubes is not None else cube.volar_cubes
+        c_cube.res_mom_cubes = _pin_and_get_ptr(res_mom, np.float32)
+        c_cube.high_cubes = _pin_and_get_ptr(cube.high_cubes, np.float32)
+        c_cube.ema_cubes = _pin_and_get_ptr(cube.ema_cubes, np.float32)
+        c_cube.rs_pass_cubes = _pin_and_get_ptr(cube.rs_pass_cubes, np.uint8)
+        vol_tgt = cube.vol_target_scalar if hasattr(cube, "vol_target_scalar") and cube.vol_target_scalar is not None else None
+        c_cube.vol_target_scalar = _pin_and_get_ptr(vol_tgt, np.float32)
+        deliv_p = cube.delivery_veto_plane if hasattr(cube, "delivery_veto_plane") and cube.delivery_veto_plane is not None else None
+        c_cube.delivery_veto_plane = _pin_and_get_ptr(deliv_p, np.uint8)
 
         # Execute parallel C99 simulation
         self.lib.run_parallel_brute_force(

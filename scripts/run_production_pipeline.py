@@ -62,12 +62,6 @@ class PipelineLock:
             try:
                 content = json.loads(self.lock_file.read_text(encoding="utf-8"))
                 lock_pid = content.get("pid")
-                acquired_at_str = content.get("acquired_at", "")
-                if acquired_at_str:
-                    acquired_dt = datetime.datetime.fromisoformat(acquired_at_str)
-                    age_seconds = (datetime.datetime.now(datetime.timezone.utc) - acquired_dt).total_seconds()
-                    if age_seconds > self.timeout_seconds:
-                        is_stale = True
             except Exception:
                 is_stale = True
 
@@ -77,10 +71,8 @@ class PipelineLock:
                 try:
                     os.kill(lock_pid, 0)
                     process_alive = True
-                except ProcessLookupError:
+                except (ProcessLookupError, OSError):
                     process_alive = False
-                except PermissionError:
-                    process_alive = True
 
                 if process_alive:
                     raise LockAcquisitionError(

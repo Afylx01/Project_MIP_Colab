@@ -33,12 +33,13 @@ from .grid import (
 class BruteForceCampaignRunner:
     """Orchestrates in-memory tensor cubes and multi-threaded C99 execution."""
 
-    def __init__(self, cube: Optional[TensorCubeContainer] = None, force_recompile: bool = False, base_dir: Optional[Any] = None):
+    def __init__(self, cube: Optional[TensorCubeContainer] = None, force_recompile: bool = False, base_dir: Optional[Any] = None, **kwargs):
         self.engine = NativeBruteForceEngine(force_recompile=force_recompile)
         self.cube = cube
         self.base_dir = Path(base_dir) if base_dir else None
-        self._cube_universe = getattr(cube, "universe_name", None) if cube else None
-        self._cube_benchmark = getattr(cube, "benchmark_name", None) if cube else None
+        self._cube_universe = kwargs.get("universe_name", kwargs.get("universe", getattr(cube, "universe_name", None) if cube else None))
+        self._cube_benchmark = kwargs.get("benchmark_name", kwargs.get("benchmark", getattr(cube, "benchmark_name", None) if cube else None))
+        self.extra_kwargs = kwargs
 
     def ensure_cube(
         self,
@@ -448,7 +449,9 @@ class BruteForceCampaignRunner:
     ) -> pd.DataFrame:
         """Runs institutional pre-packaged optimization matrices (tier1, tier2, tier3, tier4)."""
         actual_preset = preset or preset_name or "tier1"
-        cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
+        u_name = self._cube_universe or universe_name
+        bm_name = self._cube_benchmark or benchmark
+        cube = self.ensure_cube(universe_name=u_name, benchmark=bm_name)
         preset_clean = actual_preset.lower().replace("-", "").replace("_", "")
         has_durations = include_random_durations or ("duration" in preset_clean) or ("window" in preset_clean)
 
@@ -625,3 +628,37 @@ class BruteForceCampaignRunner:
 
 # Institutional Alias for Backward Compatibility
 BruteForceRunner = BruteForceCampaignRunner
+
+
+def run_custom_backtest(**kwargs) -> Dict[str, Any]:
+    """Module-level convenience wrapper for BruteForceCampaignRunner.run_custom_backtest."""
+    base_dir = kwargs.pop("base_dir", None)
+    runner = BruteForceCampaignRunner(base_dir=base_dir)
+    # Map common aliases
+    if "universe_mode" in kwargs and "universe_name" not in kwargs:
+        kwargs["universe_name"] = kwargs.pop("universe_mode")
+    if "use_residual_momentum" in kwargs and "use_residual_mom" not in kwargs:
+        kwargs["use_residual_mom"] = kwargs.pop("use_residual_momentum")
+    generate_chart = kwargs.pop("generate_chart", False)
+    exit_buffer = kwargs.pop("exit_buffer", None)
+    if exit_buffer is not None and "exit_buffer_rank" not in kwargs:
+        kwargs["exit_buffer_rank"] = exit_buffer
+    res = runner.run_custom_backtest(**kwargs)
+    # Populate alias keys for caller flexibility
+    res["cagr"] = res.get("cagr_pct", 0.0)
+    res["sharpe"] = res.get("sharpe_ratio", 0.0)
+    if generate_chart:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import io, base64
+        plt.close("all")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        dates = pd.to_datetime(res["rebalance_dates"])
+        ax.plot(dates, res["equity_curve"], label="Equity Curve")
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", bbox_inches="tight")
+        plt.close("all")
+        buf.seek(0)
+        res["chart_base64"] = base64.b64encode(buf.read()).decode("utf-8")
+    return res

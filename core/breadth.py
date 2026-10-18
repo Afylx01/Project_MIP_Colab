@@ -103,6 +103,8 @@ class MarketBreadthEngine:
             bars = compute_rrg_metrics(bars)
             snap = bars[bars["date"] == target_date].copy()
 
+        valid_high_low = snap["high_252"].notna() & snap["low_252"].notna() & (snap["high_252"] > snap["low_252"] * 1.0001)
+
         snap["high_252"] = snap["high_252"].fillna(snap["close"])
         snap["low_252"] = snap["low_252"].fillna(snap["close"])
         snap["ema_200"] = snap["ema_200"].fillna(snap["close"])
@@ -129,9 +131,9 @@ class MarketBreadthEngine:
         pct_within_20 = round((within_20pct / total_scanned) * 100.0, 2)
         pct_within_5 = round((within_5pct / total_scanned) * 100.0, 2)
 
-        # 3. Net New Highs / Lows
-        new_highs = int((snap["close"] >= 0.99 * snap["high_252"]).sum())
-        new_lows = int((snap["close"] <= 1.01 * snap["low_252"]).sum())
+        # 3. Net New Highs / Lows (Strictly requires seasoned history to prevent IPO dual-triggers)
+        new_highs = int(((snap["close"] >= 0.99 * snap["high_252"]) & valid_high_low).sum())
+        new_lows = int(((snap["close"] <= 1.01 * snap["low_252"]) & valid_high_low).sum())
         net_highs_lows = new_highs - new_lows
 
         # 4. Market Breadth Regime Classification

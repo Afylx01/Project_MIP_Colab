@@ -140,7 +140,7 @@ class TestNoForbiddenArtifacts(unittest.TestCase):
         self.assertFalse((PROJECT_ROOT / "paper_trading").exists())
 
     def test_no_npz_files(self):
-        npz_files = list(PROJECT_ROOT.rglob("*.npz"))
+        npz_files = [p for p in PROJECT_ROOT.rglob("*.npz") if ".cache" not in p.parts]
         self.assertEqual(len(npz_files), 0,
                          f"Found NPZ files: {npz_files}")
 

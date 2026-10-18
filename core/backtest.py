@@ -266,18 +266,10 @@ class LightweightBacktester:
 
                 effective_buffer = exit_buffer if exit_buffer is not None else (top_n * 2)
 
-                # Adjust active holdings for splits/bonuses between rebalance dates (DEF-01)
-                if getattr(self, "analytical_engine", None):
-                    for sym, h in current_holdings.items():
-                        active_actions = self.analytical_engine.get_active_actions(sym, signal_date)
-                        last_ca_date = h.get("last_ca_date", h["entry_date"])
-                        for a in active_actions:
-                            if last_ca_date < a.ex_date <= signal_date:
-                                factor = getattr(a, "adjustment_factor", getattr(a, "factor", 1.0))
-                                if factor > 0 and factor != 1.0:
-                                    h["shares"] = int(round(h["shares"] / factor))
-                                    h["buy_px"] = round(h["buy_px"] * factor, 2)
-                                    h["last_ca_date"] = a.ex_date
+                # Invariant (L1-DEF-01): bars price series is already adjusted for splits/bonuses
+                # backwards via AnalyticalPriceEngine.derive_analytical_series() at lines 121-133.
+                # Entry shares and prices are established in consistent adjusted currency units.
+                # Redundant runtime share multiplication removed to preserve exact GIPS accounting parity.
 
                 for sym, h in current_holdings.items():
                     shares = h["shares"]
@@ -571,9 +563,12 @@ class LightweightBacktester:
         reports_dir = self.base_dir / "reports"
         reports_dir.mkdir(parents=True, exist_ok=True)
 
-        if closed_trades:
-            trades_df = pd.DataFrame(closed_trades)
-            trades_df.to_csv(reports_dir / "trade_log.csv", index=False)
+        trade_cols = [
+            "trade_id", "symbol", "entry_date", "exit_date", "entry_px", "exit_px",
+            "shares", "cost_basis", "net_proceeds", "net_pnl", "return_pct", "exit_reason"
+        ]
+        trades_df = pd.DataFrame(closed_trades, columns=trade_cols) if closed_trades else pd.DataFrame(columns=trade_cols)
+        trades_df.to_csv(reports_dir / "trade_log.csv", index=False)
 
         with open(reports_dir / "backtest_results.json", "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)

@@ -24,7 +24,7 @@
 
 #define MAX_UNIVERSE_SYMBOLS 2048
 #define MAX_SECTORS 64
-#define MAX_HOLDINGS 64
+#define MAX_HOLDINGS 128
 #define MAX_SCHEDULES 8
 #define MAX_PERIODS 4096
 #define CHUNK_SIZE 64
@@ -188,23 +188,23 @@ static inline void simulate_single_config(
         return;
     }
 
-    float cash = initial_capital;
-    float peak_equity = initial_capital;
-    float max_dd = 0.0f;
-    float total_traded_val = 0.0f;
+    double cash = (double)initial_capital;
+    double peak_equity = (double)initial_capital;
+    double max_dd = 0.0;
+    double total_traded_val = 0.0;
 
     Holding holdings[MAX_HOLDINGS];
     int num_holdings = 0;
 
     uint32_t total_trades = 0;
     uint32_t win_trades = 0;
-    float gross_gains = 0.0f;
-    float gross_losses = 0.0f;
+    double gross_gains = 0.0;
+    double gross_losses = 0.0;
 
-    float periodic_equity[MAX_PERIODS];
-    float periodic_returns[MAX_PERIODS];
+    double periodic_equity[MAX_PERIODS];
+    double periodic_returns[MAX_PERIODS];
     int equity_count = 0;
-    periodic_equity[equity_count++] = initial_capital;
+    periodic_equity[equity_count++] = (double)initial_capital;
 
     // Plane offsets
     const size_t plane_stride = (size_t)T * N;
@@ -316,7 +316,11 @@ static inline void simulate_single_config(
         }
 
         // 3. Select New Entrants for Open Slots
-        int open_slots = (int)params->top_n - num_holdings;
+        uint32_t eff_top_n = params->top_n > MAX_HOLDINGS ? MAX_HOLDINGS : params->top_n;
+        int open_slots = (int)eff_top_n - num_holdings;
+        if (open_slots > (int)(MAX_HOLDINGS - num_holdings)) {
+            open_slots = (int)(MAX_HOLDINGS - num_holdings);
+        }
         bool is_bull = (filter_flags & FILTER_REGIME) ? (cube->benchmark_regime[sig_date] > 0) : true;
         bool enforce_sector = (filter_flags & FILTER_SECTOR_CAP) && (params->max_per_sector < 90);
 
@@ -336,6 +340,7 @@ static inline void simulate_single_config(
             int num_selected = 0;
 
             for (int i = 0; i < pass_count && num_selected < open_slots; i++) {
+                if (num_selected >= MAX_HOLDINGS) break; // Defensive boundary guard
                 int sym = pass_candidates[i].symbol_idx;
                 if (is_held[sym]) continue;
 
@@ -440,23 +445,23 @@ static inline void simulate_single_config(
         }
 
         // 5. Portfolio Valuation at Period Close
-        float period_nav = cash;
+        double period_nav = cash;
         for (int h = 0; h < num_holdings; h++) {
             int s = holdings[h].symbol_idx;
             float px = exec_close[s] > 0.0f ? exec_close[s] : holdings[h].buy_px;
-            period_nav += (holdings[h].shares * px);
+            period_nav += ((double)holdings[h].shares * (double)px);
         }
 
         if (period_nav > peak_equity) peak_equity = period_nav;
-        float dd = (peak_equity - period_nav) / peak_equity;
+        double dd = (peak_equity - period_nav) / peak_equity;
         if (dd > max_dd) max_dd = dd;
 
         if (equity_count < MAX_PERIODS) {
-            float prev_eq = periodic_equity[equity_count - 1];
-            if (prev_eq > 0.0f) {
-                periodic_returns[equity_count - 1] = (period_nav / prev_eq) - 1.0f;
+            double prev_eq = periodic_equity[equity_count - 1];
+            if (prev_eq > 0.0) {
+                periodic_returns[equity_count - 1] = (period_nav / prev_eq) - 1.0;
             } else {
-                periodic_returns[equity_count - 1] = 0.0f;
+                periodic_returns[equity_count - 1] = 0.0;
             }
             periodic_equity[equity_count++] = period_nav;
         }
@@ -502,8 +507,20 @@ static inline void simulate_single_config(
     float down_vol = n_ret > 1 ? sqrtf(sum_down_sq / (n_ret - 1)) : 0.01f;
 
     float sharpe = periodic_vol > 1e-5f ? (((mean_ret - rf_periodic) / periodic_vol) * k_annual) : 0.0f;
-    float sortino = down_vol > 1e-5f ? (((mean_ret - rf_periodic) / down_vol) * k_annual) : 0.0f;
-    float calmar = max_dd > 1e-4f ? (cagr / (max_dd * 100.0f)) : 0.0f;
+    float sortino;
+    if (down_vol > 1e-5f) {
+        sortino = ((mean_ret - rf_periodic) / down_vol) * k_annual;
+    } else {
+        sortino = (mean_ret >= rf_periodic) ? 99.9f : -99.9f;
+    }
+
+    float calmar;
+    if (max_dd > 1e-4f) {
+        calmar = cagr / (max_dd * 100.0f);
+    } else {
+        calmar = (cagr > 0.0f) ? 99.9f : 0.0f;
+    }
+
     float win_rate = total_trades > 0 ? ((float)win_trades / (float)total_trades * 100.0f) : 0.0f;
     float profit_factor = gross_losses > 0.0f ? (gross_gains / gross_losses) : (gross_gains > 0.0f ? 99.9f : 1.0f);
 
@@ -511,13 +528,13 @@ static inline void simulate_single_config(
     float turnover_annual = avg_capital > 0.0f ? ((total_traded_val / avg_capital) / total_years * 100.0f) : 0.0f;
 
     result->param_id = params->param_id;
-    result->cagr = cagr;
-    result->sharpe = sharpe;
-    result->sortino = sortino;
-    result->max_drawdown = max_dd * 100.0f;
-    result->calmar = calmar;
-    result->win_rate = win_rate;
-    result->profit_factor = profit_factor;
+    result->cagr = isfinite(cagr) ? cagr : 0.0f;
+    result->sharpe = isfinite(sharpe) ? sharpe : 0.0f;
+    result->sortino = isfinite(sortino) ? sortino : 0.0f;
+    result->max_drawdown = isfinite(max_dd) ? (max_dd * 100.0f) : 0.0f;
+    result->calmar = isfinite(calmar) ? calmar : 0.0f;
+    result->win_rate = isfinite(win_rate) ? win_rate : 0.0f;
+    result->profit_factor = isfinite(profit_factor) ? profit_factor : 1.0f;
     result->ending_equity = final_equity;
     result->total_trades = total_trades;
     result->winning_trades = win_trades;
@@ -570,10 +587,19 @@ void run_parallel_brute_force(
         .task_counter = &local_task_counter
     };
 
+    uint32_t active_threads = 0;
     for (uint32_t t = 0; t < num_threads; t++) {
-        pthread_create(&threads[t], NULL, worker_thread_entry, &ctx);
+        int rc = pthread_create(&threads[active_threads], NULL, worker_thread_entry, &ctx);
+        if (rc == 0) {
+            active_threads++;
+        }
     }
-    for (uint32_t t = 0; t < num_threads; t++) {
-        pthread_join(threads[t], NULL);
+    if (active_threads == 0) {
+        // Fallback: execute synchronously on caller thread
+        worker_thread_entry(&ctx);
+    } else {
+        for (uint32_t t = 0; t < active_threads; t++) {
+            pthread_join(threads[t], NULL);
+        }
     }
 }

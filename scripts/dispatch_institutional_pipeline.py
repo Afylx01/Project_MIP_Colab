@@ -65,6 +65,9 @@ def run_institutional_pipeline(args: argparse.Namespace) -> int:
     checker = OperationalHealthChecker(base_dir=PROJECT_ROOT)
     healthy, health = checker.run_all_checks()
     print(f"  ✓ Operational Health: {health.get('overall_health')} ({health.get('checks_passed')}/{health.get('checks_total')} checks passed)")
+    if not healthy and not getattr(args, "force", False):
+        print(f"❌ Pre-flight health check FAILED ({health.get('checks_passed')}/{health.get('checks_total')} checks passed). Pipeline aborted.")
+        sys.exit(1)
 
     # 2. Resolve Target Date
     target_date = args.as_of_date or get_latest_date()
@@ -91,8 +94,15 @@ def run_institutional_pipeline(args: argparse.Namespace) -> int:
 
     # 4. Institutional Risk & Tail Analytics
     print("\n[Stage 3/6] Computing Institutional Tail Risk & Factor Decomposition...")
-    # Synthetic / representative returns series for risk evaluation
-    sample_returns = [0.0012, -0.0045, 0.0089, -0.0021, 0.0065, 0.0032, -0.0015, 0.0041, 0.0078, -0.0035] * 25
+    if top_df is not None and not top_df.empty and "ret_252" in top_df.columns:
+        mean_ret = float(top_df["ret_252"].mean())
+        vol = float(top_df["vol_252"].mean()) if "vol_252" in top_df.columns else 0.25
+        daily_vol = max(vol / np.sqrt(252), 0.005)
+        np.random.seed(42)
+        sample_returns = list(np.random.normal(loc=mean_ret / 252, scale=daily_vol, size=252))
+    else:
+        sample_returns = [0.0] * 252
+
     risk_metrics = calculate_comprehensive_risk_suite(
         returns=sample_returns,
         rf_rate=0.065,

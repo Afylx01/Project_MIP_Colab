@@ -51,6 +51,28 @@ def load_env_credentials() -> Dict[str, str]:
 
     return creds
 
+def _chunk_message(text: str, max_length: int = 4000) -> List[str]:
+    """Chunks long text into message parts respecting line boundaries."""
+    if len(text) <= max_length:
+        return [text]
+    chunks = []
+    lines = text.split("\n")
+    current_chunk = []
+    current_len = 0
+    for line in lines:
+        line_len = len(line) + 1
+        if current_len + line_len > max_length:
+            if current_chunk:
+                chunks.append("\n".join(current_chunk))
+            current_chunk = [line]
+            current_len = line_len
+        else:
+            current_chunk.append(line)
+            current_len += line_len
+    if current_chunk:
+        chunks.append("\n".join(current_chunk))
+    return chunks
+
 
 class PydroidTelegramSender:
     """Dispatches Telegram notifications and deliverables natively inside Pydroid 3."""
@@ -84,11 +106,16 @@ class PydroidTelegramSender:
                 return None
 
     def send_message(self, text: str, parse_mode: str = "HTML", dry_run: bool = False) -> bool:
-        """Sends an HTML/text message to the designated Telegram chat."""
+        """Sends an HTML/text message to the designated Telegram chat, chunking if necessary."""
+        chunks = _chunk_message(text, max_length=4000)
+
         if dry_run:
-            print("[Telegram] DRY RUN — Message content:")
+            print(f"[Telegram] DRY RUN — Message content ({len(chunks)} chunk(s)):")
             print("-" * 50)
-            print(text)
+            for idx, chunk in enumerate(chunks, 1):
+                if len(chunks) > 1:
+                    print(f"--- Chunk [{idx}/{len(chunks)}] ---")
+                print(chunk)
             print("-" * 50)
             return True
 
@@ -97,38 +124,43 @@ class PydroidTelegramSender:
             return False
 
         session = self._get_session()
-        payload = {
-            "chat_id": self.chat_id,
-            "text": text,
-            "parse_mode": parse_mode,
-            "disable_web_page_preview": True,
-        }
-
+        all_ok = True
         url = f"{self.api_url}/sendMessage"
-        try:
-            if session:
-                resp = session.post(url, json=payload, timeout=15)
-                res_data = resp.json()
-            else:
-                import urllib.request
-                req = urllib.request.Request(
-                    url,
-                    data=json.dumps(payload).encode("utf-8"),
-                    headers={"Content-Type": "application/json"},
-                )
-                with urllib.request.urlopen(req, timeout=15) as r:
-                    res_data = json.loads(r.read().decode("utf-8"))
 
-            if res_data.get("ok"):
-                msg_id = res_data.get('result', {}).get('message_id')
-                print(f"✓ Telegram message sent successfully (Msg ID: {msg_id})")
-                return True
-            else:
-                print(f"✗ Telegram API Error: {res_data.get('description')}")
-                return False
-        except Exception as e:
-            print(f"✗ Telegram request error: {self._sanitize_error(e)}")
-            return False
+        for idx, chunk in enumerate(chunks, 1):
+            chunk_prefix = f"<b>[{idx}/{len(chunks)}]</b>\n" if len(chunks) > 1 else ""
+            payload = {
+                "chat_id": self.chat_id,
+                "text": chunk_prefix + chunk,
+                "parse_mode": parse_mode,
+                "disable_web_page_preview": True,
+            }
+
+            try:
+                if session:
+                    resp = session.post(url, json=payload, timeout=15)
+                    res_data = resp.json()
+                else:
+                    import urllib.request
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode("utf-8"),
+                        headers={"Content-Type": "application/json"},
+                    )
+                    with urllib.request.urlopen(req, timeout=15) as r:
+                        res_data = json.loads(r.read().decode("utf-8"))
+
+                if res_data.get("ok"):
+                    msg_id = res_data.get('result', {}).get('message_id')
+                    print(f"✓ Telegram message sent successfully (Msg ID: {msg_id})")
+                else:
+                    print(f"✗ Telegram API Error: {res_data.get('description')}")
+                    all_ok = False
+            except Exception as e:
+                print(f"✗ Telegram request error: {self._sanitize_error(e)}")
+                all_ok = False
+
+        return all_ok
 
     def send_photo(self, photo_path: Path, caption: Optional[str] = None, dry_run: bool = False) -> bool:
         """Uploads and dispatches a PNG chart or image."""
