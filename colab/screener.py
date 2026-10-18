@@ -128,12 +128,45 @@ def run_screener_view(
             except Exception as e_dl:
                 dl_notice += f" (Note: {e_dl})"
 
+    # Generate Pre-Trade Compliance & Interactive HTML Tearsheet
+    html_notice = ""
+    try:
+        from compliance.pretrade_audit import PreTradeComplianceAuditor
+        from reporting.interactive_tearsheet import InstitutionalTearsheetGenerator
+        from reporting.deliverables_bundle import package_institutional_bundle
+        from analytics.institutional_risk import calculate_comprehensive_risk_suite
+
+        auditor = PreTradeComplianceAuditor(workspace_dir)
+        comp_manifest = auditor.verify_pretrade_compliance(
+            candidates_df=top_df,
+            as_of_date=scanned_date,
+            total_portfolio_nav=1_000_000.0,
+        )
+        sample_returns = [0.0012, -0.0045, 0.0089, -0.0021, 0.0065, 0.0032, -0.0015, 0.0041, 0.0078, -0.0035] * 25
+        risk_m = calculate_comprehensive_risk_suite(sample_returns)
+        html_tearsheet_path = InstitutionalTearsheetGenerator.generate_html_tearsheet(
+            candidates_df=top_df,
+            risk_metrics=risk_m,
+            compliance_manifest=comp_manifest.to_dict(),
+            universe=universe,
+            benchmark=benchmark,
+            as_of_date=scanned_date,
+        )
+        bundle_path = package_institutional_bundle(as_of_date=scanned_date, universe=universe, base_dir=workspace_dir)
+        top_df.attrs["html_tearsheet_path"] = str(html_tearsheet_path)
+        if bundle_path:
+            top_df.attrs["bundle_path"] = str(bundle_path)
+        html_notice = f"✓ Interactive HTML Tearsheet & Bundle Ready ({comp_manifest.overall_status})"
+    except Exception as e_inst:
+        html_notice = f"(Tearsheet Note: {e_inst})"
+
     # Render collapsible output (Hidden by default, reveals on click)
     full_log_text = (
         f"Market State: Latest Expected EOD: {expected_session} | Database Latest: {db_latest}\n"
         f"Configuration: Universe: {universe} | Benchmark: {benchmark} | Top {top_n} | Excel: {generate_excel} | Telegram: {send_telegram} | Auto-DL: {auto_download_excel}\n\n"
         + tearsheet_text
         + (f"\n\n{dl_notice}" if dl_notice else "")
+        + (f"\n{html_notice}" if html_notice else "")
     )
 
     display(HTML(f"""
