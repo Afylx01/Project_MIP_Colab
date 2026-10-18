@@ -1361,7 +1361,7 @@ def run_brute_force_flow(
             end_in = input(f"  End Date (YYYY-MM-DD) [Default: 2026-08-31]: ").strip() or "2026-08-31"
 
             print(f"\n{C_YELLOW}Running native C99 simulation on Snapdragon 8 Gen 2...{C_RESET}")
-            res = runner.run_baseline(start_date=start_in, end_date=end_in, schedule=sched_in)
+            res = runner.run_baseline(start_date=start_in, end_date=end_in, schedule=sched_in, benchmark=benchmark)
 
             print(f"\n{C_BOLD}{'=' * 68}{C_RESET}")
             print(f"{C_BOLD} CANONICAL BASELINE PERFORMANCE SUMMARY ({start_in} to {end_in}){C_RESET}")
@@ -1384,7 +1384,7 @@ def run_brute_force_flow(
 
         elif sub_choice == "2":
             print(f"\n{C_CYAN}── REBALANCE SCHEDULES COMPARISON SWEEP ──{C_RESET}")
-            cube = runner.ensure_cube(universe_name="NIFTY500")
+            cube = runner.ensure_cube(universe_name="NIFTY500", benchmark=benchmark)
             params = []
             for s_idx, s_name in enumerate(REBALANCE_SCHEDULES):
                 p = get_canonical_baseline_param()
@@ -1411,7 +1411,7 @@ def run_brute_force_flow(
 
         elif sub_choice == "3":
             print(f"\n{C_CYAN}── MACRO ERAS HISTORICAL STRESS-TEST (7 ERAS) ──{C_RESET}")
-            cube = runner.ensure_cube(universe_name="NIFTY500")
+            cube = runner.ensure_cube(universe_name="NIFTY500", benchmark=benchmark)
             grid = generate_tier1_baseline_matrix(cube)
             print(f"{C_YELLOW}Executing 35 simulations across 7 Historical Eras x 5 Schedules...{C_RESET}")
             df = runner.run_sweep(grid, num_threads=8)
@@ -1431,7 +1431,7 @@ def run_brute_force_flow(
 
         elif sub_choice == "4":
             print(f"\n{C_CYAN}── SYSTEMATIC STRATEGY FILTER ABLATION (FACTOR ATTRIBUTION) ──{C_RESET}")
-            cube = runner.ensure_cube(universe_name="NIFTY500")
+            cube = runner.ensure_cube(universe_name="NIFTY500", benchmark=benchmark)
             grid = generate_tier2_ablation_grid(cube)
             print(f"{C_YELLOW}Executing 44 filter ablation simulations across Modern & Full history...{C_RESET}")
             df = runner.run_sweep(grid, num_threads=8)
@@ -1450,7 +1450,7 @@ def run_brute_force_flow(
 
         elif sub_choice == "5":
             print(f"\n{C_CYAN}── MONTE CARLO ROLLING WINDOWS & DEFLATED SHARPE RATIO (DSR) ──{C_RESET}")
-            cube = runner.ensure_cube(universe_name="NIFTY500")
+            cube = runner.ensure_cube(universe_name="NIFTY500", benchmark=benchmark)
             grid = generate_tier4_rolling_windows_grid(cube, num_windows=200)
             print(f"{C_YELLOW}Executing {len(grid)} Monte Carlo rolling window simulations (1y to 10y)...{C_RESET}")
             df = runner.run_sweep(grid, num_threads=8)

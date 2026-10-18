@@ -1212,7 +1212,7 @@ class HardenedScanner(PydroidScanner):
         if use_vol_targeting and top_df is not None and not top_df.empty:
             try:
                 from nextgen.volatility_targeting import compute_ewma_realized_volatility, compute_dynamic_cash_shield_scalar
-                b_df = self.load_benchmark()
+                b_df = self.load_benchmark(benchmark_override=benchmark)
                 if not b_df.empty and "close" in b_df.columns:
                     b_rets = b_df["close"].pct_change().dropna()
                     ewma_vol = compute_ewma_realized_volatility(b_rets)
