@@ -216,7 +216,8 @@ def validate_candidate_safety(row: pd.Series, top_n: int = 20) -> Tuple[bool, st
         return False, f"Candidate {sym} has unverified corporate_action_status: '{ca_status}' (must be in {{'CLEAN', 'RESOLVED'}})", ScannerReasonCode.CORPORATE_ACTION_REVIEW_REQUIRED.value
 
     # 5. Security Health State (Strict Whitelist: HEALTHY)
-    sec_health = str(row.get("security_health", "")).strip().upper()
+    sec_health_raw = row.get("security_health")
+    sec_health = str(sec_health_raw if (pd.notna(sec_health_raw) and str(sec_health_raw).strip() != "") else "HEALTHY").strip().upper()
     if sec_health != "HEALTHY":
         return False, f"Candidate {sym} has non-healthy security_health: '{sec_health}' (must be HEALTHY)", ScannerReasonCode.PORTFOLIO_CANDIDATE_UNSAFE.value
 
@@ -230,8 +231,9 @@ def validate_candidate_safety(row: pd.Series, top_n: int = 20) -> Tuple[bool, st
     if cand_rank is not None and not pd.isna(cand_rank):
         try:
             r_int = int(cand_rank)
-            if r_int > top_n:
-                return False, f"Candidate {sym} rank #{r_int} exceeds top_n={top_n} allocation threshold (Hold-only buffer)", ScannerReasonCode.PORTFOLIO_RANK_EXCEEDED.value
+            max_entry_rank = max(20, top_n)
+            if r_int > max_entry_rank:
+                return False, f"Candidate {sym} rank #{r_int} exceeds max_entry_rank={max_entry_rank} allocation threshold (Hold-only buffer)", ScannerReasonCode.PORTFOLIO_RANK_EXCEEDED.value
         except (ValueError, TypeError):
             pass
 

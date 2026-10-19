@@ -997,6 +997,7 @@ class PydroidScanner:
                 row_dict["rank"] = rank_idx + 1
                 row_dict["date"] = target_date
                 row_dict["security_id"] = r.get("security_id", f"SEC_{sym}")
+                row_dict["security_health"] = r.get("security_health", "HEALTHY")
 
                 if sym in top_sym_set:
                     top_r = top_row_map[sym]

@@ -112,7 +112,7 @@
     {
       "filename": "portfolio.py",
       "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
-      "sha256_migrated": "fe342d88272c6e397286ac8c9223a03b008e0f8c7b6cd4178f75ec617f2a86ba",
+      "sha256_migrated": "ef09e9ddd7063b9215e9c7852f708bb9931a8abf396cd55b61e5d985748ea08b",
       "status": "refactored",
       "refactor_notes": "Loop 3 institutional defect remediation"
     },
@@ -140,7 +140,7 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "2252ebbbce44a594ab60166fee180a46de42e8eab53c5070ee741c78f6917bad",
+      "sha256_migrated": "9b958f8ef7ec80c120d3e57d1bda2e74774f8fdb8cb4fb63fb8d514daf716f30",
       "status": "refactored",
       "refactor_notes": "Loop 2 institutional defect remediation"
     },
