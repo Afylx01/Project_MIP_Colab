@@ -99,6 +99,17 @@ def pause_for_menu(prompt: str = "Press Enter to return to menu..."):
             pass
 
 
+def safe_input(prompt: str = "", default: str = "") -> str:
+    """Safely prompts user, returning default if non-interactive or on EOF."""
+    if not PAUSE_ON_RETURN or not sys.stdin.isatty():
+        return default
+    try:
+        val = input(prompt).strip()
+        return val if val else default
+    except (KeyboardInterrupt, EOFError):
+        return default
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # Option [1]: Weekly Momentum Scanner (Full Suite)
 # ═══════════════════════════════════════════════════════════════════════
@@ -553,10 +564,10 @@ def run_custom_backtest_flow(benchmark: str = "NIFTY500"):
     print(f"\n{C_BOLD}{C_CYAN}💼 LIGHTWEIGHT VECTOR BACKTESTER [Benchmark: {benchmark}]{C_RESET}\n")
 
     print(f"Configure Backtest Parameters (Press Enter to accept defaults):")
-    start_in = input("  1. Start Date [Default: 2020-01-01]: ").strip() or "2020-01-01"
-    end_in = input(f"  2. End Date [Default: {latest_date}]: ").strip() or latest_date
-    top_n_in = input("  3. Portfolio Top N [Default: 20]: ").strip() or "20"
-    capital_in = input("  4. Initial Capital (₹) [Default: 1000000]: ").strip() or "1000000"
+    start_in = safe_input("  1. Start Date [Default: 2020-01-01]: ", "2020-01-01")
+    end_in = safe_input(f"  2. End Date [Default: {latest_date}]: ", latest_date)
+    top_n_in = safe_input("  3. Portfolio Top N [Default: 20]: ", "20")
+    capital_in = safe_input("  4. Initial Capital (₹) [Default: 1000000]: ", "1000000")
 
     try:
         top_n = int(top_n_in)
@@ -630,8 +641,8 @@ def run_portfolio_orders():
     def_max_sec = int(st.get("max_per_sector", 2))
     def_mode = str(st.get("sizing_mode", "atr_risk_parity"))
 
-    capital_in = input(f"  Target Capital (₹) [Default: {def_cap:,.0f}]: ").strip() or str(int(def_cap))
-    top_n_in = input(f"  Portfolio Size Top N [Default: {def_top}]: ").strip() or str(def_top)
+    capital_in = safe_input(f"  Target Capital (₹) [Default: {def_cap:,.0f}]: ", str(int(def_cap)))
+    top_n_in = safe_input(f"  Portfolio Size Top N [Default: {def_top}]: ", str(def_top))
 
     try:
         capital = float(capital_in)
@@ -1123,7 +1134,11 @@ def run_excel_regenerator_flow():
 # Option [16]: Interactive Investing Settings TUI
 # ═══════════════════════════════════════════════════════════════════════
 def run_investing_settings_flow():
-    from core.settings import interactive_settings_menu
+    from core.settings import interactive_settings_menu, load_investing_settings, format_settings_summary
+    if not PAUSE_ON_RETURN or not sys.stdin.isatty():
+        settings = load_investing_settings(BASE_DIR)
+        print(format_settings_summary(settings))
+        return
     interactive_settings_menu(BASE_DIR)
 
 
