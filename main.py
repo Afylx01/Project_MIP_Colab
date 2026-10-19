@@ -1154,7 +1154,7 @@ def run_all_indices_batch_flow(as_of_date: Optional[str] = None, force_refresh: 
 
     try:
         from scripts.reconcile_and_test_all_universes import main as run_batch_reconcile
-        run_batch_reconcile()
+        run_batch_reconcile(as_of_date=target_date)
     except Exception as e:
         print(f"{C_RED}Error running batch reconciliation: {e}{C_RESET}")
 

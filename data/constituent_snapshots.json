@@ -5061,7 +5061,7 @@
         "TICKER99"
       ],
       "recorded_at": "2026-10-13T03:35:12.594940",
-      "last_verified_at": "2026-10-18T23:00:21.345221"
+      "last_verified_at": "2026-10-19T05:35:24.470495"
     }
   ],
   "NIFTY750": [
@@ -5831,7 +5831,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-12T06:18:39.046451",
-      "last_verified_at": "2026-10-18T22:58:16.218897"
+      "last_verified_at": "2026-10-19T05:36:34.846101"
     }
   ],
   "NIFTYBANK": [
@@ -5860,7 +5860,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T06:44:12.672780",
-      "last_verified_at": "2026-10-18T22:54:00.457215"
+      "last_verified_at": "2026-10-19T05:43:42.151114"
     }
   ],
   "NIFTY50": [
@@ -5925,7 +5925,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T06:47:01.512631",
-      "last_verified_at": "2026-10-18T22:55:07.810452"
+      "last_verified_at": "2026-10-19T05:33:23.961275"
     }
   ],
   "NIFTYNEXT50": [
@@ -5990,7 +5990,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T06:47:48.159895",
-      "last_verified_at": "2026-10-18T22:54:26.670940"
+      "last_verified_at": "2026-10-19T05:33:50.252963"
     }
   ],
   "NIFTY100": [
@@ -6105,7 +6105,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T06:52:18.474685",
-      "last_verified_at": "2026-10-18T18:45:41.368887"
+      "last_verified_at": "2026-10-19T05:34:13.748435"
     }
   ],
   "NIFTY200": [
@@ -6320,7 +6320,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T06:54:56.166810",
-      "last_verified_at": "2026-10-14T13:32:41.159354"
+      "last_verified_at": "2026-10-19T05:34:43.380420"
     }
   ],
   "NIFTYMIDCAP50": [
@@ -6385,7 +6385,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:01:15.145182",
-      "last_verified_at": "2026-10-14T13:33:31.170594"
+      "last_verified_at": "2026-10-19T05:37:55.289330"
     }
   ],
   "NIFTYMIDCAP100": [
@@ -6500,7 +6500,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:01:47.994686",
-      "last_verified_at": "2026-10-14T13:33:36.388307"
+      "last_verified_at": "2026-10-19T05:38:20.764247"
     }
   ],
   "NIFTYMIDCAP150": [
@@ -6665,7 +6665,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:02:28.684420",
-      "last_verified_at": "2026-10-14T13:33:42.889142"
+      "last_verified_at": "2026-10-19T05:38:52.215938"
     }
   ],
   "NIFTYSMALLCAP50": [
@@ -6730,7 +6730,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:03:12.975877",
-      "last_verified_at": "2026-10-14T13:33:50.189118"
+      "last_verified_at": "2026-10-19T05:39:25.150741"
     }
   ],
   "NIFTYSMALLCAP100": [
@@ -6845,7 +6845,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:03:43.472279",
-      "last_verified_at": "2026-10-14T13:33:55.478930"
+      "last_verified_at": "2026-10-19T05:39:48.416161"
     }
   ],
   "NIFTYSMALLCAP250": [
@@ -7111,7 +7111,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:04:20.754386",
-      "last_verified_at": "2026-10-14T13:34:01.928544"
+      "last_verified_at": "2026-10-19T05:40:18.800328"
     }
   ],
   "NIFTYMICROCAP250": [
@@ -7380,7 +7380,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:05:18.932406",
-      "last_verified_at": "2026-10-14T13:34:11.351460"
+      "last_verified_at": "2026-10-19T05:41:02.501336"
     }
   ],
   "NIFTYMIDSMALLCAP400": [
@@ -7796,7 +7796,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:06:13.437868",
-      "last_verified_at": "2026-10-14T13:34:20.660698"
+      "last_verified_at": "2026-10-19T05:41:44.743323"
     }
   ],
   "NIFTYLARGEMIDCAP250": [
@@ -8061,7 +8061,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:07:28.655983",
-      "last_verified_at": "2026-10-14T13:34:33.140251"
+      "last_verified_at": "2026-10-19T05:42:42.509824"
     }
   ],
   "NIFTYAUTO": [
@@ -8091,7 +8091,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:08:24.797523",
-      "last_verified_at": "2026-10-14T13:34:43.509630"
+      "last_verified_at": "2026-10-19T05:43:24.947311"
     }
   ],
   "NIFTYFINANCIALSERVICES": [
@@ -8126,7 +8126,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:10:44.174937",
-      "last_verified_at": "2026-10-14T13:34:56.333375"
+      "last_verified_at": "2026-10-19T05:43:59.462756"
     }
   ],
   "NIFTYFMCG": [
@@ -8156,7 +8156,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:13:08.013905",
-      "last_verified_at": "2026-10-14T13:35:22.402557"
+      "last_verified_at": "2026-10-19T05:44:17.288141"
     }
   ],
   "NIFTYIT": [
@@ -8181,7 +8181,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:13:25.072803",
-      "last_verified_at": "2026-10-14T13:35:47.305079"
+      "last_verified_at": "2026-10-19T05:44:34.606463"
     }
   ],
   "NIFTYMEDIA": [
@@ -8206,7 +8206,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:13:34.449076",
-      "last_verified_at": "2026-10-13T07:13:34.623153"
+      "last_verified_at": "2026-10-19T05:44:59.981480"
     }
   ],
   "NIFTYMETAL": [
@@ -8236,7 +8236,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:13:48.759430",
-      "last_verified_at": "2026-10-13T07:13:48.818107"
+      "last_verified_at": "2026-10-19T05:45:16.611338"
     }
   ],
   "NIFTYPHARMA": [
@@ -8271,7 +8271,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:13:54.918638",
-      "last_verified_at": "2026-10-13T07:13:55.005606"
+      "last_verified_at": "2026-10-19T05:45:34.545632"
     }
   ],
   "NIFTYPSUBANK": [
@@ -8298,7 +8298,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:14:01.158314",
-      "last_verified_at": "2026-10-13T07:14:01.221291"
+      "last_verified_at": "2026-10-19T05:45:52.116680"
     }
   ],
   "NIFTYPRIVATEBANK": [
@@ -8323,7 +8323,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:14:06.206475",
-      "last_verified_at": "2026-10-13T07:14:06.285700"
+      "last_verified_at": "2026-10-19T05:46:09.051768"
     }
   ],
   "NIFTYREALTY": [
@@ -8348,7 +8348,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:14:10.248779",
-      "last_verified_at": "2026-10-13T07:14:10.304111"
+      "last_verified_at": "2026-10-19T05:46:25.821641"
     }
   ],
   "NIFTYHEALTHCARE": [
@@ -8383,7 +8383,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:14:14.152596",
-      "last_verified_at": "2026-10-13T07:14:14.218166"
+      "last_verified_at": "2026-10-19T05:46:42.383303"
     }
   ],
   "NIFTYCONSUMERDURABLES": [
@@ -8412,7 +8412,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:14:19.463757",
-      "last_verified_at": "2026-10-13T07:14:19.750750"
+      "last_verified_at": "2026-10-19T05:47:00.311981"
     }
   ],
   "NIFTYOILGAS": [
@@ -8442,7 +8442,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:15:16.469856",
-      "last_verified_at": "2026-10-13T07:15:16.709265"
+      "last_verified_at": "2026-10-19T05:47:17.765255"
     }
   ],
   "NIFTYCOMMODITIES": [
@@ -8487,7 +8487,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:17:43.575361",
-      "last_verified_at": "2026-10-13T07:17:44.183416"
+      "last_verified_at": "2026-10-19T05:47:35.007836"
     }
   ],
   "NIFTYENERGY": [
@@ -8542,7 +8542,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:19:42.511624",
-      "last_verified_at": "2026-10-13T07:19:42.939216"
+      "last_verified_at": "2026-10-19T05:47:54.824385"
     }
   ],
   "NIFTYINFRASTRUCTURE": [
@@ -8587,7 +8587,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:21:01.141424",
-      "last_verified_at": "2026-10-13T07:21:04.408921"
+      "last_verified_at": "2026-10-19T05:48:14.724125"
     }
   ],
   "NIFTYCPSE": [
@@ -8613,7 +8613,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:21:36.093024",
-      "last_verified_at": "2026-10-13T07:21:36.273526"
+      "last_verified_at": "2026-10-19T05:48:36.541518"
     }
   ],
   "NIFTYPSE": [
@@ -8648,7 +8648,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:24:44.801768",
-      "last_verified_at": "2026-10-13T07:24:45.074008"
+      "last_verified_at": "2026-10-19T05:48:53.749308"
     }
   ],
   "NIFTYSERVICESSECTOR": [
@@ -8693,7 +8693,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:25:14.160600",
-      "last_verified_at": "2026-10-13T07:25:14.491763"
+      "last_verified_at": "2026-10-19T05:49:13.169718"
     }
   ],
   "NIFTYMNC": [
@@ -8738,7 +8738,7 @@
       "added": [],
       "removed": [],
       "recorded_at": "2026-10-13T07:29:23.081346",
-      "last_verified_at": "2026-10-13T07:29:23.402173"
+      "last_verified_at": "2026-10-19T05:49:33.764937"
     }
   ],
   "ALL": [

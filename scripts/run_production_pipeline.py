@@ -147,6 +147,7 @@ class HeadlessProductionPipeline:
         skip_health_check: bool = False,
         dispatch_alert: bool = True,
         dry_run: bool = False,
+        benchmark: str = "NIFTY500",
     ) -> Dict[str, Any]:
         start_time = time.time()
         start_dt = datetime.datetime.now(datetime.timezone.utc)
@@ -181,6 +182,7 @@ class HeadlessProductionPipeline:
                 force_constituent_refresh=force_refresh,
                 allow_stale_universe=allow_stale,
                 export_reports=True,
+                benchmark=benchmark,
             )
 
             # 4. Collect execution metrics and telemetry
@@ -276,6 +278,7 @@ class HeadlessProductionPipeline:
 def main():
     parser = argparse.ArgumentParser(description="MIP Android Unattended Production Pipeline Runner")
     parser.add_argument("--universe", type=str, default="NIFTY750", help="Target universe mode (default: NIFTY750)")
+    parser.add_argument("--benchmark", type=str, default="NIFTY500", help="Target benchmark index or symbol (default: NIFTY500)")
     parser.add_argument("--as-of-date", type=str, default=None, help="Target as-of date YYYY-MM-DD (default: latest in DB)")
     parser.add_argument("--force-refresh", action="store_true", help="Force live constituent refresh from exchange")
     parser.add_argument("--disallow-stale", action="store_true", help="Fail closed if constituent cache exceeds 30-day TTL")
@@ -289,6 +292,7 @@ def main():
     try:
         telemetry = pipeline.run_pipeline(
             universe=args.universe,
+            benchmark=args.benchmark,
             as_of_date=args.as_of_date,
             force_refresh=args.force_refresh,
             allow_stale=not args.disallow_stale,

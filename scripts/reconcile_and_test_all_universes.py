@@ -29,13 +29,15 @@ from scripts.scanner_hardening import (
     get_canonical_strategy_fingerprint,
     get_hardened_universe_label,
 )
-from core.data_engine import get_db_path
+from core.data_engine import get_db_path, get_latest_date
 
 
-def main():
+def main(as_of_date: str = None):
     start_time = time.time()
-    as_of_date = "2026-10-09"
     base_dir = PROJECT_ROOT
+    db_path = get_db_path()
+    if not as_of_date:
+        as_of_date = get_latest_date(db_path) or "2026-10-16"
     reports_dir = base_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
 

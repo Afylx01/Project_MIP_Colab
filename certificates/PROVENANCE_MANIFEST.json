@@ -161,7 +161,7 @@
     {
       "filename": "sync_sectors.py",
       "sha256_source": "f22c930f44904f27134f9a24fd4b2cbbea3c12c4f79256548140f341dbb7a9e0",
-      "sha256_migrated": "649d4dc8029082f79b694ab3a4df68e0c3992fa991a1b54546e9a36d39c0ecbc",
+      "sha256_migrated": "1e1f4c9f95fd5fa1748905ef75d2ed4c63128aefc84e88a7b9109c436ac90606",
       "status": "refactored",
       "refactor_notes": "OWASP Top 10 security hardening & defensive boundaries"
     },

@@ -19,6 +19,7 @@ import sys
 import time
 import argparse
 import logging
+import numpy as np
 from pathlib import Path
 
 # Add project root to path

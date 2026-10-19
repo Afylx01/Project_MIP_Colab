@@ -287,6 +287,13 @@ def sync_nse_sectors(base_dir: Optional[Path] = None) -> Dict[str, str]:
             try:
                 # Enforce bounded timeout and memory allocation limit (OWASP A05 / CWE-400)
                 max_bytes = 10 * 1024 * 1024
+                req = urllib.request.Request(
+                    url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    }
+                )
                 with urllib.request.urlopen(req, timeout=15) as response:
                     csv_path.write_bytes(response.read(max_bytes))
                 logger.info(f"Fallback download succeeded for {fname}")
