@@ -35,7 +35,7 @@
     {
       "filename": "auto_fetch.py",
       "sha256_source": "a99103cb6397860f9e3883403b2a69b7c88ccad32b09b7053b604ba29fbfdd29",
-      "sha256_migrated": "2c8675c8e130cb016ac983ac65a7e679c5120e42ac9eeea2895ffd04fe6b73f4",
+      "sha256_migrated": "8ae0f030483b878dfce9293003620c158eb662fc96891938a5386ad6e57b3b41",
       "status": "refactored",
       "refactor_notes": "Auto-sync mutation firewall pass & Telegram dispatch integration"
     },

@@ -9,7 +9,7 @@ import sqlite3
 import datetime
 import re
 from pathlib import Path
-from typing import Optional, List, Dict, Tuple, Set
+from typing import Optional, List, Dict, Tuple, Set, Union, Any
 import pandas as pd
 import numpy as np
 
