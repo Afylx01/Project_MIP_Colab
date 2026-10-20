@@ -34,6 +34,18 @@ class ComplianceCheckResult:
     details: str
 
 
+class ResultDict(dict):
+    """Dictionary supporting both item and attribute access for compliance results."""
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+
 @dataclass
 class ComplianceManifest:
     as_of_date: str
@@ -42,11 +54,29 @@ class ComplianceManifest:
     total_checks: int
     passed_checks: int
     failed_checks: int
-    check_results: List[Dict[str, Any]] = field(default_factory=list)
+    check_results: List[Any] = field(default_factory=list)
     sha256_seal: str = ""
 
+    @property
+    def violations(self) -> List[str]:
+        viols = []
+        for r in self.check_results:
+            passed = r.get("passed") if isinstance(r, dict) else getattr(r, "passed", True)
+            if not passed:
+                viols.append(str(r.get("details", "") if isinstance(r, dict) else getattr(r, "details", "")))
+        return viols
+
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        return {
+            "as_of_date": self.as_of_date,
+            "evaluation_timestamp": self.evaluation_timestamp,
+            "overall_status": self.overall_status,
+            "total_checks": self.total_checks,
+            "passed_checks": self.passed_checks,
+            "failed_checks": self.failed_checks,
+            "check_results": [dict(r) if isinstance(r, dict) else asdict(r) for r in self.check_results],
+            "sha256_seal": self.sha256_seal,
+        }
 
 
 class PreTradeComplianceAuditor:
@@ -73,15 +103,22 @@ class PreTradeComplianceAuditor:
 
     def verify_pretrade_compliance(
         self,
-        candidates_df: pd.DataFrame,
-        as_of_date: str,
+        candidates_df: Optional[pd.DataFrame] = None,
+        as_of_date: str = "",
         total_portfolio_nav: float = 1_000_000.0,
         available_cash: float = 1_000_000.0,
         export_to_disk: bool = True,
+        actionable_df: Optional[pd.DataFrame] = None,
+        total_nav: Optional[float] = None,
+        **kwargs,
     ) -> ComplianceManifest:
         """
         Executes all 6 pre-trade compliance audits on actionable target candidates.
         """
+        if candidates_df is None and actionable_df is not None:
+            candidates_df = actionable_df
+        if total_nav is not None:
+            total_portfolio_nav = total_nav
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
         results: List[ComplianceCheckResult] = []
 
@@ -104,7 +141,7 @@ class PreTradeComplianceAuditor:
                 total_checks=len(results),
                 passed_checks=1,
                 failed_checks=0,
-                check_results=[asdict(r) for r in results],
+                check_results=[ResultDict(asdict(r)) for r in results],
                 sha256_seal=seal,
             )
 
@@ -184,7 +221,11 @@ class PreTradeComplianceAuditor:
                 if ex_str and sym in set(actionable_df["symbol"]):
                     ex_str_clean = ex_str[:10]
                     as_of_str_clean = as_of_date[:10]
-                    bus_days = abs(int(np.busday_count(min(as_of_str_clean, ex_str_clean), max(as_of_str_clean, ex_str_clean))))
+                    d1 = np.datetime64(min(as_of_str_clean, ex_str_clean), 'D')
+                    d2 = np.datetime64(max(as_of_str_clean, ex_str_clean), 'D')
+                    d1_bus = np.busday_offset(d1, 0, roll='forward')
+                    d2_bus = np.busday_offset(d2, 0, roll='forward')
+                    bus_days = abs(int(np.busday_count(d1_bus, d2_bus)))
                     if bus_days <= 3:
                         ca_violations.append(f"{sym} (Ex-Date: {ex_str_clean}, {ca.get('action_type', 'ACTION')}, Distance: {bus_days} sessions)")
         except Exception:
@@ -256,7 +297,7 @@ class PreTradeComplianceAuditor:
             total_checks=len(results),
             passed_checks=len(results) - failed_count,
             failed_checks=failed_count,
-            check_results=[asdict(r) for r in results],
+            check_results=[ResultDict(asdict(r)) for r in results],
             sha256_seal=seal,
         )
 
@@ -268,6 +309,8 @@ class PreTradeComplianceAuditor:
             self.export_manifest(manifest, out_path)
 
         return manifest
+
+    run_pretrade_audit = verify_pretrade_compliance
 
     def export_manifest(self, manifest: ComplianceManifest, out_path: Path) -> Path:
         """Atomically writes compliance manifest to disk via temporary swap."""
@@ -282,3 +325,7 @@ class PreTradeComplianceAuditor:
             if tmp_path.exists():
                 tmp_path.unlink(missing_ok=True)
             raise
+
+
+# Institutional Alias
+PreTradeComplianceEngine = PreTradeComplianceAuditor

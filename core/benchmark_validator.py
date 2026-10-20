@@ -644,7 +644,7 @@ def _align_and_fill_dates(df: pd.DataFrame, dates: List[str]) -> pd.DataFrame:
 
 
 def _load_ticker_from_db(symbol: str, base_dir: Path) -> Optional[pd.DataFrame]:
-    """Loads price series for a single ticker directly from universe.db."""
+    """Loads price series for a single ticker directly from universe.db, adjusting for corporate actions."""
     db_path = base_dir / "data" / "universe.db"
     if not db_path.exists():
         return None
@@ -652,12 +652,32 @@ def _load_ticker_from_db(symbol: str, base_dir: Path) -> Optional[pd.DataFrame]:
     try:
         import sqlite3
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-        q = "SELECT date, close FROM prices WHERE symbol = ? ORDER BY date ASC;"
-        df = pd.read_sql_query(q, conn, params=(symbol,))
+        q = "SELECT date, open, high, low, close, volume FROM prices WHERE symbol = ? ORDER BY date ASC;"
+        try:
+            df = pd.read_sql_query(q, conn, params=(symbol,))
+        except Exception:
+            # Fallback if only date, close exists in schema
+            df = pd.read_sql_query("SELECT date, close FROM prices WHERE symbol = ? ORDER BY date ASC;", conn, params=(symbol,))
+
         if not df.empty and "date" in df.columns and "close" in df.columns:
             df["date"] = df["date"].astype(str)
-            df["close"] = df["close"].astype(float)
-            return df
+            for col in ["open", "high", "low", "close", "volume"]:
+                if col in df.columns:
+                    df[col] = df[col].astype(float)
+                else:
+                    df[col] = df["close"].astype(float) if col != "volume" else 1000.0
+
+            # Route through AnalyticalPriceEngine to adjust for splits / bonuses
+            try:
+                from core.analytical_price import AnalyticalPriceEngine
+                ape = AnalyticalPriceEngine(base_dir=base_dir)
+                adj_df, _ = ape.derive_analytical_series(symbol, df)
+                if not adj_df.empty:
+                    return adj_df[["date", "close"]].copy()
+            except Exception:
+                pass
+
+            return df[["date", "close"]].copy()
     except Exception:
         pass
     finally:
@@ -745,7 +765,9 @@ def _build_universe_proxy_series(universe_name: str = "NIFTY500", base_dir: Opti
 
         if not px_df.empty:
             piv = px_df.pivot(index="date", columns="symbol", values="close")
-            rets = piv.pct_change(fill_method=None).median(axis=1).fillna(0.0)
+            # Clamp daily returns to exchange statutory circuit bounds [-20%, +20%] to neutralize unadjusted splits
+            clamped_rets = piv.pct_change(fill_method=None).clip(lower=-0.20, upper=0.20)
+            rets = clamped_rets.median(axis=1).fillna(0.0)
             cum_index = (1.0 + rets).cumprod() * 1000.0
             proxy_df = pd.DataFrame({"date": cum_index.index.astype(str), "close": cum_index.values.astype(float)})
             return compute_benchmark_indicators(proxy_df)

@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import sys
 import json
+import html
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import pandas as pd
@@ -52,24 +53,35 @@ def load_env_credentials() -> Dict[str, str]:
     return creds
 
 def _chunk_message(text: str, max_length: int = 4000) -> List[str]:
-    """Chunks long text into message parts respecting line boundaries."""
+    """Chunks long text into message parts respecting line boundaries and maintaining HTML tag closure."""
     if len(text) <= max_length:
         return [text]
     chunks = []
     lines = text.split("\n")
     current_chunk = []
     current_len = 0
+    in_pre = False
+
     for line in lines:
         line_len = len(line) + 1
-        if current_len + line_len > max_length:
-            if current_chunk:
-                chunks.append("\n".join(current_chunk))
-            current_chunk = [line]
-            current_len = line_len
-        else:
-            current_chunk.append(line)
-            current_len += line_len
+        extra = 7 if in_pre else 0
+        if current_chunk and (current_len + line_len + extra > max_length):
+            if in_pre:
+                current_chunk.append("</pre>")
+            chunks.append("\n".join(current_chunk))
+            current_chunk = ["<pre>"] if in_pre else []
+            current_len = sum(len(x) + 1 for x in current_chunk)
+
+        current_chunk.append(line)
+        current_len += line_len
+        if "<pre>" in line and "</pre>" not in line:
+            in_pre = True
+        elif "</pre>" in line and "<pre>" not in line:
+            in_pre = False
+
     if current_chunk:
+        if in_pre and not current_chunk[-1].endswith("</pre>"):
+            current_chunk.append("</pre>")
         chunks.append("\n".join(current_chunk))
     return chunks
 
@@ -233,17 +245,25 @@ TelegramSender = PydroidTelegramSender
 
 def format_telegram_alert(
     top_df: pd.DataFrame,
-    breadth: Dict,
-    sectors: Dict,
-    regime: Dict,
-    as_of_date: str,
+    breadth: Optional[Dict] = None,
+    sectors: Optional[Dict] = None,
+    regime: Optional[Dict] = None,
+    as_of_date: str = "",
     top_etf_df: Optional[pd.DataFrame] = None,
     delivery_df: Optional[pd.DataFrame] = None,
     universe_label: str = "NIFTY 750",
     db_audit: Optional[Dict] = None,
     benchmark_name: Optional[str] = None,
+    regime_info: Optional[Dict] = None,
+    **kwargs,
 ) -> str:
     """Formats institutional Telegram HTML message with v5.5.2 rich sections."""
+    if regime is None and regime_info is not None:
+        regime = regime_info
+    regime = regime or {}
+    breadth = breadth or {}
+    sectors = sectors or {}
+
     tp = breadth.get("trend_participation", {})
     hp = breadth.get("high_proximity", {})
     nhl = breadth.get("net_highs_lows", {})
@@ -297,7 +317,8 @@ def format_telegram_alert(
     msg += f"{'Rank':<4}{'Sector':<11}{'1M Ret':<8}{'Alpha':<8}{'Breadth'}\n"
     msg += "-" * 38 + "\n"
     for s in sectors.get("sectors", [])[:4]:
-        msg += f"{s['rank']:<4}{s['sector']:<11}{s['ret_1m']:+5.1f}%  {s['alpha_1m']:+5.1f}%  {s['breadth_200_pct']:4.0f}%\n"
+        s_sec = html.escape(str(s.get('sector', '')), quote=False)
+        msg += f"{s.get('rank', 0):<4}{s_sec:<11}{s.get('ret_1m', 0.0):+5.1f}%  {s.get('alpha_1m', 0.0):+5.1f}%  {s.get('breadth_200_pct', 0.0):4.0f}%\n"
     msg += "</pre>\n"
 
     # Top 10 Stocks with TradingView hyperlinks, residual alpha, and delivery tags
@@ -309,6 +330,12 @@ def format_telegram_alert(
         ret_val = float(r.get("ret_1y", 0.0) or r.get("return_252d", 0.0))
         ret_1y = ret_val if abs(ret_val) > 5.0 or ret_val == 0.0 else ret_val * 100.0
         tv_url = f"https://in.tradingview.com/chart/?symbol=NSE:{sym}"
+
+        sec_val = r.get("sector")
+        sec_str = ""
+        if pd.notna(sec_val) and str(sec_val).strip():
+            sec_esc = html.escape(str(sec_val).strip(), quote=False)
+            sec_str = f" ({sec_esc})"
 
         d_info = dmap.get(sym, {})
         d_per = d_info.get("deliv_per")
@@ -325,7 +352,7 @@ def format_telegram_alert(
         if pd.notna(r.get("residual_mom_score")):
             res_str = f" | Res: <code>{float(r['residual_mom_score']):+.2f}</code>"
 
-        msg += f"<code>{idx:02d}.</code> <a href=\"{tv_url}\"><b>{sym}</b></a> — ₹{px:,.1f} | Volar: <code>{volar:.2f}</code>{res_str} | 1Y: <code>{ret_1y:+.1f}%</code>{d_str}\n"
+        msg += f"<code>{idx:02d}.</code> <a href=\"{tv_url}\"><b>{sym}</b></a>{sec_str} — ₹{px:,.1f} | Volar: <code>{volar:.2f}</code>{res_str} | 1Y: <code>{ret_1y:+.1f}%</code>{d_str}\n"
 
     # Top 5 Momentify ALL-ONE ETFs
     if top_etf_df is not None and not top_etf_df.empty:

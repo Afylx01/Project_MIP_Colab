@@ -1,22 +1,22 @@
 # Quantitative Scanner Quality & Lineage Report
 
-**Scan ID:** `SCAN_2026-10-16_1792399844`  
-**Execution Timestamp:** 2026-10-19 08:50:44  
+**Scan ID:** `SCAN_2026-10-16_1792486612`  
+**Execution Timestamp:** 2026-10-20 08:56:52  
 **As-Of Market Date:** 2026-10-16  
-**Reference Benchmark:** `NIFTY50`  
+**Reference Benchmark:** `NIFTY500`  
 **Strategy Version:** `MIP-Scanner-1.0`  
 **Scanner Version:** `2.0.0-institutional`  
 **Configuration Hash:** `6c8981f97b010ad4...`  
-**Execution Runtime:** 75.66s  
+**Execution Runtime:** 51.27s  
 
 ---
 
 ## 1. Scanner Health State: **DEGRADED**
 
 - **Allow Actionable Buys:** `True`
-- **Universe Coverage:** 89.69% (670 / 747 symbols)
+- **Universe Coverage:** 95.17% (473 / 497 symbols)
 - **Benchmark Status:** `BULL` (Regime: `NORMAL`)
-- **Benchmark Level vs 20 EMA:** ₹23,146.15 vs 20 EMA ₹22,892.10
+- **Benchmark Level vs 20 EMA:** ₹22,270.05 vs 20 EMA ₹22,256.81
 
 ### Next-Gen Alpha Overlays & Risk Controls:
 
@@ -27,8 +27,7 @@
 | **Delivery Flow Absorption Veto** | `BYPASS` | Microstructure Distribution Spikes Veto |
 
 ### Non-Critical Health Warnings:
-- ℹ️ Degraded universe coverage: 89.7% is below standard 90% threshold
-- ℹ️ 3 unverified market data anomalies flagged during scan
+- ℹ️ 1 unverified market data anomalies flagged during scan
 
 ---
 
@@ -36,21 +35,20 @@
 
 | Metric | Count | Percentage |
 |---|---|---|
-| **Requested Universe** | 747 | 100.0% |
-| **Data-Valid Securities** | 670 | 89.69% |
-| **Qualified Strategy Candidates** | 206 | 27.6% |
-| **Excluded / Failed Securities** | 541 | 72.4% |
+| **Requested Universe** | 497 | 100.0% |
+| **Data-Valid Securities** | 473 | 95.17% |
+| **Qualified Strategy Candidates** | 136 | 27.4% |
+| **Excluded / Failed Securities** | 361 | 72.6% |
 
 ### Reason Code Histogram:
 
 | Reason Code | Count | Category | Description |
 |---|---|---|---|
-| `BELOW_52W_HIGH_THRESHOLD` | 368 | STRATEGY_FILTER | Close is below 80% of 52-week rolling high. |
-| `PASS` | 206 | SUCCESS | Candidate fully qualified and verified across all strategy rules. |
-| `INSUFFICIENT_HISTORY` | 74 | HISTORY | History is below mandatory 252-session minimum. |
-| `BELOW_EMA200` | 67 | STRATEGY_FILTER | Close is not strictly above the 200-day exponential moving average. |
-| `NEGATIVE_MOMENTUM` | 29 | STRATEGY_FILTER | 1-year momentum return or Volar score is non-positive. |
-| `UNRESOLVED_STRUCTURAL_PRICE_EVENT` | 2 | DATA_INTEGRITY | Unresolved structural price discontinuity (drop >= 40% or jump >= 60%) in lookback window. |
+| `BELOW_52W_HIGH_THRESHOLD` | 254 | STRATEGY_FILTER | Close is below 80% of 52-week rolling high. |
+| `PASS` | 136 | SUCCESS | Candidate fully qualified and verified across all strategy rules. |
+| `BELOW_EMA200` | 64 | STRATEGY_FILTER | Close is not strictly above the 200-day exponential moving average. |
+| `INSUFFICIENT_HISTORY` | 23 | HISTORY | History is below mandatory 252-session minimum. |
+| `NEGATIVE_MOMENTUM` | 19 | STRATEGY_FILTER | 1-year momentum return or Volar score is non-positive. |
 | `CORPORATE_ACTION_REVIEW_REQUIRED` | 1 | DATA_INTEGRITY | Material corporate reorganization requires review; unadjusted or unverified factor. |
 
 ---
@@ -62,20 +60,20 @@
 | 1 | **STLTECH** | TELECOMMUNICATION | ₹865.90 | `10.81` | `N/A` | +668.8% | APPROVED | PASS |
 | 2 | **CUPID** | FAST MOVING CONSUMER GOODS | ₹353.70 | `10.48` | `N/A` | +608.9% | APPROVED | PASS |
 | 3 | **WELCORP** | CAPITAL GOODS | ₹2,571.50 | `4.74` | `N/A` | +212.7% | APPROVED | PASS |
-| 4 | **SKYGOLD** | CONSUMER DURABLES | ₹1,060.60 | `4.72` | `N/A` | +226.8% | APPROVED | PASS |
-| 5 | **LAURUSLABS** | HEALTHCARE | ₹2,060.10 | `4.70` | `N/A` | +135.1% | APPROVED | PASS |
-| 6 | **HFCL** | TELECOMMUNICATION | ₹256.01 | `4.67` | `N/A` | +241.6% | APPROVED | PASS |
-| 7 | **SANSERA** | AUTOMOBILE AND AUTO COMPONENTS | ₹4,120.70 | `4.63` | `N/A` | +194.6% | APPROVED | PASS |
-| 8 | **CPPLUS** | CAPITAL GOODS | ₹4,063.60 | `4.46` | `N/A` | +199.9% | APPROVED | PASS |
-| 9 | **SHILPAMED** | HEALTHCARE | ₹937.60 | `3.96` | `N/A` | +165.6% | APPROVED | PASS |
-| 10 | **ATHERENERG** | AUTOMOBILE AND AUTO COMPONENTS | ₹1,470.00 | `2.91` | `N/A` | +139.0% | APPROVED | PASS |
-| 11 | **KTKBANK** | FINANCIAL SERVICES | ₹329.85 | `2.63` | `N/A` | +92.8% | APPROVED | PASS |
-| 12 | **TMB** | FINANCIAL SERVICES | ₹857.30 | `2.60` | `N/A` | +100.5% | APPROVED | PASS |
-| 13 | **AETHER** | CHEMICALS | ₹1,538.60 | `2.55` | `N/A` | +106.5% | APPROVED | PASS |
-| 14 | **ARVIND** | TEXTILES | ₹525.70 | `2.14` | `N/A` | +83.7% | APPROVED | PASS |
-| 15 | **PGIL** | TEXTILES | ₹1,289.20 | `1.96` | `N/A` | +97.4% | APPROVED | PASS |
-| 16 | **GAEL** | FAST MOVING CONSUMER GOODS | ₹174.14 | `1.94` | `N/A` | +71.5% | APPROVED | PASS |
-| 17 | **NAVINFLUOR** | CHEMICALS | ₹8,167.00 | `1.92` | `N/A` | +70.2% | APPROVED | PASS |
-| 18 | **CHENNPETRO** | OIL GAS & CONSUMABLE FUELS | ₹1,406.60 | `1.68` | `N/A` | +92.5% | APPROVED | PASS |
-| 19 | **NAZARA** | MEDIA ENTERTAINMENT & PUBLICATION | ₹418.15 | `1.55` | `N/A` | +59.4% | APPROVED | PASS |
-| 20 | **GESHIP** | SERVICES | ₹1,507.40 | `1.48` | `N/A` | +51.1% | APPROVED | PASS |
+| 4 | **LAURUSLABS** | HEALTHCARE | ₹2,060.10 | `4.70` | `N/A` | +135.1% | APPROVED | PASS |
+| 5 | **HFCL** | TELECOMMUNICATION | ₹256.01 | `4.67` | `N/A` | +241.6% | APPROVED | PASS |
+| 6 | **SANSERA** | AUTOMOBILE AND AUTO COMPONENTS | ₹4,120.70 | `4.63` | `N/A` | +194.6% | APPROVED | PASS |
+| 7 | **CPPLUS** | CAPITAL GOODS | ₹4,063.60 | `4.46` | `N/A` | +199.9% | APPROVED | PASS |
+| 8 | **ATHERENERG** | AUTOMOBILE AND AUTO COMPONENTS | ₹1,470.00 | `2.91` | `N/A` | +139.0% | APPROVED | PASS |
+| 9 | **AETHER** | CHEMICALS | ₹1,538.60 | `2.55` | `N/A` | +106.5% | APPROVED | PASS |
+| 10 | **ACUTAAS** | HEALTHCARE | ₹3,206.00 | `2.55` | `N/A` | +114.2% | APPROVED | PASS |
+| 11 | **FEDERALBNK** | FINANCIAL SERVICES | ₹338.00 | `2.22` | `N/A` | +57.4% | APPROVED | PASS |
+| 12 | **NAVINFLUOR** | CHEMICALS | ₹8,167.00 | `1.92` | `N/A` | +70.2% | APPROVED | PASS |
+| 13 | **HONASA** | FAST MOVING CONSUMER GOODS | ₹452.25 | `1.85` | `N/A` | +60.5% | APPROVED | PASS |
+| 14 | **ANANDRATHI** | FINANCIAL SERVICES | ₹2,159.70 | `1.83` | `N/A` | +37.1% | APPROVED | PASS |
+| 15 | **WELSPUNLIV** | TEXTILES | ₹219.30 | `1.70` | `N/A` | +78.5% | APPROVED | PASS |
+| 16 | **CHENNPETRO** | OIL GAS & CONSUMABLE FUELS | ₹1,406.60 | `1.68` | `N/A` | +92.5% | APPROVED | PASS |
+| 17 | **GESHIP** | SERVICES | ₹1,507.40 | `1.48` | `N/A` | +51.1% | APPROVED | PASS |
+| 18 | **AEGISLOG** | OIL GAS & CONSUMABLE FUELS | ₹1,366.70 | `1.47` | `N/A` | +69.4% | APPROVED | PASS |
+| 19 | **BBOX** | INFORMATION TECHNOLOGY | ₹907.25 | `1.33` | `N/A` | +60.6% | APPROVED | PASS |
+| 20 | **NYKAA** | CONSUMER SERVICES | ₹345.00 | `1.30` | `N/A` | +34.9% | APPROVED | PASS |

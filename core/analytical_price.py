@@ -82,19 +82,27 @@ class CorporateActionEvent:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "CorporateActionEvent":
-        act_t = data.get("action_type", "UNKNOWN_MATERIAL_EVENT")
-        act_n = data.get("action_nature", "UNKNOWN")
-        
+        act_t = data.get("action_type", data.get("type", "UNKNOWN_MATERIAL_EVENT"))
+        act_n = data.get("action_nature")
+
         # Safe Enum casting
         try:
             parsed_type = ActionType(act_t)
         except ValueError:
             parsed_type = ActionType.UNKNOWN_MATERIAL_EVENT
-            
-        try:
-            parsed_nature = ActionNature(act_n)
-        except ValueError:
-            parsed_nature = ActionNature.UNKNOWN
+
+        if act_n:
+            try:
+                parsed_nature = ActionNature(act_n)
+            except ValueError:
+                parsed_nature = ActionNature.UNKNOWN
+        else:
+            if parsed_type in (ActionType.SPLIT, ActionType.BONUS, ActionType.CONSOLIDATION):
+                parsed_nature = ActionNature.ENTERPRISE_PRESERVING
+            elif parsed_type in (ActionType.DEMERGER, ActionType.SPIN_OFF, ActionType.MERGER, ActionType.AMALGAMATION, ActionType.CAPITAL_REDUCTION):
+                parsed_nature = ActionNature.ENTERPRISE_ALTERING
+            else:
+                parsed_nature = ActionNature.UNKNOWN
             
         return cls(
             symbol=str(data.get("symbol", "")).strip().upper(),
@@ -126,9 +134,17 @@ class AnalyticalPriceEngine:
       - Unexplained structural drops > 40% fail closed without contaminating the scanner.
     """
 
-    def __init__(self, registry_path: Optional[Union[Path, str]] = None):
-        base_dir = get_base_dir()
-        self.registry_path = Path(registry_path) if registry_path else (base_dir / "data" / "corporate_actions_registry.json")
+    def __init__(
+        self,
+        registry_path: Optional[Union[Path, str]] = None,
+        base_dir: Optional[Union[Path, str]] = None,
+    ):
+        base = Path(base_dir) if base_dir else get_base_dir()
+        if registry_path:
+            p = Path(registry_path)
+            self.registry_path = p if p.is_file() or p.suffix == ".json" else (p / "data" / "corporate_actions_registry.json")
+        else:
+            self.registry_path = base / "data" / "corporate_actions_registry.json"
         self.actions_by_symbol: Dict[str, List[CorporateActionEvent]] = {}
         self.reload_registry()
 
@@ -141,16 +157,29 @@ class AnalyticalPriceEngine:
         try:
             with open(self.registry_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            
-            # Support both list of actions and wrapped dictionary
-            action_list = data.get("actions", data) if isinstance(data, dict) else data
-            
+
+            # Support list of actions, wrapped dictionary, or symbol-keyed dictionary
+            if isinstance(data, list):
+                action_list = data
+            elif isinstance(data, dict):
+                if "actions" in data and isinstance(data["actions"], list):
+                    action_list = data["actions"]
+                else:
+                    action_list = []
+                    for k, val in data.items():
+                        if isinstance(val, list):
+                            action_list.extend(val)
+                        elif isinstance(val, dict):
+                            action_list.append(val)
+            else:
+                action_list = []
+
             for item in action_list:
                 ev = CorporateActionEvent.from_dict(item)
                 if ev.symbol not in self.actions_by_symbol:
                     self.actions_by_symbol[ev.symbol] = []
                 self.actions_by_symbol[ev.symbol].append(ev)
-                
+
             # Sort each symbol's actions chronologically
             for sym in self.actions_by_symbol:
                 self.actions_by_symbol[sym].sort(key=lambda a: a.ex_date)
@@ -178,7 +207,7 @@ class AnalyticalPriceEngine:
         self,
         symbol: str,
         df_raw: pd.DataFrame,
-        as_of_date: str,
+        as_of_date: Optional[str] = None,
         min_clean_bars: int = 252,
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
@@ -188,7 +217,12 @@ class AnalyticalPriceEngine:
           - Quarantines unexplained dislocations > 40%.
         """
         sym_clean = str(symbol).strip().upper()
-        as_of_clean = str(as_of_date).strip()[:10]
+        if as_of_date is not None:
+            as_of_clean = str(as_of_date).strip()[:10]
+        elif df_raw is not None and not df_raw.empty and "date" in df_raw.columns:
+            as_of_clean = str(df_raw["date"].max()).strip()[:10]
+        else:
+            as_of_clean = "9999-12-31"
 
         diag: Dict[str, Any] = {
             "symbol": sym_clean,
@@ -229,28 +263,33 @@ class AnalyticalPriceEngine:
         # Branch A: Enterprise-Altering Reorganizations (Demergers, etc.)
         # -------------------------------------------------------------
         altering_actions = [a for a in actions if a.action_nature == ActionNature.ENTERPRISE_ALTERING]
+        partition_cutoff = None
         if altering_actions:
             # Locate latest reorganization ex-date
             latest_reorg = max(altering_actions, key=lambda a: a.ex_date)
-            cutoff = latest_reorg.ex_date
+            partition_cutoff = latest_reorg.ex_date
             
             # Boundary History Partitioning: Sever pre-reorganization conglomerate bars
-            df_part = df[df["date"] >= cutoff].copy().reset_index(drop=True)
+            df = df[df["date"] >= partition_cutoff].copy().reset_index(drop=True)
             diag["treatment"] = "BOUNDARY_HISTORY_PARTITIONING"
             diag["is_partitioned"] = True
-            diag["partition_cutoff"] = cutoff
-            diag["clean_bars_count"] = len(df_part)
-            
-            # History qualification evaluated downstream by validator (min_history_bars)
-            return df_part, diag
+            diag["partition_cutoff"] = partition_cutoff
+            diag["clean_bars_count"] = len(df)
 
         # -------------------------------------------------------------
         # Branch B: Enterprise-Preserving Actions (Bonus, Split)
         # -------------------------------------------------------------
-        preserving_actions = [a for a in actions if a.action_nature == ActionNature.ENTERPRISE_PRESERVING]
+        preserving_actions = [
+            a for a in actions 
+            if a.action_nature == ActionNature.ENTERPRISE_PRESERVING
+            and (partition_cutoff is None or a.ex_date >= partition_cutoff)
+        ]
         if preserving_actions:
             df_adj = df.copy()
-            diag["treatment"] = "CONTINUOUS_BACKWARD_ADJUSTMENT"
+            if diag.get("is_partitioned"):
+                diag["treatment"] = "PARTITIONING_AND_CONTINUOUS_ADJUSTMENT"
+            else:
+                diag["treatment"] = "CONTINUOUS_BACKWARD_ADJUSTMENT"
             
             # Apply multiplicative scaling in reverse chronological order
             for act in sorted(preserving_actions, key=lambda a: a.ex_date, reverse=True):
@@ -290,7 +329,7 @@ class AnalyticalPriceEngine:
             bad_drops = active_tail[is_anom & (~active_tail["date"].isin(known_action_dates))]
             if not bad_drops.empty:
                 diag["is_blocked_unresolved"] = True
-                diag["unresolved_reason"] = f"Unresolved structural dislocation in lookback window on {bad_drops['date'].iloc[0]}"
+                diag["unresolved_reason"] = f"Unresolved structural drop/dislocation in lookback window on {bad_drops['date'].iloc[0]}"
                 return df_adj.drop(columns=["_ratio"], errors="ignore"), diag
 
             return df_adj.drop(columns=["_ratio"], errors="ignore"), diag
@@ -307,7 +346,7 @@ class AnalyticalPriceEngine:
                 # Structural price jump/drop with no corporate action record -> Fail Closed
                 diag["treatment"] = "UNRESOLVED_CRASH"
                 diag["is_blocked_unresolved"] = True
-                diag["unresolved_reason"] = f"Unresolved structural dislocation of {bad_drops['_ratio'].iloc[0]:.2f}x on {bad_drops['date'].iloc[0]}"
+                diag["unresolved_reason"] = f"Unresolved structural drop/dislocation of {bad_drops['_ratio'].iloc[0]:.2f}x on {bad_drops['date'].iloc[0]}"
                 return df.drop(columns=["_ratio"], errors="ignore"), diag
             df = df.drop(columns=["_ratio"], errors="ignore")
 

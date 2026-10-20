@@ -131,7 +131,20 @@ class FastDataCache:
                 with np.load(filepath, allow_pickle=False) as data:
                     raw_cols = list(data["columns"])
                     cols = [c.decode("utf-8") if isinstance(c, bytes) else str(c) for c in raw_cols]
-                    records = {col: data[col] for col in cols}
+                    records = {}
+                    for col in cols:
+                        arr = data[col]
+                        null_key = f"__null_{col}"
+                        if null_key in data:
+                            mask = data[null_key]
+                            if arr.dtype.kind in ('U', 'S', 'O'):
+                                s_series = pd.Series(arr, dtype=object)
+                                s_series[mask] = np.nan
+                                records[col] = s_series
+                            else:
+                                records[col] = np.where(mask, np.nan, arr)
+                        else:
+                            records[col] = arr
                     df = pd.DataFrame(records)
             else:
                 return None
@@ -155,6 +168,7 @@ class FastDataCache:
         cache_key: str,
         df: pd.DataFrame,
         description: str = "",
+        preferred_format: str = "auto",
     ) -> bool:
         """
         Atomically stores DataFrame to cache with format auto-selection.
@@ -165,7 +179,8 @@ class FastDataCache:
         self._enforce_size_limit()
 
         try:
-            if HAS_PYARROW:
+            use_feather = (preferred_format == "auto" or preferred_format == "feather") and HAS_PYARROW
+            if use_feather:
                 fmt = "feather"
                 filename = f"{cache_key}.feather"
                 filepath = self.cache_dir / filename
@@ -183,10 +198,13 @@ class FastDataCache:
                 arrays_to_save: Dict[str, Any] = {"columns": np.array([str(c) for c in df.columns], dtype=str)}
                 for col in df.columns:
                     s = df[col]
+                    col_str = str(col)
+                    if s.isna().any():
+                        arrays_to_save[f"__null_{col_str}"] = s.isna().to_numpy()
                     if s.dtype == object or pd.api.types.is_string_dtype(s):
-                        arrays_to_save[str(col)] = np.array(s.astype(str), dtype=str)
+                        arrays_to_save[col_str] = np.array(s.fillna("").astype(str), dtype=str)
                     else:
-                        arrays_to_save[str(col)] = s.to_numpy()
+                        arrays_to_save[col_str] = s.to_numpy()
                 np.savez_compressed(tmp_path, **arrays_to_save)
                 tmp_path.replace(filepath)
 

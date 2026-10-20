@@ -438,6 +438,17 @@ class PydroidAutoFetch:
             cursor.execute("SELECT MAX(date) FROM prices;")
             res = cursor.fetchone()
             db_latest = res[0] if res and res[0] else None
+
+            if bm_sync_res.get("status") not in ["SUCCESS", "UP_TO_DATE"]:
+                return {
+                    "status": AutoFetchStatus.VALIDATION_FAILURE.value,
+                    "benchmark_status": bm_sync_res.get("status"),
+                    "dates_fetched": 0,
+                    "actions_applied": 0,
+                    "db_latest": db_latest,
+                    "message": f"Universe current but benchmark sync failed: {bm_sync_res.get('message')}"
+                }
+
             return {
                 "status": AutoFetchStatus.CURRENT.value,
                 "benchmark_status": bm_sync_res.get("status"),

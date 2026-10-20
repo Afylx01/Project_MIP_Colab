@@ -143,7 +143,16 @@ static inline void simulate_single_config(
     const TensorCube* cube
 ) {
     const uint32_t N = cube->num_symbols;
-    if (N > MAX_UNIVERSE_SYMBOLS) return; // Prevent stack buffer overflow
+    if (N > MAX_UNIVERSE_SYMBOLS) {
+        memset(result, 0, sizeof(SimulationSummary));
+        result->param_id = params->param_id;
+        result->sharpe = -99.9f;
+        result->sortino = -99.9f;
+        result->calmar = -99.9f;
+        result->cagr = -99.9f;
+        result->max_drawdown = 1.0f;
+        return; // Prevent stack buffer overflow
+    }
     const uint32_t T = cube->num_dates;
     const float total_friction_rate = (params->friction_bps + params->slippage_bps) / 10000.0f;
     const float initial_capital = params->initial_capital > 0.0f ? params->initial_capital : 1000000.0f;

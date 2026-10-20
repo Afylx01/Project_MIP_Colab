@@ -11,6 +11,7 @@ import datetime
 import hashlib
 import json
 import os
+import time
 import sqlite3
 import pandas as pd
 from pathlib import Path
@@ -172,18 +173,6 @@ def ensure_database_schema(conn: sqlite3.Connection) -> None:
                 PRIMARY KEY (symbol, ex_date, type)
             );
         """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS picks_history (
-                pick_date TEXT NOT NULL,
-                symbol TEXT NOT NULL,
-                entry_price REAL,
-                exit_price REAL,
-                ret_since REAL,
-                last_px_date TEXT,
-                status TEXT DEFAULT 'ACTIVE',
-                PRIMARY KEY (pick_date, symbol)
-            );
-        """)
         conn.commit()
     finally:
         cursor.close()
@@ -290,9 +279,21 @@ def load_applied_corporate_actions(
     return sorted(res, key=lambda a: (a["ex_date"], a["symbol"]))
 
 
-def get_latest_date() -> str:
-    """Returns the latest available trading date in universe.db (YYYY-MM-DD)."""
-    conn = get_connection()
+def save_corporate_actions_registry(actions: Dict[str, Any], base_dir: Optional[Path] = None) -> Path:
+    """Atomically saves corporate actions registry JSON to data/corporate_actions_registry.json."""
+    base = Path(base_dir) if base_dir else get_base_dir()
+    reg_path = base / "data" / "corporate_actions_registry.json"
+    reg_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = reg_path.with_suffix(f".tmp_{os.getpid()}_{int(time.time())}")
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(actions, f, indent=2)
+    tmp_path.replace(reg_path)
+    return reg_path
+
+
+def get_latest_date(db_path: Optional[Union[str, Path]] = None) -> str:
+    """Returns the latest available trading date in universe.db or db_path (YYYY-MM-DD)."""
+    conn = get_connection(db_path) if db_path is not None else get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT MAX(date) FROM prices;")
@@ -300,6 +301,8 @@ def get_latest_date() -> str:
         return res[0] if res and res[0] else ""
     finally:
         cursor.close()
+        if db_path is not None:
+            conn.close()
 
 
 def get_date_range() -> Tuple[str, str]:

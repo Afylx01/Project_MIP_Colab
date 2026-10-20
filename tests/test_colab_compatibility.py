@@ -69,10 +69,11 @@ class TestColabCompatibilityAndSecurity(unittest.TestCase):
             "PROVENANCE_MANIFEST.json",
             "PRODUCTION_READINESS_CERTIFICATE.json",
             "RELEASE_DISTRIBUTION_MANIFEST.json",
+            "cache_manifest.json",
         }
         for jf in json_files:
-            # Skip reports or tests fixtures if any
-            if "reports" in jf.parts or ".pytest_cache" in jf.parts:
+            # Skip reports, cache, logs, or tests fixtures if any
+            if "reports" in jf.parts or ".pytest_cache" in jf.parts or ".cache" in jf.parts or "logs" in jf.parts:
                 continue
             self.assertIn(jf.name, allowed_json_basenames, f"Forbidden JSON artifact detected in repository: {jf}")
 

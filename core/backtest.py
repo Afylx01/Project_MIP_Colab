@@ -45,6 +45,29 @@ class LightweightBacktester:
         except Exception:
             self.analytical_engine = None
 
+    @staticmethod
+    def build_trades_df(closed_trades: List[Dict[str, Any]], trade_cols: Optional[List[str]] = None) -> pd.DataFrame:
+        """Constructs standardized DataFrame from closed trade records, normalizing legacy keys."""
+        cols = trade_cols or [
+            "trade_id", "symbol", "entry_date", "exit_date", "entry_px", "exit_px",
+            "shares", "cost_basis", "net_proceeds", "net_pnl", "return_pct", "exit_reason"
+        ]
+        if not closed_trades:
+            return pd.DataFrame(columns=cols)
+        normalized = []
+        for t in closed_trades:
+            t_copy = dict(t)
+            if "entry_px" not in t_copy and "entry_price" in t_copy:
+                t_copy["entry_px"] = t_copy["entry_price"]
+            if "exit_px" not in t_copy and "exit_price" in t_copy:
+                t_copy["exit_px"] = t_copy["exit_price"]
+            if "cost_basis" not in t_copy:
+                t_copy["cost_basis"] = round(t_copy.get("shares", 0) * t_copy.get("entry_px", t_copy.get("entry_price", 0.0)), 2)
+            if "net_proceeds" not in t_copy:
+                t_copy["net_proceeds"] = round(t_copy.get("cost_basis", 0.0) + t_copy.get("net_pnl", 0.0), 2)
+            normalized.append(t_copy)
+        return pd.DataFrame(normalized, columns=cols)
+
     def log(self, msg: str):
         print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] [Backtest] {msg}")
 
@@ -319,10 +342,14 @@ class LightweightBacktester:
                             "trade_id": total_closed_trades,
                             "symbol": sym,
                             "entry_date": entry_dt,
-                            "entry_price": buy_px,
                             "exit_date": exec_date,
+                            "entry_px": buy_px,
+                            "exit_px": exit_px,
+                            "entry_price": buy_px,
                             "exit_price": exit_px,
                             "shares": shares,
+                            "cost_basis": round(cost_basis, 2),
+                            "net_proceeds": round(net_proceeds, 2),
                             "gross_pnl": round(gross_proceeds - (shares * buy_px), 2),
                             "net_pnl": round(net_pnl, 2),
                             "return_pct": ret_pct,
@@ -567,7 +594,7 @@ class LightweightBacktester:
             "trade_id", "symbol", "entry_date", "exit_date", "entry_px", "exit_px",
             "shares", "cost_basis", "net_proceeds", "net_pnl", "return_pct", "exit_reason"
         ]
-        trades_df = pd.DataFrame(closed_trades, columns=trade_cols) if closed_trades else pd.DataFrame(columns=trade_cols)
+        trades_df = self.build_trades_df(closed_trades, trade_cols)
         trades_df.to_csv(reports_dir / "trade_log.csv", index=False)
 
         with open(reports_dir / "backtest_results.json", "w", encoding="utf-8") as f:

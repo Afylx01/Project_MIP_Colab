@@ -32,24 +32,25 @@ class TensorCubeContainer:
         self,
         dates: List[str],
         symbols: List[str],
-        schedule_indices_map: Dict[str, np.ndarray],
-        benchmark_regime: np.ndarray,
-        sector_ids: np.ndarray,
-        open_px: np.ndarray,
-        close_px: np.ndarray,
-        atr_14: np.ndarray,
-        volar_cubes: np.ndarray,
-        high_cubes: np.ndarray,
-        res_mom_cubes: np.ndarray,
-        ema_cubes: np.ndarray,
-        rs_pass_cubes: np.ndarray,
-        vol_target_scalar: np.ndarray,
-        delivery_veto_plane: np.ndarray,
-        lookback_values: List[int],
-        ema_span_values: List[int],
-        sector_names: List[str],
+        schedule_indices_map: Optional[Dict[str, np.ndarray]] = None,
+        benchmark_regime: Optional[np.ndarray] = None,
+        sector_ids: Optional[np.ndarray] = None,
+        open_px: Optional[np.ndarray] = None,
+        close_px: Optional[np.ndarray] = None,
+        atr_14: Optional[np.ndarray] = None,
+        volar_cubes: Optional[np.ndarray] = None,
+        high_cubes: Optional[np.ndarray] = None,
+        res_mom_cubes: Optional[np.ndarray] = None,
+        ema_cubes: Optional[np.ndarray] = None,
+        rs_pass_cubes: Optional[np.ndarray] = None,
+        vol_target_scalar: Optional[np.ndarray] = None,
+        delivery_veto_plane: Optional[np.ndarray] = None,
+        lookback_values: Optional[List[int]] = None,
+        ema_span_values: Optional[List[int]] = None,
+        sector_names: Optional[List[str]] = None,
         bench_closes: Optional[np.ndarray] = None,
         benchmark_name: str = "NIFTY500",
+        **kwargs,
     ):
         self.dates = dates
         self.symbols = symbols
@@ -59,6 +60,10 @@ class TensorCubeContainer:
 
         self.schedule_names = ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]
         self.num_schedules = len(self.schedule_names)
+
+        if schedule_indices_map is None:
+            reb = kwargs.get("rebalance_indices", np.array([0, min(1, len(dates)-1)], dtype=np.int32))
+            schedule_indices_map = {s: reb for s in self.schedule_names}
 
         # Concatenate rebalance indices for all schedules into a single 1D int32 array
         self.schedule_offsets = np.zeros(8, dtype=np.uint32)
@@ -77,30 +82,33 @@ class TensorCubeContainer:
         self.rebalance_indices = np.ascontiguousarray(np.concatenate(rebal_list), dtype=np.int32)
         self.num_rebalances = self.schedule_lengths[1] # monthly length for backward compatibility
 
-        self.benchmark_regime = np.ascontiguousarray(benchmark_regime, dtype=np.uint8)
-        self.sector_ids = np.ascontiguousarray(sector_ids, dtype=np.uint8)
+        self.benchmark_regime = np.ascontiguousarray(benchmark_regime if benchmark_regime is not None else np.ones(len(dates), dtype=np.uint8), dtype=np.uint8)
+        self.sector_ids = np.ascontiguousarray(sector_ids if sector_ids is not None else np.zeros(len(symbols), dtype=np.uint8), dtype=np.uint8)
 
-        self.open_px = np.ascontiguousarray(open_px, dtype=np.float32)
-        self.close_px = np.ascontiguousarray(close_px, dtype=np.float32)
-        self.atr_14 = np.ascontiguousarray(atr_14, dtype=np.float32)
+        self.open_px = np.ascontiguousarray(open_px if open_px is not None else np.ones((len(dates), len(symbols)), dtype=np.float32), dtype=np.float32)
+        self.close_px = np.ascontiguousarray(close_px if close_px is not None else np.ones((len(dates), len(symbols)), dtype=np.float32), dtype=np.float32)
+        self.atr_14 = np.ascontiguousarray(atr_14 if atr_14 is not None else np.ones((len(dates), len(symbols)), dtype=np.float32), dtype=np.float32)
 
-        self.volar_cubes = np.ascontiguousarray(volar_cubes, dtype=np.float32)
-        self.high_cubes = np.ascontiguousarray(high_cubes, dtype=np.float32)
-        self.res_mom_cubes = np.ascontiguousarray(res_mom_cubes, dtype=np.float32)
-        self.ema_cubes = np.ascontiguousarray(ema_cubes, dtype=np.float32)
-        self.rs_pass_cubes = np.ascontiguousarray(rs_pass_cubes, dtype=np.uint8)
+        self.volar_cubes = np.ascontiguousarray(volar_cubes if volar_cubes is not None else np.ones((1, len(dates), len(symbols)), dtype=np.float32), dtype=np.float32)
+        self.high_cubes = np.ascontiguousarray(high_cubes if high_cubes is not None else np.ones((1, len(dates), len(symbols)), dtype=np.float32), dtype=np.float32)
+        res_mom = res_mom_cubes if res_mom_cubes is not None else kwargs.get("res_mom_cubes", volar_cubes)
+        self.res_mom_cubes = np.ascontiguousarray(res_mom if res_mom is not None else self.volar_cubes, dtype=np.float32)
+        self.ema_cubes = np.ascontiguousarray(ema_cubes if ema_cubes is not None else np.ones((1, len(dates), len(symbols)), dtype=np.float32), dtype=np.float32)
+        self.rs_pass_cubes = np.ascontiguousarray(rs_pass_cubes if rs_pass_cubes is not None else np.ones((1, len(dates), len(symbols)), dtype=np.uint8), dtype=np.uint8)
 
-        self.vol_target_scalar = np.ascontiguousarray(vol_target_scalar, dtype=np.float32)
-        self.delivery_veto_plane = np.ascontiguousarray(delivery_veto_plane, dtype=np.uint8)
+        vol_tgt = vol_target_scalar if vol_target_scalar is not None else kwargs.get("vol_target_scalar")
+        self.vol_target_scalar = np.ascontiguousarray(vol_tgt, dtype=np.float32) if vol_tgt is not None else None
+        deliv = delivery_veto_plane if delivery_veto_plane is not None else kwargs.get("delivery_veto_plane")
+        self.delivery_veto_plane = np.ascontiguousarray(deliv, dtype=np.uint8) if deliv is not None else None
 
         if bench_closes is not None:
             self.bench_closes = np.ascontiguousarray(bench_closes, dtype=np.float32)
         else:
             self.bench_closes = np.ones(self.num_dates, dtype=np.float32)
 
-        self.lookback_values = lookback_values
-        self.ema_span_values = ema_span_values
-        self.sector_names = sector_names
+        self.lookback_values = lookback_values or kwargs.get("lookback_values", [252])
+        self.ema_span_values = ema_span_values or kwargs.get("ema_span_values", [200])
+        self.sector_names = sector_names or kwargs.get("sector_names", ["GENERAL"])
 
         self.date_to_idx = {d: i for i, d in enumerate(dates)}
         self.symbol_to_idx = {s: i for i, s in enumerate(symbols)}
@@ -134,6 +142,8 @@ def build_tensor_cube(
     lookback_values: Optional[List[int]] = None,
     ema_span_values: Optional[List[int]] = None,
     base_dir: Optional[Path] = None,
+    symbols: Optional[List[str]] = None,
+    **kwargs,
 ) -> TensorCubeContainer:
     """
     Constructs the precomputed multi-schedule, multi-lookback tensor cube for NIFTY 750 / 500 / ALL.
@@ -145,16 +155,21 @@ def build_tensor_cube(
         ema_span_values = DEFAULT_EMA_SPANS
 
     base_path = Path(base_dir) if base_dir else get_base_dir()
-    db_path = get_db_path()
+    db_path = (base_path / "data" / "universe.db") if (base_path / "data" / "universe.db").exists() else get_db_path()
     if end_date is None:
         from core.data_engine import get_latest_date
-        end_date = get_latest_date()
+        end_date = get_latest_date(db_path=db_path)
 
-    print(f"\n[CubeBuilder] Loading constituents for universe '{universe_name}'...")
-    sym_set = load_universe_constituents(universe_name)
-    all_symbols = sorted(list(sym_set))
-    N = len(all_symbols)
-    print(f"[CubeBuilder] Loaded {N} constituents from {universe_name}.")
+    if symbols is not None:
+        all_symbols = sorted(list(set(symbols)))
+        N = len(all_symbols)
+        print(f"\n[CubeBuilder] Using {N} explicit symbols for universe '{universe_name}'.")
+    else:
+        print(f"\n[CubeBuilder] Loading constituents for universe '{universe_name}'...")
+        sym_set = load_universe_constituents(universe_name)
+        all_symbols = sorted(list(sym_set))
+        N = len(all_symbols)
+        print(f"[CubeBuilder] Loaded {N} constituents from {universe_name}.")
 
     # Sector mapping
     raw_sector_map = load_symbol_sector_map()
@@ -173,6 +188,22 @@ def build_tensor_cube(
     )
     raw_bars = pd.read_sql_query(query, conn, params=all_symbols + [start_date, end_date])
     conn.close()
+
+    # Corporate action adjustment for constituent bars
+    try:
+        from core.analytical_price import AnalyticalPriceEngine
+        ape = AnalyticalPriceEngine(base_dir=base_path)
+        if ape.actions_by_symbol:
+            adj_chunks = []
+            for sym, group in raw_bars.groupby("symbol"):
+                if sym in ape.actions_by_symbol:
+                    adj_df, _ = ape.derive_analytical_series(sym, group)
+                    adj_chunks.append(adj_df)
+                else:
+                    adj_chunks.append(group)
+            raw_bars = pd.concat(adj_chunks, ignore_index=True)
+    except Exception as e_ca:
+        print(f"[CubeBuilder] Notice: Analytical corporate adjustment bypassed: {e_ca}")
 
     raw_bars["date"] = raw_bars["date"].astype(str)
     all_dates = sorted(raw_bars["date"].unique().tolist())

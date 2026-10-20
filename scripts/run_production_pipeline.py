@@ -62,6 +62,12 @@ class PipelineLock:
             try:
                 content = json.loads(self.lock_file.read_text(encoding="utf-8"))
                 lock_pid = content.get("pid")
+                acquired_at_str = content.get("acquired_at")
+                if acquired_at_str:
+                    acquired_at = datetime.datetime.fromisoformat(acquired_at_str)
+                    age_seconds = (datetime.datetime.now(datetime.timezone.utc) - acquired_at).total_seconds()
+                    if age_seconds > self.timeout_seconds:
+                        is_stale = True
             except Exception:
                 is_stale = True
 

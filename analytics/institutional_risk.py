@@ -182,13 +182,21 @@ def calculate_comprehensive_risk_suite(
     specific_risk_pct = 100.0
 
     if benchmark_returns is not None:
-        bm = np.asarray(benchmark_returns, dtype=np.float64)
-        valid_len = min(len(r), len(bm))
-        r_sub = r[:valid_len]
-        bm_sub = bm[:valid_len]
-        mask = np.isfinite(r_sub) & np.isfinite(bm_sub)
-        r_clean = r_sub[mask]
-        bm_clean = bm_sub[mask]
+        if isinstance(returns, (pd.Series, pd.DataFrame)) and isinstance(benchmark_returns, (pd.Series, pd.DataFrame)):
+            s_ret = returns if isinstance(returns, pd.Series) else returns.iloc[:, 0]
+            s_bm = benchmark_returns if isinstance(benchmark_returns, pd.Series) else benchmark_returns.iloc[:, 0]
+            df_aligned = pd.DataFrame({"r": s_ret, "bm": s_bm}).dropna()
+            r_clean = df_aligned["r"].to_numpy(dtype=np.float64)
+            bm_clean = df_aligned["bm"].to_numpy(dtype=np.float64)
+        else:
+            r_raw = np.asarray(returns, dtype=np.float64)
+            bm_raw = np.asarray(benchmark_returns, dtype=np.float64)
+            valid_len = min(len(r_raw), len(bm_raw))
+            r_sub = r_raw[:valid_len]
+            bm_sub = bm_raw[:valid_len]
+            mask = np.isfinite(r_sub) & np.isfinite(bm_sub)
+            r_clean = r_sub[mask]
+            bm_clean = bm_sub[mask]
 
         if len(r_clean) > 5 and np.var(bm_clean) > 1e-8:
             bm_cagr = float((np.prod(1.0 + bm_clean)) ** (annualization_factor / len(bm_clean)) - 1.0) if np.all(1.0 + bm_clean > 0) else 0.0

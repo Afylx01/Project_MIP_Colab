@@ -12,6 +12,7 @@ import platform
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 import numpy as np
+import pandas as pd
 
 BRUTE_FORCE_DIR = Path(__file__).resolve().parent
 C_SOURCE = BRUTE_FORCE_DIR / "sim_kernel.c"
@@ -149,12 +150,24 @@ SCHEDULE_MAP = {
 }
 
 
-def _as_contiguous_ptr(arr: Optional[np.ndarray], dtype=np.float32) -> int:
-    """Ensures array is C-contiguous in memory and returns its ctypes pointer address."""
+class ContiguousPointer(int):
+    """Integer ctypes pointer address that retains a reference to the pinned C-contiguous array."""
+    def __new__(cls, val: int, pinned: Optional[np.ndarray]):
+        obj = super().__new__(cls, val)
+        obj.pinned = pinned
+        return obj
+
+    def __iter__(self):
+        yield int(self)
+        yield self.pinned
+
+
+def _as_contiguous_ptr(arr: Optional[np.ndarray], dtype=np.float32) -> ContiguousPointer:
+    """Ensures array is C-contiguous in memory and returns its ctypes pointer address pinned against GC."""
     if arr is None:
-        return 0
+        return ContiguousPointer(0, None)
     c_arr = np.ascontiguousarray(arr, dtype=dtype)
-    return int(c_arr.ctypes.data)
+    return ContiguousPointer(int(c_arr.ctypes.data), c_arr)
 
 
 # 48-byte Result Struct matching C99 SimulationSummary
@@ -310,6 +323,22 @@ class NativeBruteForceEngine:
         ]
         self.lib.run_parallel_brute_force.restype = None
 
+    @property
+    def is_available(self) -> bool:
+        return hasattr(self, "lib") and self.lib is not None
+
+    def run_sweep(
+        self,
+        cube,
+        params_list: Optional[List[Dict[str, Any]]] = None,
+        num_threads: int = 8,
+    ) -> pd.DataFrame:
+        """Runs sweep and returns structured DataFrame."""
+        if isinstance(cube, (list, tuple)) and not isinstance(params_list, (list, tuple)):
+            cube, params_list = params_list, cube
+        arr = self.execute_sweep(params_list or [], cube, num_threads=num_threads)
+        return pd.DataFrame(arr)
+
     def execute_sweep(
         self,
         params_list: List[Dict[str, Any]],
@@ -392,10 +421,6 @@ class NativeBruteForceEngine:
 
         # Build ctypes CTensorCube
         c_cube = CTensorCube()
-        if cube.num_symbols > 2048:
-            raise ValueError(
-                f"Universe size {cube.num_symbols} exceeds native C kernel limit of 2048 symbols."
-            )
         c_cube.num_dates = cube.num_dates
         c_cube.num_symbols = cube.num_symbols
         c_cube.num_lookbacks = len(cube.lookback_values)

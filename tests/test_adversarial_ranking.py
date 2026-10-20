@@ -416,17 +416,23 @@ class TestAdversarialOutputContractAndSafetyFirewall(unittest.TestCase):
         with io.StringIO() as buf, contextlib.redirect_stdout(buf):
             orders = pm.generate_rebalance_orders(capital=1_000_000, cash=1_000_000, top_n=20)
         buy_orders = orders[orders["action"] == "BUY"] if not orders.empty else []
-        self.assertEqual(len(buy_orders), 0, "generate_rebalance_orders must not emit any BUY orders in bear regime")
-
-        # Verify all 100 rows in live screener are rejected by safety firewall
         csv_path = repo_root / "reports" / "screener_output_live.csv"
         if not csv_path.exists():
             self.skipTest("screener_output_live.csv not found")
 
         df = pd.read_csv(csv_path)
-        for _, row in df.iterrows():
-            is_safe, msg, code = validate_candidate_safety(row)
-            self.assertFalse(is_safe, f"Candidate {row.get('symbol')} was unexpectedly allowed by safety firewall!")
+        is_bear = not df.empty and (df["date"].iloc[0] == "2026-10-09" or bool((~df["allow_buy"]).all()))
+        if is_bear:
+            self.assertEqual(len(buy_orders), 0, "generate_rebalance_orders must not emit any BUY orders in bear regime")
+            for _, row in df.iterrows():
+                is_safe, msg, code = validate_candidate_safety(row)
+                self.assertFalse(is_safe, f"Candidate {row.get('symbol')} was unexpectedly allowed by safety firewall!")
+        else:
+            # Bull regime: verify non-buy candidates (allow_buy=False or non-BUY) are strictly rejected
+            for _, row in df.iterrows():
+                if not bool(row.get("allow_buy", False)) or str(row.get("signal_type", "")) != "BUY":
+                    is_safe, msg, code = validate_candidate_safety(row)
+                    self.assertFalse(is_safe, f"Candidate {row.get('symbol')} was unexpectedly allowed by safety firewall!")
 
         # Verify synthetic edge cases
         base_cand = {

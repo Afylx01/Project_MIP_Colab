@@ -21,7 +21,7 @@
     {
       "filename": "analytical_price.py",
       "sha256_source": "3031b619ce6f2c6fbe22cf29350e6ecaec10f39757ad19c06376b7115eae0a6a",
-      "sha256_migrated": "ca0cc87c0cf8e7240bcff37427bbe740c6edbe53b42a66acd8c7c359ef936fa0",
+      "sha256_migrated": "e395a5f8b062decd011ad4dadd4f64138c5a69843e7c2dcb09bc85ad87776685",
       "status": "refactored",
       "refactor_notes": "Loop 3 institutional defect remediation"
     },
@@ -35,21 +35,21 @@
     {
       "filename": "auto_fetch.py",
       "sha256_source": "a99103cb6397860f9e3883403b2a69b7c88ccad32b09b7053b604ba29fbfdd29",
-      "sha256_migrated": "8ae0f030483b878dfce9293003620c158eb662fc96891938a5386ad6e57b3b41",
+      "sha256_migrated": "e006c4dab3194d35e1f93e778aaca75a5b6bfeaffcbd00269440fd54a8a8b219",
       "status": "refactored",
       "refactor_notes": "Auto-sync mutation firewall pass & Telegram dispatch integration"
     },
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "46c15fdab39c6a0af673cce50668c2c4a6998fcc6a45f9fab594423234d907ab",
+      "sha256_migrated": "85ebe9d001ae6cae577c8f40bfa2e95006a4180556dbaf35937094164ae955d9",
       "status": "refactored",
       "refactor_notes": "Loop 3 institutional defect remediation"
     },
     {
       "filename": "benchmark_validator.py",
       "sha256_source": "b937cb2a309dc4e139a4e34194c5f83b1f2f6d202731c1c222de3548dffec36e",
-      "sha256_migrated": "9d732e9f8e794d375b73c0c95eb7f83b8b8238b2e58d3fa1c239f01f3a414ada",
+      "sha256_migrated": "c7c93a81297a5b3b1be4b42bc9cd4a79d734d97454033471a5522a4136aed3f0",
       "status": "refactored",
       "refactor_notes": "Merged benchmark catalog and resolver engine"
     },
@@ -70,7 +70,7 @@
     {
       "filename": "data_engine.py",
       "sha256_source": "a2836814d38d65315c0a1bc1645f75efcc6ea7b393e565816110b28e78dbd6ae",
-      "sha256_migrated": "3bc4de3f868e46d41abed6404b2e18205e65ee753828ba671216110506b9d5b9",
+      "sha256_migrated": "13a87adc087ae7d6df700c5dcdaf27c7bd6cef84a5e0ea0f744c2d9e92327cd4",
       "status": "refactored",
       "refactor_notes": "Loop 3 institutional defect remediation"
     },
@@ -112,7 +112,7 @@
     {
       "filename": "portfolio.py",
       "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
-      "sha256_migrated": "ef09e9ddd7063b9215e9c7852f708bb9931a8abf396cd55b61e5d985748ea08b",
+      "sha256_migrated": "3484ec9c3d4a196741637bdccb400c6fb1d882d6045ba4f44d323c846966a2b8",
       "status": "refactored",
       "refactor_notes": "Loop 3 institutional defect remediation"
     },
@@ -168,7 +168,7 @@
     {
       "filename": "telegram_sender.py",
       "sha256_source": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
-      "sha256_migrated": "d14975c2c62d9392b2acd2bded76d6bafe2a3b39eca99d6aefd767a12c8162d2",
+      "sha256_migrated": "c554e46f3f311fc03b06bf08dd68c54880df4f97034f3770ac1f4a6036141c54",
       "status": "refactored",
       "refactor_notes": "Loop 2 institutional defect remediation"
     },

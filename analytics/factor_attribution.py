@@ -126,14 +126,14 @@ class BrinsonFachlerEngine:
         cum_rb = float(np.prod([max(0.0, 1.0 + r) for r in benchmark_total_returns]) - 1.0)
         total_active_spread = cum_rp - cum_rb
 
-        if abs(total_active_spread) < 1e-12:
-            K_scale = 0.0
+        denom = sum(
+            k_factors[t] * (portfolio_total_returns[t] - benchmark_total_returns[t])
+            for t in range(T)
+        )
+        if abs(denom) > 1e-8 and abs(total_active_spread) > 1e-8:
+            K_scale = total_active_spread / denom
         else:
-            denom = sum(
-                k_factors[t] * (portfolio_total_returns[t] - benchmark_total_returns[t])
-                for t in range(T)
-            )
-            K_scale = (total_active_spread / denom) if abs(denom) > 1e-12 else (1.0 + cum_rb)
+            K_scale = 1.0 / (1.0 + cum_rb) if (1.0 + cum_rb > 0) else 1.0
 
         # Aggregate across all sectors
         sector_totals: Dict[str, Dict[str, float]] = {}
@@ -150,12 +150,19 @@ class BrinsonFachlerEngine:
                         "mean_wp": 0.0,
                         "mean_wb": 0.0,
                     }
-                sector_totals[sec]["allocation"] += kt_scaled * row["allocation_effect"]
-                sector_totals[sec]["selection"] += kt_scaled * row["selection_effect"]
-                sector_totals[sec]["interaction"] += kt_scaled * row["interaction_effect"]
-                sector_totals[sec]["total_active"] += kt_scaled * row["total_active_return"]
-                sector_totals[sec]["mean_wp"] += row["weight_portfolio"] / T
-                sector_totals[sec]["mean_wb"] += row["weight_benchmark"] / T
+                alloc = float(row.get("allocation_effect", row.get("allocation", 0.0)))
+                selec = float(row.get("selection_effect", row.get("selection", 0.0)))
+                inter = float(row.get("interaction_effect", row.get("interaction", 0.0)))
+                tot_act = float(row.get("total_active_return", row.get("total_active", 0.0)))
+                wp = float(row.get("weight_portfolio", row.get("mean_wp", 0.0)))
+                wb = float(row.get("weight_benchmark", row.get("mean_wb", 0.0)))
+
+                sector_totals[sec]["allocation"] += kt_scaled * alloc
+                sector_totals[sec]["selection"] += kt_scaled * selec
+                sector_totals[sec]["interaction"] += kt_scaled * inter
+                sector_totals[sec]["total_active"] += kt_scaled * tot_act
+                sector_totals[sec]["mean_wp"] += wp / T
+                sector_totals[sec]["mean_wb"] += wb / T
 
         summary_rows = []
         for sec, data in sorted(sector_totals.items()):
@@ -167,6 +174,12 @@ class BrinsonFachlerEngine:
                 "cumulative_selection": round(data["selection"], 6),
                 "cumulative_interaction": round(data["interaction"], 6),
                 "cumulative_total_active": round(data["total_active"], 6),
+                "allocation": round(data["allocation"], 6),
+                "selection": round(data["selection"], 6),
+                "interaction": round(data["interaction"], 6),
+                "total_active": round(data["total_active"], 6),
             })
 
         return pd.DataFrame(summary_rows)
+
+    link_multi_period_attributions = link_multi_period_menchero

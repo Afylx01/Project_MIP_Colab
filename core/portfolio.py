@@ -1082,6 +1082,9 @@ class PortfolioManager:
         allow_research_overrides: bool = False,
         cash: Optional[float] = None,
         portfolio_state: Optional[Any] = None,
+        screener_df: Optional[pd.DataFrame] = None,
+        prices: Optional[dict] = None,
+        **kwargs,
     ) -> pd.DataFrame:
         """
         Generates rebalance orders applying:
@@ -1139,7 +1142,7 @@ class PortfolioManager:
             )
         latest_date = str(as_of_date).strip()[:10] if as_of_date else get_latest_date()
 
-        screener_df = self.load_screener_output()
+        screener_df = screener_df if screener_df is not None else self.load_screener_output()
         if screener_df.empty:
             self.log("No qualifying screener candidates found.")
             return pd.DataFrame(columns=EMPTY_ORDERS_COLS)
@@ -1173,14 +1176,16 @@ class PortfolioManager:
         conn = get_connection(read_only=True, reuse=True)
 
         all_syms = set(current_holdings.keys()) | set(screener_df["symbol"].dropna().tolist())
-        prices = {}
+        resolved_prices = dict(prices) if prices is not None else {}
         for sym in all_syms:
-            query = "SELECT close FROM prices WHERE symbol = ? AND date = ?"
-            df_price = pd.read_sql_query(query, conn, params=(sym, latest_date))
-            if not df_price.empty:
-                prices[sym] = float(df_price.iloc[0]["close"])
-            else:
-                prices[sym] = 0.0
+            if sym not in resolved_prices or resolved_prices[sym] <= 0:
+                query = "SELECT close FROM prices WHERE symbol = ? AND date = ?"
+                df_price = pd.read_sql_query(query, conn, params=(sym, latest_date))
+                if not df_price.empty:
+                    resolved_prices[sym] = float(df_price.iloc[0]["close"])
+                elif sym not in resolved_prices:
+                    resolved_prices[sym] = 0.0
+        prices = resolved_prices
 
         # Build deduplicated screener map: symbol -> best candidate row
         # If duplicates exist, keep highest volar score / best rank
@@ -1512,7 +1517,14 @@ class PortfolioManager:
 
         # Budget normalization: ensure BUY orders do not exceed remaining unallocated capital
         held_value = sum(o["target_value"] for o in buy_hold_orders if o["action"] == "HOLD")
-        avail_for_buys = max(0.0, (capital * 0.99) - held_value)
+        sell_proceeds = sum(o["total_cost"] for o in sell_orders)
+        incremental_hold_cost = sum(
+            max(0, o["target_shares"] - current_holdings.get(o["symbol"], 0)) * o["close_price"]
+            for o in buy_hold_orders if o["action"] == "HOLD"
+        )
+        cash_avail = max(0.0, (actual_cash + sell_proceeds - incremental_hold_cost) * 0.99)
+        nav_headroom = max(0.0, (capital * 0.99) - held_value)
+        avail_for_buys = min(cash_avail, nav_headroom) if actual_cash > 0 else nav_headroom
         buy_orders = [o for o in buy_hold_orders if o["action"] == "BUY"]
         buy_requested = sum(o["total_cost"] for o in buy_orders)
 

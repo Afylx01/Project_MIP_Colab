@@ -122,8 +122,9 @@ def decompress_file(src_gz_path: Path, dest_path: Path) -> Tuple[int, int]:
     tmp_dest = dest.parent / f"{dest.name}.tmp_{int(time.time())}_{uuid.uuid4().hex[:8]}"
     with gzip.open(src_gz, "rb") as f_in, open(tmp_dest, "wb") as f_out:
         shutil.copyfileobj(f_in, f_out, length=10 * 1024 * 1024)
+    gz_size = src_gz.stat().st_size
     tmp_dest.replace(dest)
-    return src_gz.stat().st_size, dest.stat().st_size
+    return gz_size, dest.stat().st_size
 
 
 def sync_universe_from_gdrive(
