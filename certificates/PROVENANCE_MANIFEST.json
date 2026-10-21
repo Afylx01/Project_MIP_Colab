@@ -42,7 +42,7 @@
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "85ebe9d001ae6cae577c8f40bfa2e95006a4180556dbaf35937094164ae955d9",
+      "sha256_migrated": "3c7d57a49f833c1b5d312496a8fa2a82f53989483515cf971b551585432049bd",
       "status": "refactored",
       "refactor_notes": "Loop 3 institutional defect remediation"
     },
