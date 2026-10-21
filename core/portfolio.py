@@ -1337,7 +1337,7 @@ class PortfolioManager:
                 deliv_act = str(s_row.get("delivery_action", s_row.get("deliv_action", ""))).upper()
                 if enforce_delivery_exit_veto and (is_deliv_vetoed or "DISTRIBUTION" in deliv_act or "VETO" in deliv_act):
                     exit_reason = "DISTRIBUTION_VETO"
-                    exit_reason_code = ScannerReasonCode.PASS.value
+                    exit_reason_code = ScannerReasonCode.PORTFOLIO_DISTRIBUTION_VETO.value
                     exit_source_signal = "DELIVERY_VETO"
                 elif close_price < 0.80 * hi_252:
                     exit_reason = "STOP_52W_HIGH_RETRACEMENT"
@@ -1360,8 +1360,13 @@ class PortfolioManager:
                         best_cand_alpha = 0.0
                         cand_candidates_pre = screener_df.copy()
                         if not cand_candidates_pre.empty:
-                            best_row = cand_candidates_pre.iloc[0]
-                            best_cand_alpha = float(best_row.get("composite_alpha_score", best_row.get("volar_score", 0.0) / 100.0))
+                            if "composite_alpha_score" in cand_candidates_pre.columns:
+                                best_cand_alpha = float(cand_candidates_pre["composite_alpha_score"].max())
+                            elif "volar_score" in cand_candidates_pre.columns:
+                                best_cand_alpha = float(cand_candidates_pre["volar_score"].max() / 100.0)
+                            else:
+                                best_row = cand_candidates_pre.iloc[0]
+                                best_cand_alpha = float(best_row.get("composite_alpha_score", best_row.get("volar_score", 0.0) / 100.0))
                         held_alpha = float(s_row.get("composite_alpha_score", s_row.get("volar_score", 0.0) / 100.0))
 
                         if (best_cand_alpha - held_alpha) < hurdle:

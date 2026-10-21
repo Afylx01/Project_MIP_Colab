@@ -24,6 +24,7 @@ from nextgen.composite_alpha import (
     compute_composite_alpha_score,
 )
 from core.portfolio import PortfolioManager
+from core.reason_codes import ScannerReasonCode
 from core.data_engine import get_base_dir
 
 
@@ -120,6 +121,7 @@ class TestDeliveryDistributionHoldingVeto:
         assert "STLTECH" in sell_syms, "STLTECH must be liquidated due to delivery distribution veto"
         st_sell = sells[sells["symbol"] == "STLTECH"].iloc[0]
         assert "DISTRIBUTION" in str(st_sell["reason"]).upper()
+        assert st_sell["reason_code"] == ScannerReasonCode.PORTFOLIO_DISTRIBUTION_VETO.value
 
 
 class TestTurnoverDeadbandAndTaxAwareRebalancing:

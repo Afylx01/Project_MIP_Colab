@@ -112,16 +112,16 @@
     {
       "filename": "portfolio.py",
       "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
-      "sha256_migrated": "8059b564d5de9d88f8dedc910e0fe042c7e280e5f06e7fd7e1a3c35da56763c1",
+      "sha256_migrated": "865264647370eb8230cf1f209eab713edcfc12eaecf6878c40c198868f2a69cb",
       "status": "refactored",
       "refactor_notes": "Phase 2 Factor Fusion, Delivery Distribution Veto & Tax Awareness"
     },
     {
       "filename": "reason_codes.py",
       "sha256_source": "4db8ef5a79762956510f73c0616766366087d915320f29bed1b87b1742a66d3e",
-      "sha256_migrated": "7970cc1f2bed07bd17b34e5be7c156c24aae5d67ff811bbbf840e01c57e29f9a",
+      "sha256_migrated": "4291eca90584a9a2009a5f7860e2807a5a3c8d8b1321bd26f8fde8b87aaa4f73",
       "status": "refactored",
-      "refactor_notes": "Phase 1 Institutional Workstation Streamlining & Execution Guard"
+      "refactor_notes": "Phase 2 Delivery Distribution Veto code and Phase 1 Upper Circuit"
     },
     {
       "filename": "rrg.py",

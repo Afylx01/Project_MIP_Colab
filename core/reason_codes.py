@@ -68,6 +68,7 @@ class ScannerReasonCode(str, Enum):
     PORTFOLIO_DUPLICATE_CANDIDATE = "PORTFOLIO_DUPLICATE_CANDIDATE" # Duplicate candidate symbol or security ID
     PORTFOLIO_INVALID_PRICE = "PORTFOLIO_INVALID_PRICE"         # Candidate price is non-positive or non-finite
     PORTFOLIO_REGIME_BLOCKED = "PORTFOLIO_REGIME_BLOCKED"       # New entry blocked by defensive regime
+    PORTFOLIO_DISTRIBUTION_VETO = "PORTFOLIO_DISTRIBUTION_VETO" # Existing holding revoked due to delivery distribution
     UPPER_CIRCUIT_LOCKED = "UPPER_CIRCUIT_LOCKED"               # Security locked at statutory exchange Upper Circuit ceiling
 
     @property
@@ -152,6 +153,7 @@ class ScannerReasonCode(str, Enum):
             ScannerReasonCode.PORTFOLIO_DUPLICATE_CANDIDATE: "Duplicate candidate symbol or canonical security ID rejected.",
             ScannerReasonCode.PORTFOLIO_INVALID_PRICE: "Candidate price is non-positive, NaN, or non-finite.",
             ScannerReasonCode.PORTFOLIO_REGIME_BLOCKED: "New candidate entry blocked due to defensive benchmark regime.",
+            ScannerReasonCode.PORTFOLIO_DISTRIBUTION_VETO: "Existing holding revoked and liquidated due to severe institutional delivery distribution.",
             ScannerReasonCode.UPPER_CIRCUIT_LOCKED: "Security locked at statutory exchange Upper Circuit ceiling (zero seller liquidity).",
         }
         return descriptions.get(self, "Unknown status code.")
