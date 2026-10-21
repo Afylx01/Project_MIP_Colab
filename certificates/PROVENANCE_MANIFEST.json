@@ -42,9 +42,9 @@
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "3c7d57a49f833c1b5d312496a8fa2a82f53989483515cf971b551585432049bd",
+      "sha256_migrated": "2c8722cf83a0184d4187f32250eeb6e2712ae2ad032e6457963dfa0228d8c737",
       "status": "refactored",
-      "refactor_notes": "Loop 3 institutional defect remediation"
+      "refactor_notes": "Ablation campaign bar-caching acceleration and research overrides"
     },
     {
       "filename": "benchmark_validator.py",

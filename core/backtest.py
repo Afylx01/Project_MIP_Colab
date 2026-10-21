@@ -133,88 +133,126 @@ class LightweightBacktester:
         start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
         warmup_dt = start_dt - datetime.timedelta(days=550)
         warmup_str = warmup_dt.strftime("%Y-%m-%d")
+        cache_key = (warmup_str, end_date, getattr(self, "benchmark_name", "NIFTY500"))
 
-        self.log(f"Loading bars from SQLite ({warmup_str} to {end_date})...")
-        bars = load_bars(start_date=warmup_str, end_date=end_date)
-        bars["date"] = bars["date"].astype(str)
-        bars = bars.sort_values(by=["symbol", "date"]).reset_index(drop=True)
-        bars["sector"] = bars["symbol"].map(lambda s: self.sector_map.get(s, "OTHER"))
+        if getattr(self, "_prepared_cache_key", None) == cache_key and hasattr(self, "_prepared_cache"):
+            c = self._prepared_cache
+            bars_by_date = c["bars_by_date"]
+            open_by_date = c["open_by_date"]
+            close_by_date = c["close_by_date"]
+            atr_by_date = c["atr_by_date"]
+            all_dates = c["all_dates"]
+            date_to_idx = c["date_to_idx"]
+            self.delisted_symbols = c["delisted_symbols"]
+            bench_bull_map = c["bench_bull_map"]
+            b_df = c["b_df"]
+        else:
+            self.log(f"Loading bars from SQLite ({warmup_str} to {end_date})...")
+            bars = load_bars(start_date=warmup_str, end_date=end_date)
+            bars["date"] = bars["date"].astype(str)
+            bars = bars.sort_values(by=["symbol", "date"]).reset_index(drop=True)
+            bars["sector"] = bars["symbol"].map(lambda s: self.sector_map.get(s, "OTHER"))
 
-        # Point-in-time corporate action adjustments via AnalyticalPriceEngine (DEF-01)
-        if getattr(self, "analytical_engine", None) and self.analytical_engine.actions_by_symbol:
-            for ca_sym in self.analytical_engine.actions_by_symbol:
-                mask = bars["symbol"] == ca_sym
-                if mask.any():
-                    df_sub = bars.loc[mask].copy()
-                    df_adj, _ = self.analytical_engine.derive_analytical_series(
-                        ca_sym, df_sub, as_of_date=end_date
-                    )
-                    if not df_adj.empty and len(df_adj) == len(df_sub):
-                        for col in ["open", "high", "low", "close"]:
-                            if col in df_adj.columns:
-                                bars.loc[mask, col] = df_adj[col].values
+            # Point-in-time corporate action adjustments via AnalyticalPriceEngine (DEF-01)
+            if getattr(self, "analytical_engine", None) and self.analytical_engine.actions_by_symbol:
+                for ca_sym in self.analytical_engine.actions_by_symbol:
+                    mask = bars["symbol"] == ca_sym
+                    if mask.any():
+                        df_sub = bars.loc[mask].copy()
+                        df_adj, _ = self.analytical_engine.derive_analytical_series(
+                            ca_sym, df_sub, as_of_date=end_date
+                        )
+                        if not df_adj.empty and len(df_adj) == len(df_sub):
+                            for col in ["open", "high", "low", "close"]:
+                                if col in df_adj.columns:
+                                    bars.loc[mask, col] = df_adj[col].values
 
-        self.delisted_symbols = set(bars.loc[bars["is_delisted"] == 1, "symbol"].unique()) if "is_delisted" in bars.columns else set()
+            self.delisted_symbols = set(bars.loc[bars["is_delisted"] == 1, "symbol"].unique()) if "is_delisted" in bars.columns else set()
 
-        b_df = self.load_benchmark()
-        bench_bull_map = {}
-        bench_close_map = {}
-        if not b_df.empty:
-            b_df["date"] = b_df["date"].astype(str)
-            b_df = b_df.sort_values("date").reset_index(drop=True)
-            from .benchmark_validator import validate_benchmark_dataframe, compute_benchmark_indicators
-            valid, reason = validate_benchmark_dataframe(b_df, min_history=20)
-            if valid:
-                b_df = compute_benchmark_indicators(b_df)
-                bench_bull_map = dict(zip(b_df["date"], b_df["close"] >= b_df["ema_20"]))
-                bench_close_map = dict(zip(b_df["date"], b_df["close"]))
-            else:
-                self.log(f"Warning: Benchmark data invalid ({reason}). Backtester will operate fail-closed.")
+            b_df = self.load_benchmark()
+            bench_bull_map = {}
+            bench_close_map = {}
+            if not b_df.empty:
+                b_df["date"] = b_df["date"].astype(str)
+                b_df = b_df.sort_values("date").reset_index(drop=True)
+                from .benchmark_validator import validate_benchmark_dataframe, compute_benchmark_indicators
+                valid, reason = validate_benchmark_dataframe(b_df, min_history=20)
+                if valid:
+                    b_df = compute_benchmark_indicators(b_df)
+                    bench_bull_map = dict(zip(b_df["date"], b_df["close"] >= b_df["ema_20"]))
+                    bench_close_map = dict(zip(b_df["date"], b_df["close"]))
+                else:
+                    self.log(f"Warning: Benchmark data invalid ({reason}). Backtester will operate fail-closed.")
 
-        self.log("Computing momentum factors across universe...")
-        bars["close_252d"] = bars.groupby("symbol")["close"].shift(252)
-        bars["ret_1y"] = (bars["close"] / bars["close_252d"] - 1.0)
-        bars["daily_ret"] = bars.groupby("symbol")["close"].pct_change()
-        bars["vol_252"] = bars.groupby("symbol")["daily_ret"].transform(
-            lambda s: s.rolling(252, min_periods=min(50, len(s))).std() * np.sqrt(252)
-        )
-        bars["volar"] = bars["ret_1y"] / bars["vol_252"].clip(lower=0.05)
-        bars["ema_200"] = bars.groupby("symbol")["close"].transform(
-            lambda s: s.ewm(span=200, adjust=True, min_periods=min(50, len(s))).mean()
-        )
-        bars["high_252"] = bars.groupby("symbol")["high"].transform(
-            lambda s: s.rolling(252, min_periods=min(50, len(s))).max()
-        )
-        prev_close_bars = bars.groupby("symbol")["close"].shift(1)
-        bars["tr"] = np.maximum(
-            bars["high"] - bars["low"],
-            np.maximum((bars["high"] - prev_close_bars).abs(), (bars["low"] - prev_close_bars).abs())
-        )
-        bars["atr_14"] = bars.groupby("symbol")["tr"].transform(
-            lambda s: s.rolling(14, min_periods=min(5, len(s))).mean()
-        ).fillna(bars["close"] * 0.03)
-
-        # Filters (including Filter 3: RS vs Benchmark > 200 EMA of RS)
-        bars["pass_retrace"] = bars["close"] >= 0.80 * bars["high_252"]
-        bars["pass_trend"] = bars["close"] > bars["ema_200"]
-        if bench_close_map:
-            bars["bench_close"] = bars["date"].map(bench_close_map)
-            valid_bench = bars["bench_close"].notna() & (bars["bench_close"] > 0)
-            bars["rs_ratio"] = np.where(valid_bench, bars["close"] / bars["bench_close"], np.nan)
-            bars["rs_ema_200"] = bars.groupby("symbol")["rs_ratio"].transform(
+            self.log("Computing momentum factors across universe...")
+            bars["close_252d"] = bars.groupby("symbol")["close"].shift(252)
+            bars["ret_1y"] = (bars["close"] / bars["close_252d"] - 1.0)
+            bars["daily_ret"] = bars.groupby("symbol")["close"].pct_change()
+            bars["vol_252"] = bars.groupby("symbol")["daily_ret"].transform(
+                lambda s: s.rolling(252, min_periods=min(50, len(s))).std() * np.sqrt(252)
+            )
+            bars["volar"] = bars["ret_1y"] / bars["vol_252"].clip(lower=0.05)
+            bars["ema_200"] = bars.groupby("symbol")["close"].transform(
                 lambda s: s.ewm(span=200, adjust=True, min_periods=min(50, len(s))).mean()
             )
-            bars["pass_rs"] = (valid_bench & (bars["rs_ratio"] > bars["rs_ema_200"])).fillna(False)
-        else:
-            bars["pass_rs"] = False if use_regime_filter else True
+            bars["high_252"] = bars.groupby("symbol")["high"].transform(
+                lambda s: s.rolling(252, min_periods=min(50, len(s))).max()
+            )
+            prev_close_bars = bars.groupby("symbol")["close"].shift(1)
+            bars["tr"] = np.maximum(
+                bars["high"] - bars["low"],
+                np.maximum((bars["high"] - prev_close_bars).abs(), (bars["low"] - prev_close_bars).abs())
+            )
+            bars["atr_14"] = bars.groupby("symbol")["tr"].transform(
+                lambda s: s.rolling(14, min_periods=min(5, len(s))).mean()
+            ).fillna(bars["close"] * 0.03)
 
-        bars["pass_all"] = bars["pass_retrace"] & bars["pass_trend"] & bars["pass_rs"] & (bars["volar"] > 0)
+            # Filters (including Filter 3: RS vs Benchmark > 200 EMA of RS)
+            bars["pass_retrace"] = bars["close"] >= 0.80 * bars["high_252"]
+            bars["pass_trend"] = bars["close"] > bars["ema_200"]
+            if bench_close_map:
+                bars["bench_close"] = bars["date"].map(bench_close_map)
+                valid_bench = bars["bench_close"].notna() & (bars["bench_close"] > 0)
+                bars["rs_ratio"] = np.where(valid_bench, bars["close"] / bars["bench_close"], np.nan)
+                bars["rs_ema_200"] = bars.groupby("symbol")["rs_ratio"].transform(
+                    lambda s: s.ewm(span=200, adjust=True, min_periods=min(50, len(s))).mean()
+                )
+                bars["pass_rs"] = (valid_bench & (bars["rs_ratio"] > bars["rs_ema_200"])).fillna(False)
+            else:
+                bars["pass_rs"] = False if use_regime_filter else True
 
-        # Build chronological calendar mapping
-        all_dates = sorted(bars["date"].unique())
-        date_to_idx = {d: i for i, d in enumerate(all_dates)}
+            bars["pass_all"] = bars["pass_retrace"] & bars["pass_trend"] & bars["pass_rs"] & (bars["volar"] > 0)
 
-        # Identify monthly rebalance signal dates
+            all_dates = sorted(bars["date"].unique())
+            date_to_idx = {d: i for i, d in enumerate(all_dates)}
+
+            self.log(f"Pre-indexing snapshots across universe bars...")
+            bars_by_date = {d: g for d, g in bars[bars["date"].isin(set(all_dates))].groupby("date")}
+
+            open_by_date = {}
+            close_by_date = {}
+            atr_by_date = {}
+            for d in all_dates:
+                g = bars_by_date.get(d)
+                if g is not None:
+                    open_by_date[d] = dict(zip(g["symbol"], g["open"]))
+                    close_by_date[d] = dict(zip(g["symbol"], g["close"]))
+                    atr_by_date[d] = dict(zip(g["symbol"], g["atr_14"]))
+
+            self._prepared_cache = {
+                "bars_by_date": bars_by_date,
+                "open_by_date": open_by_date,
+                "close_by_date": close_by_date,
+                "atr_by_date": atr_by_date,
+                "all_dates": all_dates,
+                "date_to_idx": date_to_idx,
+                "delisted_symbols": self.delisted_symbols,
+                "bench_bull_map": bench_bull_map,
+                "b_df": b_df,
+            }
+            self._prepared_cache_key = cache_key
+
+        # Identify monthly rebalance signal dates for this run
         test_dates = [d for d in all_dates if d >= start_date]
         df_dates = pd.DataFrame({"date": test_dates})
         df_dates["month"] = df_dates["date"].str[:7]
@@ -225,21 +263,6 @@ class LightweightBacktester:
 
         if len(rebalance_signal_dates) < 2:
             return {"error": "Insufficient rebalance dates in range"}
-
-        self.log(f"Pre-indexing snapshots across {len(rebalance_signal_dates)} monthly rebalances...")
-        # Index slices for signal evaluation and execution
-        bars_by_date = {d: g for d, g in bars[bars["date"].isin(set(all_dates))].groupby("date")}
-
-        # Fast price lookups per date: date -> {sym: open}, date -> {sym: close}, date -> {sym: atr_14}
-        open_by_date = {}
-        close_by_date = {}
-        atr_by_date = {}
-        for d in all_dates:
-            g = bars_by_date.get(d)
-            if g is not None:
-                open_by_date[d] = dict(zip(g["symbol"], g["open"]))
-                close_by_date[d] = dict(zip(g["symbol"], g["close"]))
-                atr_by_date[d] = dict(zip(g["symbol"], g["atr_14"]))
 
         # State tracking
         cash = initial_capital
