@@ -1,0 +1,1214 @@
+{
+  "legacy_mip_baseline": {
+    "full": {
+      "cagr": 35.01,
+      "max_drawdown": 41.65,
+      "calmar": 0.84,
+      "sharpe": 1.01,
+      "sortino": 1.59,
+      "win_rate": 45.9,
+      "profit_factor": 2.33,
+      "total_trades": 591,
+      "ending_equity": 23163080.0
+    },
+    "train": {
+      "cagr": 29.12,
+      "max_drawdown": 41.65,
+      "calmar": 0.7,
+      "sharpe": 0.81,
+      "sortino": 1.25,
+      "win_rate": 46.1,
+      "profit_factor": 2.34,
+      "total_trades": 375,
+      "ending_equity": 5664012.0
+    },
+    "test_oos": {
+      "cagr": 49.98,
+      "max_drawdown": 27.34,
+      "calmar": 1.83,
+      "sharpe": 1.5,
+      "sortino": 2.58,
+      "win_rate": 45.0,
+      "profit_factor": 2.18,
+      "total_trades": 211,
+      "ending_equity": 4301108.0
+    }
+  },
+  "top_3_settings": [
+    {
+      "param_id": 67,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 150,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 67,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    },
+    {
+      "param_id": 195,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 200,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 195,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    },
+    {
+      "param_id": 323,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 252,
+        "ema_trend": 150,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 323,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    }
+  ],
+  "top_20_by_calmar": [
+    {
+      "param_id": 67,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 150,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 67,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    },
+    {
+      "param_id": 195,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 200,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 195,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    },
+    {
+      "param_id": 323,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 252,
+        "ema_trend": 150,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 323,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    },
+    {
+      "param_id": 451,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 252,
+        "ema_trend": 200,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 451,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    },
+    {
+      "param_id": 579,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 315,
+        "ema_trend": 150,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 579,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    },
+    {
+      "param_id": 707,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 315,
+        "ema_trend": 200,
+        "buffer": 40,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 707,
+        "cagr": 29.37,
+        "max_drawdown": 17.71,
+        "calmar": 1.66,
+        "sharpe": 1.04,
+        "sortino": 1.7,
+        "win_rate": 50.5,
+        "profit_factor": 2.85,
+        "total_trades": 206,
+        "ending_equity": 5740900.0
+      },
+      "test_oos": {
+        "cagr": 39.43,
+        "max_drawdown": 13.91,
+        "calmar": 2.83,
+        "sharpe": 1.52,
+        "sortino": 3.13,
+        "win_rate": 58.7,
+        "profit_factor": 2.48,
+        "total_trades": 104,
+        "ending_equity": 3308394.0
+      },
+      "full": {
+        "cagr": 32.22,
+        "max_drawdown": 17.71,
+        "calmar": 1.82,
+        "sharpe": 1.17,
+        "sortino": 2.05,
+        "win_rate": 52.5,
+        "profit_factor": 2.58,
+        "total_trades": 316,
+        "ending_equity": 18608442.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.65
+    },
+    {
+      "param_id": 99,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 150,
+        "buffer": 60,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 99,
+        "cagr": 30.64,
+        "max_drawdown": 18.34,
+        "calmar": 1.67,
+        "sharpe": 1.11,
+        "sortino": 1.77,
+        "win_rate": 49.4,
+        "profit_factor": 3.04,
+        "total_trades": 178,
+        "ending_equity": 6131904.0
+      },
+      "test_oos": {
+        "cagr": 40.14,
+        "max_drawdown": 14.54,
+        "calmar": 2.76,
+        "sharpe": 1.52,
+        "sortino": 2.81,
+        "win_rate": 55.9,
+        "profit_factor": 2.68,
+        "total_trades": 93,
+        "ending_equity": 3369296.0
+      },
+      "full": {
+        "cagr": 32.28,
+        "max_drawdown": 18.34,
+        "calmar": 1.76,
+        "sharpe": 1.19,
+        "sortino": 1.98,
+        "win_rate": 50.4,
+        "profit_factor": 2.73,
+        "total_trades": 276,
+        "ending_equity": 18695054.0
+      },
+      "overfitting_ratio": 1.37,
+      "is_overfit": false,
+      "combined_calmar": 4.52
+    },
+    {
+      "param_id": 227,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 200,
+        "buffer": 60,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 227,
+        "cagr": 30.64,
+        "max_drawdown": 18.34,
+        "calmar": 1.67,
+        "sharpe": 1.11,
+        "sortino": 1.77,
+        "win_rate": 49.4,
+        "profit_factor": 3.04,
+        "total_trades": 178,
+        "ending_equity": 6131904.0
+      },
+      "test_oos": {
+        "cagr": 40.14,
+        "max_drawdown": 14.54,
+        "calmar": 2.76,
+        "sharpe": 1.52,
+        "sortino": 2.81,
+        "win_rate": 55.9,
+        "profit_factor": 2.68,
+        "total_trades": 93,
+        "ending_equity": 3369296.0
+      },
+      "full": {
+        "cagr": 32.28,
+        "max_drawdown": 18.34,
+        "calmar": 1.76,
+        "sharpe": 1.19,
+        "sortino": 1.98,
+        "win_rate": 50.4,
+        "profit_factor": 2.73,
+        "total_trades": 276,
+        "ending_equity": 18695054.0
+      },
+      "overfitting_ratio": 1.37,
+      "is_overfit": false,
+      "combined_calmar": 4.52
+    },
+    {
+      "param_id": 355,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 252,
+        "ema_trend": 150,
+        "buffer": 60,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 355,
+        "cagr": 30.64,
+        "max_drawdown": 18.34,
+        "calmar": 1.67,
+        "sharpe": 1.11,
+        "sortino": 1.77,
+        "win_rate": 49.4,
+        "profit_factor": 3.04,
+        "total_trades": 178,
+        "ending_equity": 6131904.0
+      },
+      "test_oos": {
+        "cagr": 40.14,
+        "max_drawdown": 14.54,
+        "calmar": 2.76,
+        "sharpe": 1.52,
+        "sortino": 2.81,
+        "win_rate": 55.9,
+        "profit_factor": 2.68,
+        "total_trades": 93,
+        "ending_equity": 3369296.0
+      },
+      "full": {
+        "cagr": 32.28,
+        "max_drawdown": 18.34,
+        "calmar": 1.76,
+        "sharpe": 1.19,
+        "sortino": 1.98,
+        "win_rate": 50.4,
+        "profit_factor": 2.73,
+        "total_trades": 276,
+        "ending_equity": 18695054.0
+      },
+      "overfitting_ratio": 1.37,
+      "is_overfit": false,
+      "combined_calmar": 4.52
+    },
+    {
+      "param_id": 483,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 252,
+        "ema_trend": 200,
+        "buffer": 60,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 483,
+        "cagr": 30.64,
+        "max_drawdown": 18.34,
+        "calmar": 1.67,
+        "sharpe": 1.11,
+        "sortino": 1.77,
+        "win_rate": 49.4,
+        "profit_factor": 3.04,
+        "total_trades": 178,
+        "ending_equity": 6131904.0
+      },
+      "test_oos": {
+        "cagr": 40.14,
+        "max_drawdown": 14.54,
+        "calmar": 2.76,
+        "sharpe": 1.52,
+        "sortino": 2.81,
+        "win_rate": 55.9,
+        "profit_factor": 2.68,
+        "total_trades": 93,
+        "ending_equity": 3369296.0
+      },
+      "full": {
+        "cagr": 32.28,
+        "max_drawdown": 18.34,
+        "calmar": 1.76,
+        "sharpe": 1.19,
+        "sortino": 1.98,
+        "win_rate": 50.4,
+        "profit_factor": 2.73,
+        "total_trades": 276,
+        "ending_equity": 18695054.0
+      },
+      "overfitting_ratio": 1.37,
+      "is_overfit": false,
+      "combined_calmar": 4.52
+    },
+    {
+      "param_id": 611,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 315,
+        "ema_trend": 150,
+        "buffer": 60,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 611,
+        "cagr": 30.64,
+        "max_drawdown": 18.34,
+        "calmar": 1.67,
+        "sharpe": 1.11,
+        "sortino": 1.77,
+        "win_rate": 49.4,
+        "profit_factor": 3.04,
+        "total_trades": 178,
+        "ending_equity": 6131904.0
+      },
+      "test_oos": {
+        "cagr": 40.14,
+        "max_drawdown": 14.54,
+        "calmar": 2.76,
+        "sharpe": 1.52,
+        "sortino": 2.81,
+        "win_rate": 55.9,
+        "profit_factor": 2.68,
+        "total_trades": 93,
+        "ending_equity": 3369296.0
+      },
+      "full": {
+        "cagr": 32.28,
+        "max_drawdown": 18.34,
+        "calmar": 1.76,
+        "sharpe": 1.19,
+        "sortino": 1.98,
+        "win_rate": 50.4,
+        "profit_factor": 2.73,
+        "total_trades": 276,
+        "ending_equity": 18695054.0
+      },
+      "overfitting_ratio": 1.37,
+      "is_overfit": false,
+      "combined_calmar": 4.52
+    },
+    {
+      "param_id": 739,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 315,
+        "ema_trend": 200,
+        "buffer": 60,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 739,
+        "cagr": 30.64,
+        "max_drawdown": 18.34,
+        "calmar": 1.67,
+        "sharpe": 1.11,
+        "sortino": 1.77,
+        "win_rate": 49.4,
+        "profit_factor": 3.04,
+        "total_trades": 178,
+        "ending_equity": 6131904.0
+      },
+      "test_oos": {
+        "cagr": 40.14,
+        "max_drawdown": 14.54,
+        "calmar": 2.76,
+        "sharpe": 1.52,
+        "sortino": 2.81,
+        "win_rate": 55.9,
+        "profit_factor": 2.68,
+        "total_trades": 93,
+        "ending_equity": 3369296.0
+      },
+      "full": {
+        "cagr": 32.28,
+        "max_drawdown": 18.34,
+        "calmar": 1.76,
+        "sharpe": 1.19,
+        "sortino": 1.98,
+        "win_rate": 50.4,
+        "profit_factor": 2.73,
+        "total_trades": 276,
+        "ending_equity": 18695054.0
+      },
+      "overfitting_ratio": 1.37,
+      "is_overfit": false,
+      "combined_calmar": 4.52
+    },
+    {
+      "param_id": 35,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 150,
+        "buffer": 30,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 35,
+        "cagr": 30.99,
+        "max_drawdown": 18.55,
+        "calmar": 1.67,
+        "sharpe": 1.05,
+        "sortino": 1.85,
+        "win_rate": 51.3,
+        "profit_factor": 3.03,
+        "total_trades": 232,
+        "ending_equity": 6246210.0
+      },
+      "test_oos": {
+        "cagr": 36.57,
+        "max_drawdown": 13.63,
+        "calmar": 2.68,
+        "sharpe": 1.4,
+        "sortino": 2.93,
+        "win_rate": 59.5,
+        "profit_factor": 2.31,
+        "total_trades": 116,
+        "ending_equity": 3070152.0
+      },
+      "full": {
+        "cagr": 31.53,
+        "max_drawdown": 18.55,
+        "calmar": 1.7,
+        "sharpe": 1.12,
+        "sortino": 2.05,
+        "win_rate": 53.8,
+        "profit_factor": 2.49,
+        "total_trades": 355,
+        "ending_equity": 17616872.0
+      },
+      "overfitting_ratio": 1.33,
+      "is_overfit": false,
+      "combined_calmar": 4.38
+    },
+    {
+      "param_id": 163,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 200,
+        "buffer": 30,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 163,
+        "cagr": 30.99,
+        "max_drawdown": 18.55,
+        "calmar": 1.67,
+        "sharpe": 1.05,
+        "sortino": 1.85,
+        "win_rate": 51.3,
+        "profit_factor": 3.03,
+        "total_trades": 232,
+        "ending_equity": 6246210.0
+      },
+      "test_oos": {
+        "cagr": 36.57,
+        "max_drawdown": 13.63,
+        "calmar": 2.68,
+        "sharpe": 1.4,
+        "sortino": 2.93,
+        "win_rate": 59.5,
+        "profit_factor": 2.31,
+        "total_trades": 116,
+        "ending_equity": 3070152.0
+      },
+      "full": {
+        "cagr": 31.53,
+        "max_drawdown": 18.55,
+        "calmar": 1.7,
+        "sharpe": 1.12,
+        "sortino": 2.05,
+        "win_rate": 53.8,
+        "profit_factor": 2.49,
+        "total_trades": 355,
+        "ending_equity": 17616872.0
+      },
+      "overfitting_ratio": 1.33,
+      "is_overfit": false,
+      "combined_calmar": 4.38
+    },
+    {
+      "param_id": 291,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 252,
+        "ema_trend": 150,
+        "buffer": 30,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 291,
+        "cagr": 30.99,
+        "max_drawdown": 18.55,
+        "calmar": 1.67,
+        "sharpe": 1.05,
+        "sortino": 1.85,
+        "win_rate": 51.3,
+        "profit_factor": 3.03,
+        "total_trades": 232,
+        "ending_equity": 6246210.0
+      },
+      "test_oos": {
+        "cagr": 36.57,
+        "max_drawdown": 13.63,
+        "calmar": 2.68,
+        "sharpe": 1.4,
+        "sortino": 2.93,
+        "win_rate": 59.5,
+        "profit_factor": 2.31,
+        "total_trades": 116,
+        "ending_equity": 3070152.0
+      },
+      "full": {
+        "cagr": 31.53,
+        "max_drawdown": 18.55,
+        "calmar": 1.7,
+        "sharpe": 1.12,
+        "sortino": 2.05,
+        "win_rate": 53.8,
+        "profit_factor": 2.49,
+        "total_trades": 355,
+        "ending_equity": 17616872.0
+      },
+      "overfitting_ratio": 1.33,
+      "is_overfit": false,
+      "combined_calmar": 4.38
+    },
+    {
+      "param_id": 419,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 252,
+        "ema_trend": 200,
+        "buffer": 30,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 419,
+        "cagr": 30.99,
+        "max_drawdown": 18.55,
+        "calmar": 1.67,
+        "sharpe": 1.05,
+        "sortino": 1.85,
+        "win_rate": 51.3,
+        "profit_factor": 3.03,
+        "total_trades": 232,
+        "ending_equity": 6246210.0
+      },
+      "test_oos": {
+        "cagr": 36.57,
+        "max_drawdown": 13.63,
+        "calmar": 2.68,
+        "sharpe": 1.4,
+        "sortino": 2.93,
+        "win_rate": 59.5,
+        "profit_factor": 2.31,
+        "total_trades": 116,
+        "ending_equity": 3070152.0
+      },
+      "full": {
+        "cagr": 31.53,
+        "max_drawdown": 18.55,
+        "calmar": 1.7,
+        "sharpe": 1.12,
+        "sortino": 2.05,
+        "win_rate": 53.8,
+        "profit_factor": 2.49,
+        "total_trades": 355,
+        "ending_equity": 17616872.0
+      },
+      "overfitting_ratio": 1.33,
+      "is_overfit": false,
+      "combined_calmar": 4.38
+    },
+    {
+      "param_id": 547,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 315,
+        "ema_trend": 150,
+        "buffer": 30,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 547,
+        "cagr": 30.99,
+        "max_drawdown": 18.55,
+        "calmar": 1.67,
+        "sharpe": 1.05,
+        "sortino": 1.85,
+        "win_rate": 51.3,
+        "profit_factor": 3.03,
+        "total_trades": 232,
+        "ending_equity": 6246210.0
+      },
+      "test_oos": {
+        "cagr": 36.57,
+        "max_drawdown": 13.63,
+        "calmar": 2.68,
+        "sharpe": 1.4,
+        "sortino": 2.93,
+        "win_rate": 59.5,
+        "profit_factor": 2.31,
+        "total_trades": 116,
+        "ending_equity": 3070152.0
+      },
+      "full": {
+        "cagr": 31.53,
+        "max_drawdown": 18.55,
+        "calmar": 1.7,
+        "sharpe": 1.12,
+        "sortino": 2.05,
+        "win_rate": 53.8,
+        "profit_factor": 2.49,
+        "total_trades": 355,
+        "ending_equity": 17616872.0
+      },
+      "overfitting_ratio": 1.33,
+      "is_overfit": false,
+      "combined_calmar": 4.38
+    },
+    {
+      "param_id": 675,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 315,
+        "ema_trend": 200,
+        "buffer": 30,
+        "sector_cap": 1,
+        "sizing": "atr_risk_parity",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 675,
+        "cagr": 30.99,
+        "max_drawdown": 18.55,
+        "calmar": 1.67,
+        "sharpe": 1.05,
+        "sortino": 1.85,
+        "win_rate": 51.3,
+        "profit_factor": 3.03,
+        "total_trades": 232,
+        "ending_equity": 6246210.0
+      },
+      "test_oos": {
+        "cagr": 36.57,
+        "max_drawdown": 13.63,
+        "calmar": 2.68,
+        "sharpe": 1.4,
+        "sortino": 2.93,
+        "win_rate": 59.5,
+        "profit_factor": 2.31,
+        "total_trades": 116,
+        "ending_equity": 3070152.0
+      },
+      "full": {
+        "cagr": 31.53,
+        "max_drawdown": 18.55,
+        "calmar": 1.7,
+        "sharpe": 1.12,
+        "sortino": 2.05,
+        "win_rate": 53.8,
+        "profit_factor": 2.49,
+        "total_trades": 355,
+        "ending_equity": 17616872.0
+      },
+      "overfitting_ratio": 1.33,
+      "is_overfit": false,
+      "combined_calmar": 4.38
+    },
+    {
+      "param_id": 39,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 150,
+        "buffer": 30,
+        "sector_cap": 1,
+        "sizing": "equal_weight",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 39,
+        "cagr": 30.89,
+        "max_drawdown": 19.34,
+        "calmar": 1.6,
+        "sharpe": 1.0,
+        "sortino": 1.71,
+        "win_rate": 51.3,
+        "profit_factor": 2.86,
+        "total_trades": 232,
+        "ending_equity": 6212420.0
+      },
+      "test_oos": {
+        "cagr": 39.1,
+        "max_drawdown": 13.16,
+        "calmar": 2.97,
+        "sharpe": 1.46,
+        "sortino": 3.16,
+        "win_rate": 59.5,
+        "profit_factor": 2.35,
+        "total_trades": 116,
+        "ending_equity": 3280157.0
+      },
+      "full": {
+        "cagr": 32.24,
+        "max_drawdown": 19.34,
+        "calmar": 1.67,
+        "sharpe": 1.1,
+        "sortino": 1.97,
+        "win_rate": 53.8,
+        "profit_factor": 2.48,
+        "total_trades": 355,
+        "ending_equity": 18647020.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.64
+    },
+    {
+      "param_id": 167,
+      "config": {
+        "schedule": "monthly",
+        "top_n": 10,
+        "lookback": 189,
+        "ema_trend": 200,
+        "buffer": 30,
+        "sector_cap": 1,
+        "sizing": "equal_weight",
+        "regime_gate": true,
+        "residual_mom": true
+      },
+      "train": {
+        "param_id": 167,
+        "cagr": 30.89,
+        "max_drawdown": 19.34,
+        "calmar": 1.6,
+        "sharpe": 1.0,
+        "sortino": 1.71,
+        "win_rate": 51.3,
+        "profit_factor": 2.86,
+        "total_trades": 232,
+        "ending_equity": 6212420.0
+      },
+      "test_oos": {
+        "cagr": 39.1,
+        "max_drawdown": 13.16,
+        "calmar": 2.97,
+        "sharpe": 1.46,
+        "sortino": 3.16,
+        "win_rate": 59.5,
+        "profit_factor": 2.35,
+        "total_trades": 116,
+        "ending_equity": 3280157.0
+      },
+      "full": {
+        "cagr": 32.24,
+        "max_drawdown": 19.34,
+        "calmar": 1.67,
+        "sharpe": 1.1,
+        "sortino": 1.97,
+        "win_rate": 53.8,
+        "profit_factor": 2.48,
+        "total_trades": 355,
+        "ending_equity": 18647020.0
+      },
+      "overfitting_ratio": 1.46,
+      "is_overfit": false,
+      "combined_calmar": 4.64
+    }
+  ]
+}
