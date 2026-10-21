@@ -1078,6 +1078,7 @@ class HardenedScanner(PydroidScanner):
         use_delivery_veto: bool = False,
         use_residual_momentum: bool = False,
         benchmark: Optional[str] = None,
+        filter_upper_circuit: bool = True,
     ) -> Tuple[pd.DataFrame, Dict, Dict, Dict, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Hardened execution of screener pipeline:
@@ -1208,6 +1209,26 @@ class HardenedScanner(PydroidScanner):
                     top_df.loc[top_df["is_delivery_vetoed"], "target_qty"] = 0
                     top_df.loc[top_df["is_delivery_vetoed"], "target_val"] = 0.0
                     top_df.attrs["delivery_vetoed_symbols"] = vetoed_syms
+
+        if filter_upper_circuit and top_df is not None and not top_df.empty:
+            uc_mask = pd.Series(False, index=top_df.index)
+            if "high" in top_df.columns and "close" in top_df.columns and "ret_1d" in top_df.columns:
+                close_s = pd.to_numeric(top_df["close"], errors="coerce").fillna(0.0)
+                high_s = pd.to_numeric(top_df["high"], errors="coerce").fillna(0.0)
+                ret_s = pd.to_numeric(top_df["ret_1d"], errors="coerce").fillna(0.0)
+                uc_mask = (close_s > 0) & (high_s > 0) & ((high_s - close_s).abs() / close_s <= 0.0005) & (ret_s >= 0.048)
+            elif "is_upper_circuit" in top_df.columns:
+                uc_mask = top_df["is_upper_circuit"].astype(bool)
+
+            top_df["is_upper_circuit"] = uc_mask
+            uc_syms = top_df.loc[uc_mask, "symbol"].tolist()
+            if uc_syms:
+                self.log(f"⚠️ Upper Circuit Guard: Excluded {len(uc_syms)} ceiling-locked candidate(s): {', '.join(uc_syms)}")
+                top_df.loc[uc_mask, "allow_buy"] = False
+                top_df.loc[uc_mask, "signal_type"] = "CIRCUIT_LOCKED"
+                top_df.loc[uc_mask, "target_qty"] = 0
+                top_df.loc[uc_mask, "target_val"] = 0.0
+                top_df.attrs["upper_circuit_symbols"] = uc_syms
 
         if use_vol_targeting and top_df is not None and not top_df.empty:
             try:

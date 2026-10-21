@@ -70,9 +70,9 @@
     {
       "filename": "data_engine.py",
       "sha256_source": "a2836814d38d65315c0a1bc1645f75efcc6ea7b393e565816110b28e78dbd6ae",
-      "sha256_migrated": "13a87adc087ae7d6df700c5dcdaf27c7bd6cef84a5e0ea0f744c2d9e92327cd4",
+      "sha256_migrated": "9ba0fa89d7f14c3a07b1a2a5bbdb5aee5e5ca038a078ec44183d5ce03464d568",
       "status": "refactored",
-      "refactor_notes": "Loop 3 institutional defect remediation"
+      "refactor_notes": "Phase 1 Institutional Workstation Streamlining & Execution Guard"
     },
     {
       "filename": "delivery.py",
@@ -112,16 +112,16 @@
     {
       "filename": "portfolio.py",
       "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
-      "sha256_migrated": "3484ec9c3d4a196741637bdccb400c6fb1d882d6045ba4f44d323c846966a2b8",
+      "sha256_migrated": "822bcdafc997874e3439f5213d30a48e270b282ca750d1eb4ab406dff4c3fa5a",
       "status": "refactored",
-      "refactor_notes": "Loop 3 institutional defect remediation"
+      "refactor_notes": "Phase 1 Institutional Workstation Streamlining & Execution Guard"
     },
     {
       "filename": "reason_codes.py",
       "sha256_source": "4db8ef5a79762956510f73c0616766366087d915320f29bed1b87b1742a66d3e",
-      "sha256_migrated": "4db8ef5a79762956510f73c0616766366087d915320f29bed1b87b1742a66d3e",
-      "status": "identical",
-      "refactor_notes": "Identical to Main MIP pydroid_core source"
+      "sha256_migrated": "7970cc1f2bed07bd17b34e5be7c156c24aae5d67ff811bbbf840e01c57e29f9a",
+      "status": "refactored",
+      "refactor_notes": "Phase 1 Institutional Workstation Streamlining & Execution Guard"
     },
     {
       "filename": "rrg.py",

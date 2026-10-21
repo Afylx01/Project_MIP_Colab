@@ -1575,73 +1575,306 @@ def run_brute_force_flow(
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# MAIN MENU (18 Options)
+# MAIN MENU (Consolidated 3-Tier Command Desk)
 # ═══════════════════════════════════════════════════════════════════════
+def run_one_click_eod_action_desk(
+    interactive: bool = True,
+    universe_mode: str = "NIFTY750",
+    top_n: int = 10,
+    capital: Optional[float] = None,
+):
+    clear_screen()
+    latest_date = get_latest_date()
+    print_banner(latest_date)
+    print(f"\n{C_BOLD}{C_GREEN}⚡ 1-CLICK EOD REBALANCE & EXECUTION DESK{C_RESET}")
+    print(f"{C_GRAY}Sync Bhavcopy -> Alpha Scan -> UC Guard -> Portfolio Rebalance -> Zerodha Kite Basket{C_RESET}\n")
+
+    from core.settings import load_investing_settings
+    from core.portfolio import PortfolioManager
+    from core.auto_fetch import PydroidAutoFetch
+
+    st = load_investing_settings(BASE_DIR)
+    def_cap = float(st.get("capital", 500000.0))
+    def_top = int(st.get("top_n", 10))
+    def_mode = str(st.get("sizing_mode", "atr_risk_parity"))
+
+    if interactive:
+        cap_str = safe_input(f"Target Capital (₹) [Default: {def_cap:,.0f}]: ", default=str(int(def_cap)))
+        top_str = safe_input(f"Target Portfolio Size (Top N) [Default: {def_top}]: ", default=str(def_top))
+        try:
+            eff_capital = float(cap_str)
+        except ValueError:
+            eff_capital = def_cap
+        try:
+            eff_top_n = int(top_str)
+        except ValueError:
+            eff_top_n = def_top
+    else:
+        eff_capital = capital if capital is not None else def_cap
+        eff_top_n = top_n
+
+    # Step 1: Market data currency & auto-sync
+    print(f"\n{C_BOLD}{C_CYAN}── STEP 1/4: MARKET DATA FRESHNESS & AUTO-SYNC ──{C_RESET}")
+    expected_eod = get_expected_latest_eod()
+    db_latest = get_latest_date()
+    if db_latest < expected_eod:
+        print(f"  {C_YELLOW}⚠ Database ({db_latest}) is behind expected completed EOD session ({expected_eod}).{C_RESET}")
+        print(f"  {C_CYAN}⚡ Fetching latest NSE Bhavcopy & Delivery metrics...{C_RESET}")
+        try:
+            fetcher = PydroidAutoFetch(BASE_DIR)
+            fetcher.sync_universe(target_date=expected_eod)
+        except Exception as e:
+            print(f"  {C_RED}Auto-fetch warning: {e}{C_RESET}")
+    else:
+        print(f"  {C_GREEN}✓ Database is current as of latest EOD session ({db_latest}).{C_RESET}")
+
+    # Step 2: Multi-Alpha Hardened Scan with Upper Circuit Guard
+    print(f"\n{C_BOLD}{C_CYAN}── STEP 2/4: HARDENED MULTI-ALPHA SCAN (UPPER CIRCUIT GUARD ACTIVE) ──{C_RESET}")
+    u_label = get_hardened_universe_label(universe_mode)
+    print(f"  Running scan on {u_label} with Residual Momentum + Delivery Veto + Upper Circuit Guard...")
+    scanner = HardenedScanner(BASE_DIR)
+    scan_res = scanner.run_scan(
+        universe_mode=universe_mode,
+        top_n=eff_top_n,
+        use_residual_momentum=True,
+        use_delivery_veto=True,
+        use_vol_targeting=True,
+        filter_upper_circuit=True,
+        export_csv=True,
+        export_excel=False,
+    )
+    top_df = scan_res[0] if scan_res else pd.DataFrame()
+
+    # Step 3: Holdings-Aware Rebalancer
+    print(f"\n{C_BOLD}{C_CYAN}── STEP 3/4: HOLDINGS-AWARE PORTFOLIO REBALANCING ──{C_RESET}")
+    holdings_path = BASE_DIR / "data" / "portfolio_holdings.json"
+    current_holdings = {}
+    if holdings_path.exists():
+        try:
+            with open(holdings_path, "r", encoding="utf-8") as f:
+                current_holdings = json.load(f)
+            print(f"  {C_GREEN}✓ Loaded current holdings ({len(current_holdings)} symbols) from portfolio_holdings.json{C_RESET}")
+        except Exception:
+            current_holdings = {}
+
+    pm = PortfolioManager(BASE_DIR)
+    orders_df = pm.generate_rebalance_orders(
+        cash=eff_capital,
+        capital=eff_capital,
+        top_n=eff_top_n,
+        sizing_mode=def_mode,
+        current_holdings=current_holdings if current_holdings else None,
+        allow_research_overrides=True,
+    )
+    csv_path = pm.export_orders(orders_df)
+    json_path, html_path = pm.export_kite_basket(orders_df)
+
+    # Step 4: Display Order Ledger & Kite Bridge
+    print(f"\n{C_BOLD}{C_CYAN}── STEP 4/4: ZERODHA KITE 1-CLICK EXECUTION BRIDGE ──{C_RESET}")
+    detail_rows = orders_df[orders_df['action'] != 'SUMMARY']
+    summary_rows = orders_df[orders_df['action'] == 'SUMMARY']
+
+    print(f"\n{C_BOLD}{'=' * 76}{C_RESET}")
+    print(f"{C_BOLD} REBALANCE ORDER TICKETS — {latest_date} (Target Capital: ₹{eff_capital:,.0f} | Top {eff_top_n}){C_RESET}")
+    print(f"{C_BOLD}{'=' * 76}{C_RESET}")
+    print(f"{'#':>3} {'Action':<6} {'Symbol':<14} {'Sector':<14} {'Price':>10} {'Shares':>8} {'Target Val':>12}")
+    print(f"{'─' * 76}")
+
+    for idx, (_, r) in enumerate(detail_rows.iterrows(), 1):
+        act = r['action']
+        act_col = C_GREEN if act == 'BUY' else (C_RED if act == 'SELL' else C_YELLOW)
+        px_val = float(r.get('close_price', 0.0))
+        px_str = f"₹{px_val:,.2f}" if px_val > 0 else "N/A"
+        sh_val = int(r.get('trade_qty', r.get('target_shares', 0)))
+        print(f"{idx:>3} {act_col}{act:<6}{C_RESET} {str(r['symbol']):<14} {str(r.get('sector', 'OTHER'))[:14]:<14} {px_str:>10} {sh_val:>8} ₹{float(r.get('target_value', 0.0)):>10,.0f}")
+
+    if not summary_rows.empty:
+        s = summary_rows.iloc[0]
+        print(f"{'─' * 76}")
+        print(f"  {C_BOLD}Total Target Portfolio Value: ₹{float(s.get('target_value', 0.0)):,.2f}{C_RESET}")
+        print(f"  {C_BOLD}Total Statutory Frictions:    ₹{float(s.get('total_friction', 0.0)):,.2f}{C_RESET}")
+
+    # Check for Upper Circuit bypasses
+    uc_bypassed = orders_df.attrs.get("upper_circuit_bypassed", [])
+    if uc_bypassed:
+        print(f"\n{C_YELLOW}⚠ UPPER CIRCUIT EXECUTION GUARD ALERTS:{C_RESET}")
+        for b in uc_bypassed:
+            print(f"  • {b['symbol']} (Rank #{b.get('rank', 'N/A')}): Locked at Upper Circuit. Bypassed to next ranked candidate.")
+
+    print(f"\n{C_BOLD}{C_GREEN}🚀 ZERODHA KITE 1-CLICK BASKET READY:{C_RESET}")
+    print(f"  • HTML Execution Bridge: {C_CYAN}file://{html_path.resolve()}{C_RESET}")
+    print(f"  • Raw Basket JSON:       {C_GRAY}{json_path.resolve()}{C_RESET}")
+    print(f"  {C_WHITE}(Open the HTML file in browser to execute all orders in Zerodha Kite with 1 click){C_RESET}\n")
+
+    if interactive:
+        tg_choice = safe_input("Dispatch live execution alert to Telegram? [y/N]: ", default="n").strip().lower()
+        if tg_choice in ("y", "yes", "1"):
+            try:
+                run_telegram_dispatch(interactive=False)
+            except Exception as e:
+                print(f"{C_RED}Telegram dispatch failed: {e}{C_RESET}")
+        pause_for_menu()
+
+
+def run_portfolio_health_audit():
+    clear_screen()
+    latest_date = get_latest_date()
+    print_banner(latest_date)
+    print(f"\n{C_BOLD}{C_CYAN}🔍 PORTFOLIO HEALTH, TRAILING ATR STOPS & CIRCUIT AUDIT{C_RESET}\n")
+
+    holdings_path = BASE_DIR / "data" / "portfolio_holdings.json"
+    if not holdings_path.exists():
+        print(f"{C_YELLOW}No saved holdings found at data/portfolio_holdings.json.{C_RESET}")
+        print(f"Run Option [1] to record active holdings.\n")
+        pause_for_menu()
+        return
+
+    try:
+        with open(holdings_path, "r", encoding="utf-8") as f:
+            holdings = json.load(f)
+    except Exception as e:
+        print(f"{C_RED}Failed to read portfolio_holdings.json: {e}{C_RESET}\n")
+        pause_for_menu()
+        return
+
+    if not holdings:
+        print(f"{C_YELLOW}Portfolio holdings file is empty.{C_RESET}\n")
+        pause_for_menu()
+        return
+
+    conn = get_connection(read_only=True, reuse=True)
+    print(f"{C_BOLD}{'=' * 84}{C_RESET}")
+    print(f"{C_BOLD} ACTIVE PORTFOLIO AUDIT AS OF {latest_date}{C_RESET}")
+    print(f"{C_BOLD}{'=' * 84}{C_RESET}")
+    print(f"{'Symbol':<12} {'Shares':>8} {'Close':>10} {'Day Ret':>10} {'200 EMA':>10} {'ATR Stop':>10} {'Health / Circuit':<18}")
+    print(f"{'─' * 84}")
+
+    for sym, shares in holdings.items():
+        if shares <= 0:
+            continue
+        q = "SELECT close, high, low FROM prices WHERE symbol = ? AND date <= ? ORDER BY date DESC LIMIT 252"
+        df_sym = pd.read_sql_query(q, conn, params=(sym, latest_date))
+        if df_sym.empty:
+            print(f"{sym:<12} {shares:>8} {'N/A':>10} {'N/A':>10} {'N/A':>10} {'N/A':>10} {C_RED}DATA UNAVAILABLE{C_RESET}")
+            continue
+
+        close_val = float(df_sym.iloc[0]["close"])
+        high_val = float(df_sym.iloc[0]["high"])
+        prev_close = float(df_sym.iloc[1]["close"]) if len(df_sym) > 1 else close_val
+        ret_1d = (close_val - prev_close) / prev_close if prev_close > 0 else 0.0
+
+        ema_200 = float(df_sym["close"].iloc[::-1].ewm(span=200, adjust=True).mean().iloc[-1]) if len(df_sym) >= 50 else close_val
+        atr_14 = float(df_sym["close"].diff().abs().rolling(14).mean().iloc[0]) if len(df_sym) >= 14 else (close_val * 0.03)
+        trailing_stop = round(max(0.01, close_val - 2.0 * atr_14), 2)
+
+        # Circuit status check
+        status_tag = f"{C_GREEN}🟢 HEALTHY{C_RESET}"
+        if abs(high_val - close_val) / close_val <= 0.0005 and ret_1d >= 0.048:
+            status_tag = f"{C_YELLOW}⚡ UPPER CIRCUIT{C_RESET}"
+        elif close_val < trailing_stop:
+            status_tag = f"{C_RED}🚨 STOP BREACHED{C_RESET}"
+        elif close_val < ema_200:
+            status_tag = f"{C_RED}⚠️ BELOW 200 EMA{C_RESET}"
+
+        ret_col = C_GREEN if ret_1d >= 0 else C_RED
+        print(f"{sym:<12} {shares:>8} ₹{close_val:>9,.2f} {ret_col}{ret_1d*100:>9.2f}%{C_RESET} ₹{ema_200:>9,.2f} ₹{trailing_stop:>9,.2f} {status_tag}")
+
+    print(f"{C_BOLD}{'=' * 84}{C_RESET}\n")
+    pause_for_menu()
+
+
+def run_advanced_research_lab():
+    while True:
+        clear_screen()
+        latest_date = get_latest_date()
+        print_banner(latest_date)
+        print(f"\n{C_BOLD}{C_YELLOW}🚀 ADVANCED QUANTITATIVE RESEARCH & BATCH LAB{C_RESET}\n")
+        print(f"  {C_CYAN}[1]{C_RESET} 🌐  Batch Scan All 36 NIFTY Indices (30-Day TTL Reconcile & Master Report)")
+        print(f"  {C_YELLOW}[2]{C_RESET} ⚡  Blazing Brute Force Optimizer & Strategy Matrix (C99 NEON)")
+        print(f"  {C_MAGENTA}[3]{C_RESET} 🎯  Definedge ALL-ONE ETF Momentum Scanner (Top 7)")
+        print(f"  {C_GREEN}[4]{C_RESET} 📦  High Delivery Volume Spikes & Accumulation Tracker")
+        print(f"  {C_BLUE}[5]{C_RESET} 📑  Regenerate Institutional 12-Sheet Excel Workbook")
+        print(f"  {C_WHITE}[6]{C_RESET} 🛡️   Run Master Institutional Test Suite (Tests 01-09)")
+        print(f"  {C_CYAN}[7]{C_RESET} 📡  Auto-Fetch Market Data (Manual Bhavcopy Sync)")
+        print(f"  {C_BLUE}[8]{C_RESET} 🏭  Sync NSE Sector Taxonomy")
+        print(f"\n  {C_RED}[0]{C_RESET} ↩️   Return to Main Action Desk\n")
+
+        sub_choice = safe_input(f"{C_BOLD}Select Lab Option [0-8]: {C_RESET}").strip()
+        if sub_choice == "0":
+            break
+        elif sub_choice == "1":
+            run_all_indices_batch_flow()
+        elif sub_choice == "2":
+            run_brute_force_flow()
+        elif sub_choice == "3":
+            run_etf_scanner_flow()
+        elif sub_choice == "4":
+            run_delivery_analytics_flow()
+        elif sub_choice == "5":
+            run_excel_regenerator_flow()
+        elif sub_choice == "6":
+            run_tdd_suite()
+        elif sub_choice == "7":
+            run_auto_fetch()
+        elif sub_choice == "8":
+            run_sector_sync()
+
+
+def build_menu_handlers() -> dict:
+    return {
+        "1": run_one_click_eod_action_desk,
+        "2": run_portfolio_health_audit,
+        "3": run_visuals_generator,
+        "4": run_standalone_breadth,
+        "5": run_standalone_sector_rrg,
+        "6": run_investing_settings_flow,
+        "7": run_database_audit,
+        "8": run_advanced_research_lab,
+        # Legacy backward-compatibility mappings:
+        "9": run_sector_sync,
+        "10": run_standalone_breadth,
+        "11": run_standalone_sector_rrg,
+        "12": run_database_audit,
+        "13": run_etf_scanner_flow,
+        "14": run_delivery_analytics_flow,
+        "15": run_excel_regenerator_flow,
+        "16": run_investing_settings_flow,
+        "17": run_all_indices_batch_flow,
+        "18": run_brute_force_flow,
+    }
+
+
 def main_menu():
+    handlers = build_menu_handlers()
     while True:
         clear_screen()
         latest_date = get_latest_date()
         print_banner(latest_date)
 
-        print(f"\n{C_BOLD} ── SCANNER & ANALYSIS ──{C_RESET}")
-        print(f"  {C_GREEN}[ 1]{C_RESET} 🚀  Run Weekly Momentum Scanner (Select from 36 Nifty Indices or All)")
-        print(f"  {C_YELLOW}[17]{C_RESET} 🌐  Batch Scan All 36 NIFTY Indices (30-Day TTL Reconcile & Master Report)")
-        print(f"  {C_CYAN}[10]{C_RESET} 📈  Standalone Market Breadth Report")
-        print(f"  {C_MAGENTA}[11]{C_RESET} 🔄  Standalone Sector Rotation & RRG Analysis")
-        print(f"  {C_CYAN}[13]{C_RESET} 🎯  Definedge ALL-ONE ETF Momentum Scanner (Top 7)")
-        print(f"  {C_GREEN}[14]{C_RESET} 📦  High Delivery Volume Spikes & Accumulation Tracker")
-        print(f"  {C_BLUE}[15]{C_RESET} 📑  Regenerate Institutional 12-Sheet Excel Workbook")
+        print(f"\n{C_BOLD} ── TIER 1: DAILY / WEEKLY ACTION DESK ──{C_RESET}")
+        print(f"  {C_GREEN}[ 1]{C_RESET} ⚡  ONE-CLICK EOD REBALANCE & EXECUTION DESK (Sync -> Alpha -> Rebalance -> Kite)")
+        print(f"  {C_CYAN}[ 2]{C_RESET} 🔍  PORTFOLIO HEALTH & STOP-LOSS AUDIT (Holdings, ATR Stops & Circuit Alerts)")
 
-        print(f"\n{C_BOLD} ── TELEGRAM ──{C_RESET}")
-        print(f"  {C_BLUE}[ 2]{C_RESET} 📱  Preview Telegram Alert (Terminal Preview)")
-        print(f"  {C_MAGENTA}[ 3]{C_RESET} ⚡  Dispatch Live Telegram Alert (Text + Charts + 12-Sheet Excel)")
+        print(f"\n{C_BOLD} ── TIER 2: DEEP RESEARCH & REGIME ANALYTICS ──{C_RESET}")
+        print(f"  {C_BLUE}[ 3]{C_RESET} 📊  Generate Visual Charts & Quantitative Tearsheets")
+        print(f"  {C_MAGENTA}[ 4]{C_RESET} 🧭  Market Regime & Breadth Monitor (50/200 EMA Breadth & Cash Shield)")
+        print(f"  {C_YELLOW}[ 5]{C_RESET} 🔄  Relative Rotation Graph (RRG) & Sector Momentum Dynamics")
 
-        print(f"\n{C_BOLD} ── PORTFOLIO, BACKTEST & BRUTE FORCE ──{C_RESET}")
-        print(f"  {C_GREEN}[ 4]{C_RESET} 📊  Generate Visual Charts & Tearsheets")
-        print(f"  {C_CYAN}[ 5]{C_RESET} 💼  Run Lightweight Custom Backtester")
-        print(f"  {C_GREEN}[ 7]{C_RESET} 💰  Portfolio Rebalancing & Order Generation")
-        print(f"  {C_YELLOW}[18]{C_RESET} ⚡  Blazing Brute Force Optimizer & Strategy Matrix (C99 NEON / Multi-Schedule / Multi-Era)")
-
-        print(f"\n{C_BOLD} ── CONFIGURATION & MANDATE ──{C_RESET}")
-        print(f"  {C_WHITE}[16]{C_RESET} ⚙️   Configure Investing & Mandate Settings (TUI Console)")
-
-        print(f"\n{C_BOLD} ── DATA & MAINTENANCE ──{C_RESET}")
-        print(f"  {C_MAGENTA}[ 8]{C_RESET} 📡  Auto-Fetch Market Data (NSE Bhavcopy Sync)")
-        print(f"  {C_BLUE}[ 9]{C_RESET} 🏭  Sync NSE Sector Taxonomy")
-        print(f"  {C_YELLOW}[12]{C_RESET} 🔍  Full Database Integrity Audit")
-        print(f"  {C_YELLOW}[ 6]{C_RESET} 🛡️   Run Master Institutional Test Suite (Tests 01-09)")
+        print(f"\n{C_BOLD} ── TIER 3: CONFIGURATION, DATA & LAB ──{C_RESET}")
+        print(f"  {C_WHITE}[ 6]{C_RESET} ⚙️   Configure Investing Settings & Portfolio Mandate")
+        print(f"  {C_YELLOW}[ 7]{C_RESET} 🗄️   Database Integrity Audit & Health Verification")
+        print(f"  {C_CYAN}[ 8]{C_RESET} 🚀  Advanced Quant Lab & Batch Runner (36 Indices, Brute Force, ETFs)")
 
         print(f"\n  {C_RED}[ 0]{C_RESET} 🚪  Exit Workstation\n")
 
         try:
-            choice = input(f"{C_BOLD}Select Option [0-18]: {C_RESET}").strip()
+            choice = input(f"{C_BOLD}Select Option [0-8, or legacy 1-18]: {C_RESET}").strip()
         except (KeyboardInterrupt, EOFError):
             print("\nExiting.")
             break
 
-        handlers = {
-            "1": run_scanner_flow,
-            "2": run_telegram_preview,
-            "3": run_telegram_dispatch,
-            "4": run_visuals_generator,
-            "5": run_custom_backtest_flow,
-            "6": run_tdd_suite,
-            "7": run_portfolio_orders,
-            "8": run_auto_fetch,
-            "9": run_sector_sync,
-            "10": run_standalone_breadth,
-            "11": run_standalone_sector_rrg,
-            "12": run_database_audit,
-            "13": run_etf_scanner_flow,
-            "14": run_delivery_analytics_flow,
-            "15": run_excel_regenerator_flow,
-            "16": run_investing_settings_flow,
-            "17": run_all_indices_batch_flow,
-            "18": run_brute_force_flow,
-        }
-
         if choice == "0":
-            print(f"\n{C_CYAN}Goodbye! Project MIP Pydroid 3 session ended.{C_RESET}\n")
+            print(f"\n{C_CYAN}Goodbye! Project MIP session ended.{C_RESET}\n")
             break
         elif choice in handlers:
             handlers[choice]()

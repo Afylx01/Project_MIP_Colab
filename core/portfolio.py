@@ -200,33 +200,49 @@ def validate_candidate_safety(row: pd.Series, top_n: int = 20) -> Tuple[bool, st
     except (ValueError, TypeError):
         return False, f"Close price for {sym} cannot be converted to float", ScannerReasonCode.PORTFOLIO_INVALID_PRICE.value
 
-    # 2. Allow Buy Flag (Strict Boolean Identity)
+    # 2. Upper Circuit Execution Guard (Zero seller liquidity; market order fails)
+    is_uc = row.get("is_upper_circuit")
+    if is_uc is True:
+        return False, f"Candidate {sym} is locked at exchange upper circuit (zero seller liquidity)", ScannerReasonCode.UPPER_CIRCUIT_LOCKED.value
+
+    cand_high = row.get("high")
+    cand_ret = row.get("ret_1d")
+    if cand_high is not None and not pd.isna(cand_high):
+        try:
+            h = float(cand_high)
+            r = float(cand_ret) if (cand_ret is not None and not pd.isna(cand_ret)) else 0.0
+            if h > 0 and p > 0 and (abs(h - p) / p <= 0.0005) and (r >= 0.048):
+                return False, f"Candidate {sym} locked at exchange upper circuit (+{r*100:.1f}%)", ScannerReasonCode.UPPER_CIRCUIT_LOCKED.value
+        except (ValueError, TypeError):
+            pass
+
+    # 3. Allow Buy Flag (Strict Boolean Identity)
     allow_buy = row.get("allow_buy")
     if allow_buy is not True:
         return False, f"Candidate {sym} has allow_buy={allow_buy} (must be strictly True)", ScannerReasonCode.PORTFOLIO_CANDIDATE_UNSAFE.value
 
-    # 3. Signal Type
+    # 4. Signal Type
     sig_type = str(row.get("signal_type", "BUY")).strip().upper()
-    if sig_type in ("BLOCKED_HOLD", "BEAR_HOLD", "BUFFER_HOLD", "REVIEW_REQUIRED", "BLOCKED", "UNSAFE"):
+    if sig_type in ("BLOCKED_HOLD", "BEAR_HOLD", "BUFFER_HOLD", "REVIEW_REQUIRED", "BLOCKED", "UNSAFE", "CIRCUIT_LOCKED"):
         return False, f"Candidate {sym} has non-buy signal_type: {sig_type}", ScannerReasonCode.PORTFOLIO_CANDIDATE_UNSAFE.value
 
-    # 4. Corporate Action Status (Strict Whitelist: CLEAN or RESOLVED)
+    # 5. Corporate Action Status (Strict Whitelist: CLEAN or RESOLVED)
     ca_status = str(row.get("corporate_action_status", "")).strip().upper()
     if ca_status not in ("CLEAN", "RESOLVED"):
         return False, f"Candidate {sym} has unverified corporate_action_status: '{ca_status}' (must be in {{'CLEAN', 'RESOLVED'}})", ScannerReasonCode.CORPORATE_ACTION_REVIEW_REQUIRED.value
 
-    # 5. Security Health State (Strict Whitelist: HEALTHY)
+    # 6. Security Health State (Strict Whitelist: HEALTHY)
     sec_health_raw = row.get("security_health")
     sec_health = str(sec_health_raw if (pd.notna(sec_health_raw) and str(sec_health_raw).strip() != "") else "HEALTHY").strip().upper()
     if sec_health != "HEALTHY":
         return False, f"Candidate {sym} has non-healthy security_health: '{sec_health}' (must be HEALTHY)", ScannerReasonCode.PORTFOLIO_CANDIDATE_UNSAFE.value
 
-    # 6. Reason Code Check
+    # 7. Reason Code Check
     r_code = str(row.get("reason_code", "PASS")).strip().upper()
     if r_code not in ("PASS", "NONE", "NAN", ""):
         return False, f"Candidate {sym} has non-passing reason_code: {r_code}", ScannerReasonCode.PORTFOLIO_CANDIDATE_UNSAFE.value
 
-    # 7. Rank Rule for New Entries: Rank must be <= top_n (Exit buffer 21-40 cannot be bought as new entry)
+    # 8. Rank Rule for New Entries: Rank must be <= top_n (Exit buffer 21-40 cannot be bought as new entry)
     cand_rank = row.get("rank")
     if cand_rank is not None and not pd.isna(cand_rank):
         try:
@@ -970,7 +986,7 @@ class PortfolioState:
 
 EMPTY_ORDERS_COLS = [
     'action', 'security_id', 'symbol', 'sector', 'close_price', 'atr_14', 'stop_loss',
-    'target_shares', 'target_value', 'risk_allocated', 'stt', 'exchange_turnover',
+    'target_shares', 'trade_qty', 'target_value', 'risk_allocated', 'stt', 'exchange_turnover',
     'brokerage', 'gst', 'stamp_duty', 'total_friction', 'total_cost', 'reason',
     'reason_code', 'as_of_date', 'source_signal'
 ]
@@ -1352,6 +1368,7 @@ class PortfolioManager:
                     "atr_14": 0.0,
                     "stop_loss": 0.0,
                     "target_shares": 0,
+                    "trade_qty": shares,
                     "target_value": target_value,
                     "risk_allocated": 0.0,
                     "stt": frictions["stt"],
@@ -1385,6 +1402,7 @@ class PortfolioManager:
             seen_symbols.add(sym)
             seen_security_ids.add(sec_id)
 
+        uc_bypassed = []
         if open_slots > 0 and is_bull:
             # Deterministic ordering: volar_score DESC, ret_1y DESC, symbol ASC
             cand_candidates = screener_df.copy()
@@ -1414,7 +1432,11 @@ class PortfolioManager:
                 # Downstream Actionable BUY Firewall Verification
                 is_safe, rej_msg, r_code = validate_candidate_safety(row, top_n=top_n)
                 if not is_safe:
-                    self.log(f"Candidate {sym} rejected by downstream safety firewall: {rej_msg}")
+                    if "CIRCUIT" in str(r_code).upper() or "CIRCUIT" in str(rej_msg).upper():
+                        uc_bypassed.append({"symbol": sym, "rank": row.get("rank"), "message": rej_msg})
+                        self.log(f"⚠️ Upper Circuit Guard: Candidate {sym} locked at upper circuit ceiling. Bypassing to next rank.")
+                    else:
+                        self.log(f"Candidate {sym} rejected by downstream safety firewall: {rej_msg}")
                     continue
 
                 sec = normalize_sector(row.get("sector"))
@@ -1491,6 +1513,7 @@ class PortfolioManager:
             reason_code = ScannerReasonCode.PORTFOLIO_BUFFER_RETAINED.value if action == "HOLD" else ScannerReasonCode.PASS.value
             source_sig = "BUFFER_RETAIN" if action == "HOLD" else "SCANNER"
 
+            t_qty = target_shares if action == "BUY" else max(0, target_shares - current_shares)
             buy_hold_orders.append({
                 "action": action,
                 "security_id": sec_id,
@@ -1500,6 +1523,7 @@ class PortfolioManager:
                 "atr_14": atr,
                 "stop_loss": stop_loss,
                 "target_shares": target_shares,
+                "trade_qty": t_qty,
                 "target_value": target_value,
                 "risk_allocated": round(target_shares * (close_price - stop_loss), 2),
                 "stt": frictions["stt"],
@@ -1533,6 +1557,7 @@ class PortfolioManager:
             for o in buy_orders:
                 scaled_shares = int(o["target_shares"] * scale_factor)
                 o["target_shares"] = scaled_shares
+                o["trade_qty"] = scaled_shares
                 o["target_value"] = scaled_shares * o["close_price"]
                 o["risk_allocated"] = round(scaled_shares * (o["close_price"] - o["stop_loss"]), 2)
                 frictions = self.compute_frictions(o["target_value"])
@@ -1589,6 +1614,7 @@ class PortfolioManager:
         orders_df.attrs["is_production_contract"] = not allow_research_overrides
         orders_df.attrs["research_overrides_active"] = allow_research_overrides
         orders_df.attrs["cash_authority"] = "AUTHORITATIVE_PORTFOLIO_STATE" if eff_state is not None else ("EXPLICIT_VERIFIED_CASH" if cash is not None else "SYNTHETIC_RESEARCH_OVERRIDE")
+        orders_df.attrs["upper_circuit_bypassed"] = uc_bypassed
 
         return orders_df
 
@@ -1615,4 +1641,251 @@ class PortfolioManager:
                 f.write("No orders generated.\n")
 
         self.log(f"Exported orders to TXT: {txt_path}")
+        try:
+            self.export_kite_basket(orders_df)
+        except Exception as e:
+            self.log(f"Warning: Failed to export Kite basket: {e}")
         return csv_path
+
+    def export_kite_basket(self, orders_df: pd.DataFrame) -> Tuple[Path, Path]:
+        """Exports actionable orders to Zerodha Kite JSON and interactive HTML bridge."""
+        return export_kite_basket(orders_df, base_dir=self.base_dir)
+
+
+def export_kite_basket(orders_df: pd.DataFrame, base_dir: Optional[Path] = None) -> Tuple[Path, Path]:
+    """
+    Exports actionable portfolio rebalance orders to:
+      1. data/kite_basket.json: Native Zerodha Kite Web Basket import schema.
+      2. data/kite_basket_execute.html: Responsive mobile/desktop HTML page with
+         a single-click Kite Publisher POST submission form and clipboard copy tool.
+    """
+    import json
+    target_base = Path(base_dir) if base_dir else get_base_dir()
+    data_dir = target_base / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    json_path = data_dir / "kite_basket.json"
+    html_path = data_dir / "kite_basket_execute.html"
+
+    basket_items = []
+    if not orders_df.empty:
+        # Actionable orders only (BUY or SELL with positive quantity)
+        actionable_df = orders_df[orders_df["action"].isin(["BUY", "SELL"])].copy()
+        for _, r in actionable_df.iterrows():
+            act = str(r["action"]).strip().upper()
+            sym = str(r["symbol"]).strip().upper()
+            close_px = float(r.get("close_price", 0.0))
+
+            qty = 0
+            if "trade_qty" in r and pd.notna(r["trade_qty"]) and int(r["trade_qty"]) > 0:
+                qty = int(r["trade_qty"])
+            elif act == "BUY":
+                qty = int(r.get("target_shares", 0))
+            elif act == "SELL":
+                qty = int(r.get("target_shares", 0))
+                if qty <= 0 and r.get("target_value", 0) > 0 and close_px > 0:
+                    qty = int(round(float(r["target_value"]) / close_px))
+
+            if qty <= 0:
+                continue
+
+            basket_items.append({
+                "variety": "regular",
+                "exchange": "NSE",
+                "tradingsymbol": sym,
+                "transaction_type": act,
+                "order_type": "MARKET",
+                "product": "CNC",
+                "quantity": qty,
+                "price": 0,
+                "trigger_price": 0,
+                "validity": "DAY",
+            })
+
+    # 1. Write Native Kite Basket JSON
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(basket_items, f, indent=2)
+
+    # 2. Write HTML Publisher Execution Desk
+    rows_html = ""
+    for idx, item in enumerate(basket_items, 1):
+        is_buy = item["transaction_type"] == "BUY"
+        badge_color = "#10b981" if is_buy else "#ef4444"
+        badge_text = "BUY" if is_buy else "SELL"
+        rows_html += f"""
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 12px; text-align: center; color: #94a3b8;">{idx}</td>
+          <td style="padding: 12px; text-align: center;"><span style="background-color: {badge_color}; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85em;">{badge_text}</span></td>
+          <td style="padding: 12px; font-weight: 700; color: #f8fafc; font-size: 1.05em;">{item['tradingsymbol']}</td>
+          <td style="padding: 12px; text-align: center; color: #cbd5e1;">{item['product']}</td>
+          <td style="padding: 12px; text-align: center; color: #cbd5e1;">{item['order_type']}</td>
+          <td style="padding: 12px; text-align: right; font-weight: 700; color: #38bdf8; font-size: 1.05em;">{item['quantity']}</td>
+        </tr>
+        """
+
+    empty_notice = """
+      <tr>
+        <td colspan="6" style="padding: 24px; text-align: center; color: #94a3b8; font-style: italic;">
+          No actionable trades required. Portfolio is fully balanced!
+        </td>
+      </tr>
+    """ if not basket_items else ""
+
+    basket_json_escaped = json.dumps(basket_items).replace("'", "&#39;")
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project MIP — Zerodha Kite Execution Bridge</title>
+  <style>
+    :root {{
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --primary: #ff5722;
+      --primary-hover: #f4511e;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }}
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }}
+    .container {{
+      width: 100%;
+      max-width: 680px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }}
+    .header {{
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }}
+    .header h1 {{
+      font-size: 1.5em;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }}
+    .header p {{
+      color: var(--text-muted);
+      font-size: 0.9em;
+    }}
+    table {{
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }}
+    th {{
+      background: #0f172a;
+      color: #94a3b8;
+      font-weight: 600;
+      padding: 10px 12px;
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }}
+    .btn {{
+      display: block;
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 1.1em;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.1s;
+      margin-bottom: 12px;
+    }}
+    .btn:hover {{ background: var(--primary-hover); transform: translateY(-1px); }}
+    .btn:active {{ transform: translateY(1px); }}
+    .btn-secondary {{
+      background: #334155;
+      color: #f8fafc;
+      font-size: 0.95em;
+      padding: 12px;
+    }}
+    .btn-secondary:hover {{ background: #475569; }}
+    .footer {{
+      margin-top: 20px;
+      text-align: center;
+      font-size: 0.8em;
+      color: var(--text-muted);
+    }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 Project MIP Execution Desk</h1>
+      <p>Institutional 1-Click Zerodha Kite Basket Bridge</p>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: center;">#</th>
+            <th style="text-align: center;">Action</th>
+            <th style="text-align: left;">Symbol</th>
+            <th style="text-align: center;">Product</th>
+            <th style="text-align: center;">Order</th>
+            <th style="text-align: right;">Quantity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows_html}
+          {empty_notice}
+        </tbody>
+      </table>
+    </div>
+
+    <form method="post" action="https://kite.zerodha.com/connect/basket" target="_blank">
+      <input type="hidden" name="api_key" value="kite_free_basket" />
+      <input type="hidden" name="data" value='{basket_json_escaped}' />
+      <button type="submit" class="btn" {"disabled style='opacity:0.5; cursor:not-allowed;'" if not basket_items else ""}>
+        ⚡ Execute All Orders in Zerodha Kite
+      </button>
+    </form>
+
+    <button type="button" class="btn btn-secondary" onclick="copyBasketJson()">
+      📋 Copy Raw Basket JSON (For Kite Web Import)
+    </button>
+
+    <div class="footer">
+      Generated automatically by Project MIP Pydroid 3 & Colab Workstation.<br>
+      Orders will execute as standard CNC delivery orders with zero margin leverage.
+    </div>
+  </div>
+
+  <script>
+    function copyBasketJson() {{
+      const data = {json.dumps(basket_items)};
+      navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {{
+        alert("✓ Zerodha Basket JSON copied to clipboard! In Zerodha Kite Web, navigate to Orders -> Baskets -> Import and paste.");
+      }}).catch(err => {{
+        prompt("Copy basket JSON below:", JSON.stringify(data));
+      }});
+    }}
+  </script>
+</body>
+</html>
+"""
+    html_path.write_text(html_content, encoding="utf-8")
+    return json_path, html_path

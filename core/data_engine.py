@@ -44,7 +44,11 @@ def get_db_path() -> Path:
     return get_base_dir() / "data" / "universe.db"
 
 
-def get_connection(read_only: bool = True, reuse: bool = True) -> sqlite3.Connection:
+def get_connection(
+    read_only: bool = True,
+    reuse: bool = True,
+    db_path: Optional[Union[str, Path]] = None,
+) -> sqlite3.Connection:
     """
     Returns an open SQLite3 connection with performance pragmas.
     Reuses existing connection by default to avoid connection open/close overhead.
@@ -52,7 +56,19 @@ def get_connection(read_only: bool = True, reuse: bool = True) -> sqlite3.Connec
     """
     global _CACHED_CONN
 
+    # Handle polymorphic first argument if caller passed db_path positionally
+    if isinstance(read_only, (str, Path)):
+        db_path = read_only
+        read_only = True
+        reuse = False
+
     is_ro = read_only or os.environ.get("MIP_READONLY", "0") == "1"
+
+    if db_path is not None:
+        target_path = Path(db_path)
+        reuse = False
+    else:
+        target_path = get_db_path()
 
     if reuse and _CACHED_CONN is not None and is_ro:
         try:
@@ -62,12 +78,11 @@ def get_connection(read_only: bool = True, reuse: bool = True) -> sqlite3.Connec
         except (sqlite3.ProgrammingError, sqlite3.OperationalError):
             _CACHED_CONN = None
 
-    db_path = get_db_path()
-    if not db_path.exists():
-        raise FileNotFoundError(f"Database not found at {db_path}! Please run scripts/export_universe_to_sqlite.py first.")
+    if not target_path.exists():
+        raise FileNotFoundError(f"Database not found at {target_path}! Please run scripts/export_universe_to_sqlite.py first.")
     
     if is_ro:
-        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, check_same_thread=False)
+        conn = sqlite3.connect(f"file:{target_path}?mode=ro", uri=True, check_same_thread=False)
         try:
             conn.execute("PRAGMA query_only = ON;")
         except sqlite3.OperationalError:
@@ -75,17 +90,17 @@ def get_connection(read_only: bool = True, reuse: bool = True) -> sqlite3.Connec
     else:
         # PRODUCTION IMMUTABILITY FIREWALL:
         # Prevent any write connection to production universe.db unless explicitly authorized
-        if db_path.resolve() == get_db_path().resolve() and os.environ.get("MIP_ALLOW_PROD_MUTATION", "0") != "1":
+        if target_path.resolve() == get_db_path().resolve() and os.environ.get("MIP_ALLOW_PROD_MUTATION", "0") != "1":
             raise PermissionError(
                 "PRODUCTION IMMUTABILITY VIOLATION: Direct write connection to production universe.db is strictly prohibited without MIP_ALLOW_PROD_MUTATION=1"
             )
-        conn = sqlite3.connect(str(db_path), check_same_thread=False)
+        conn = sqlite3.connect(str(target_path), check_same_thread=False)
 
     conn.execute("PRAGMA cache_size = 100000;")
     conn.execute("PRAGMA mmap_size = 300000000;")
     conn.execute("PRAGMA temp_store = MEMORY;")
 
-    if reuse and is_ro:
+    if reuse and is_ro and db_path is None:
         _CACHED_CONN = conn
 
     if not is_ro:
@@ -293,7 +308,7 @@ def save_corporate_actions_registry(actions: Dict[str, Any], base_dir: Optional[
 
 def get_latest_date(db_path: Optional[Union[str, Path]] = None) -> str:
     """Returns the latest available trading date in universe.db or db_path (YYYY-MM-DD)."""
-    conn = get_connection(db_path) if db_path is not None else get_connection()
+    conn = get_connection(read_only=True, reuse=False, db_path=db_path) if db_path is not None else get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT MAX(date) FROM prices;")

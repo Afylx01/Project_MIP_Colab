@@ -103,6 +103,9 @@ def run_portfolio_rebalancer(
         total_val_str = f"₹{s.get('target_value', 0.0):,.2f}"
         total_fric_str = f"₹{s.get('total_friction', 0.0):,.2f}"
 
+    json_path, html_path = pm.export_kite_basket(orders_df)
+    actionable_cnt = len(orders_df[orders_df['action'].isin(['BUY', 'SELL'])])
+
     html_out = f"""
     <div style="background-color: #1e1e24; color: #fff; padding: 20px; border-radius: 8px; font-family: monospace; margin: 15px 0;">
         <h3 style="color: #64b5f6; margin-top: 0;">💰 Portfolio Rebalance Ledger (As-Of: {latest_date})</h3>
@@ -131,6 +134,16 @@ def run_portfolio_rebalancer(
             <span>Total Target Value: <b>{total_val_str}</b></span>
             <span>Total Statutory Frictions: <b style="color: #ff8a80;">{total_fric_str}</b></span>
             <span>Net Required Capital: <b style="color: #81c784;">{total_cost_str}</b></span>
+        </div>
+        <div style="margin-top: 15px; padding: 16px; background-color: #111827; border: 1px solid #374151; border-radius: 6px;">
+            <div style="font-size: 1.1em; font-weight: bold; color: #38bdf8; margin-bottom: 6px;">🚀 Zerodha 1-Click Execution Desk</div>
+            <div style="color: #9ca3af; font-size: 0.85em; margin-bottom: 12px;">
+                Exported {actionable_cnt} actionable order(s) to <code>{json_path.name}</code> and <code>{html_path.name}</code>.
+            </div>
+            <a href="file://{html_path.resolve()}" target="_blank" style="display: inline-block; background-color: #ff5722; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-right: 10px;">
+                ⚡ Open Kite Execution HTML
+            </a>
+            <span style="color: #9ca3af; font-size: 0.85em;">(In Google Colab, download <code>{html_path}</code> to execute all orders in Kite)</span>
         </div>
     </div>
     """
