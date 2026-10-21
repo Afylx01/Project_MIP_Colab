@@ -112,3 +112,20 @@ class TestFactorReturnAttribution:
         # Alpha should be positive and substantial
         assert attribution["alpha_annualized"] > 0.10
         assert attribution["information_ratio"] > 0.5
+
+    def test_factor_attribution_short_series_fallback_schema_symmetry(self):
+        """Short or empty series must return full symmetric schema including tracking_error_annualized."""
+        short_port = pd.Series([0.01, -0.02])
+        short_bench = pd.Series([0.005, -0.01])
+        res = compute_factor_return_attribution(short_port, short_bench)
+
+        expected_keys = {
+            "beta",
+            "alpha_annualized",
+            "tracking_error_annualized",
+            "information_ratio",
+            "total_return",
+            "benchmark_return",
+        }
+        assert set(res.keys()) == expected_keys
+        assert res["tracking_error_annualized"] == 0.0

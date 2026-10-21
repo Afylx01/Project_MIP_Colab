@@ -190,6 +190,7 @@ def compute_factor_return_attribution(
         return {
             "beta": 1.0,
             "alpha_annualized": 0.0,
+            "tracking_error_annualized": 0.0,
             "information_ratio": 0.0,
             "total_return": 0.0,
             "benchmark_return": 0.0,
