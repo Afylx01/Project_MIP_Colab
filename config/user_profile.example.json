@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "user_name": "Default Institutional Investor",
+  "portfolio": {
+    "capital": 1000000.0,
+    "cash": 1000000.0,
+    "top_n": 20,
+    "exit_buffer_rank": 40,
+    "universe": "NIFTY500",
+    "benchmark": "NIFTY500",
+    "sizing_model": "equal_weight"
+  },
+  "alpha_model": {
+    "use_composite_alpha": true,
+    "weights": {
+      "total_momentum": 0.45,
+      "residual_momentum": 0.35,
+      "delivery_flow": 0.20
+    }
+  },
+  "execution_guards": {
+    "upper_circuit_veto": true,
+    "delivery_distribution_veto": true,
+    "deadband_inr": 2500.0,
+    "deadband_pct": 1.5,
+    "tax_aware_rebalance": true,
+    "max_sector_allocation": 2
+  },
+  "notifications": {
+    "telegram_enabled": false,
+    "telegram_bot_token": "",
+    "telegram_chat_id": ""
+  },
+  "automation": {
+    "headless_schedule": "18:30",
+    "auto_fetch_latest": true,
+    "generate_kite_basket": true
+  }
+}
