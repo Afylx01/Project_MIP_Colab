@@ -112,9 +112,9 @@
     {
       "filename": "portfolio.py",
       "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
-      "sha256_migrated": "822bcdafc997874e3439f5213d30a48e270b282ca750d1eb4ab406dff4c3fa5a",
+      "sha256_migrated": "8059b564d5de9d88f8dedc910e0fe042c7e280e5f06e7fd7e1a3c35da56763c1",
       "status": "refactored",
-      "refactor_notes": "Phase 1 Institutional Workstation Streamlining & Execution Guard"
+      "refactor_notes": "Phase 2 Factor Fusion, Delivery Distribution Veto & Tax Awareness"
     },
     {
       "filename": "reason_codes.py",

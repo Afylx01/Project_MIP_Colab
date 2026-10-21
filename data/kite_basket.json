@@ -1,0 +1,26 @@
+[
+  {
+    "variety": "regular",
+    "exchange": "NSE",
+    "tradingsymbol": "ACUTAAS",
+    "transaction_type": "SELL",
+    "order_type": "MARKET",
+    "product": "CNC",
+    "quantity": 2,
+    "price": 0,
+    "trigger_price": 0,
+    "validity": "DAY"
+  },
+  {
+    "variety": "regular",
+    "exchange": "NSE",
+    "tradingsymbol": "TDPOWERSYS",
+    "transaction_type": "SELL",
+    "order_type": "MARKET",
+    "product": "CNC",
+    "quantity": 6,
+    "price": 0,
+    "trigger_price": 0,
+    "validity": "DAY"
+  }
+]

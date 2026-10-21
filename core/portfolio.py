@@ -1100,6 +1100,10 @@ class PortfolioManager:
         portfolio_state: Optional[Any] = None,
         screener_df: Optional[pd.DataFrame] = None,
         prices: Optional[dict] = None,
+        enforce_delivery_exit_veto: bool = True,
+        min_trade_amount_inr: float = 2500.0,
+        min_weight_drift_pct: float = 1.5,
+        tax_aware_rebalance: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
         """
@@ -1218,12 +1222,13 @@ class PortfolioManager:
 
         # MTM Capital Basis Validation against open position equity
         holdings_mv = 0.0
-        for sym, shares in current_holdings.items():
-            if shares > 0:
+        for sym, h_entry in current_holdings.items():
+            sh = int(h_entry.get("shares", 0)) if isinstance(h_entry, dict) else int(h_entry)
+            if sh > 0:
                 px = prices.get(sym, 0.0)
                 if px <= 0 and sym in screener_map:
                     px = float(screener_map[sym].get("close", 0.0))
-                holdings_mv += shares * px
+                holdings_mv += sh * px
         holdings_mv = round(holdings_mv, 2)
 
         # Fail closed on non-positive, non-finite, or stale capital below open position equity
@@ -1290,7 +1295,16 @@ class PortfolioManager:
         sell_orders = []
         retained_holdings = {}
 
-        for sym, shares in current_holdings.items():
+        for sym, h_entry in current_holdings.items():
+            if isinstance(h_entry, dict):
+                shares = int(h_entry.get("shares", 0))
+                days_held = int(h_entry.get("days_held", 0))
+                purchase_price = float(h_entry.get("purchase_price", 0.0))
+            else:
+                shares = int(h_entry)
+                days_held = 0
+                purchase_price = 0.0
+
             if shares <= 0:
                 continue
 
@@ -1317,7 +1331,15 @@ class PortfolioManager:
                 s_rank = s_row.get("rank", 999999)
                 hi_252 = float(s_row.get("high_252", close_price))
                 ema_200 = float(s_row.get("ema_200", close_price))
-                if close_price < 0.80 * hi_252:
+
+                # Check delivery distribution veto for held stock (STLTECH fix)
+                is_deliv_vetoed = bool(s_row.get("is_delivery_vetoed", False))
+                deliv_act = str(s_row.get("delivery_action", s_row.get("deliv_action", ""))).upper()
+                if enforce_delivery_exit_veto and (is_deliv_vetoed or "DISTRIBUTION" in deliv_act or "VETO" in deliv_act):
+                    exit_reason = "DISTRIBUTION_VETO"
+                    exit_reason_code = ScannerReasonCode.PASS.value
+                    exit_source_signal = "DELIVERY_VETO"
+                elif close_price < 0.80 * hi_252:
                     exit_reason = "STOP_52W_HIGH_RETRACEMENT"
                     exit_reason_code = ScannerReasonCode.BELOW_52W_HIGH_THRESHOLD.value
                     exit_source_signal = "STOP_EXIT"
@@ -1326,9 +1348,30 @@ class PortfolioManager:
                     exit_reason_code = ScannerReasonCode.BELOW_EMA200.value
                     exit_source_signal = "STOP_EXIT"
                 elif s_rank > exit_buffer_rank:
-                    exit_reason = f"DROPOUT_RANK_{s_rank}"
-                    exit_reason_code = ScannerReasonCode.PORTFOLIO_BUFFER_EXCEEDED.value
-                    exit_source_signal = "DROPOUT_EXIT"
+                    # Check Tax-Aware LTCG Protection (Finance Act 2024)
+                    is_tax_protected = False
+                    if tax_aware_rebalance and days_held >= 280 and days_held < 365 and purchase_price > 0 and close_price > purchase_price:
+                        unrealized_gain = close_price - purchase_price
+                        gain_ratio = unrealized_gain / close_price
+                        days_remaining = max(365 - days_held, 5)
+                        annual_multiplier = 365.0 / days_remaining
+                        hurdle = 0.075 * gain_ratio * annual_multiplier
+
+                        best_cand_alpha = 0.0
+                        cand_candidates_pre = screener_df.copy()
+                        if not cand_candidates_pre.empty:
+                            best_row = cand_candidates_pre.iloc[0]
+                            best_cand_alpha = float(best_row.get("composite_alpha_score", best_row.get("volar_score", 0.0) / 100.0))
+                        held_alpha = float(s_row.get("composite_alpha_score", s_row.get("volar_score", 0.0) / 100.0))
+
+                        if (best_cand_alpha - held_alpha) < hurdle:
+                            is_tax_protected = True
+                            self.log(f"🏛️ Tax-Aware Protection: {sym} (held {days_held}d, gain {gain_ratio*100:.1f}%) protected against swap to capture LTCG bracket.")
+
+                    if not is_tax_protected:
+                        exit_reason = f"DROPOUT_RANK_{s_rank}"
+                        exit_reason_code = ScannerReasonCode.PORTFOLIO_BUFFER_EXCEEDED.value
+                        exit_source_signal = "DROPOUT_EXIT"
             else:
                 # Existing holding not present in screener output
                 # Query historical prices from SQLite to check stops
@@ -1499,21 +1542,35 @@ class PortfolioManager:
             else:
                 target_shares = math.floor(per_stock_equal / close_price)
 
-            current_shares = current_holdings.get(sym, 0)
+            h_info = current_holdings.get(sym, 0)
+            current_shares = int(h_info.get("shares", 0)) if isinstance(h_info, dict) else int(h_info)
             action = "HOLD" if current_shares > 0 else "BUY"
 
             # Avoid 0-share buy tickets
             if action == "BUY" and target_shares <= 0:
                 continue
 
-            target_value = target_shares * close_price
+            if action == "HOLD":
+                held_val = current_shares * close_price
+                tgt_val = target_shares * close_price
+                drift_val = abs(tgt_val - held_val)
+                deadband_threshold = max(min_trade_amount_inr, (min_weight_drift_pct / 100.0) * capital)
+                if drift_val < deadband_threshold:
+                    target_shares = current_shares
+                    target_value = held_val
+                    t_qty = 0
+                else:
+                    target_value = target_shares * close_price
+                    t_qty = max(0, target_shares - current_shares)
+            else:
+                target_value = target_shares * close_price
+                t_qty = target_shares
+
             frictions = self.compute_frictions(target_value)
 
             reason_desc = "BUFFER_RETAINED" if action == "HOLD" else "MOMENTUM_ENTRY"
             reason_code = ScannerReasonCode.PORTFOLIO_BUFFER_RETAINED.value if action == "HOLD" else ScannerReasonCode.PASS.value
             source_sig = "BUFFER_RETAIN" if action == "HOLD" else "SCANNER"
-
-            t_qty = target_shares if action == "BUY" else max(0, target_shares - current_shares)
             buy_hold_orders.append({
                 "action": action,
                 "security_id": sec_id,
@@ -1542,8 +1599,16 @@ class PortfolioManager:
         # Budget normalization: ensure BUY orders do not exceed remaining unallocated capital
         held_value = sum(o["target_value"] for o in buy_hold_orders if o["action"] == "HOLD")
         sell_proceeds = sum(o["total_cost"] for o in sell_orders)
+        def _get_holding_shares(h_val: Any) -> int:
+            if isinstance(h_val, dict):
+                return int(h_val.get("shares", 0))
+            try:
+                return int(h_val)
+            except (ValueError, TypeError):
+                return 0
+
         incremental_hold_cost = sum(
-            max(0, o["target_shares"] - current_holdings.get(o["symbol"], 0)) * o["close_price"]
+            max(0, o["target_shares"] - _get_holding_shares(current_holdings.get(o["symbol"], 0))) * o["close_price"]
             for o in buy_hold_orders if o["action"] == "HOLD"
         )
         cash_avail = max(0.0, (actual_cash + sell_proceeds - incremental_hold_cost) * 0.99)
