@@ -1,0 +1,13 @@
+{
+  "atr_stop_multiplier": 2.0,
+  "capital": 100000.0,
+  "cash_buffer_pct": 0.0,
+  "exit_buffer_multiplier": 2.0,
+  "friction_multiplier": 1.0,
+  "max_per_sector": 2,
+  "regime_filter_active": true,
+  "risk_per_trade_pct": 1.0,
+  "sizing_mode": "equal_weight",
+  "top_n": 10,
+  "universe_mode": "NIFTY750"
+}

@@ -256,6 +256,33 @@ def run_scanner_flow(
     force_live_fetch = force_refresh
     if interactive and not universe_mode:
         selected_mode, force_live_fetch = prompt_universe_selection()
+
+        # ── INTERACTIVE ALPHA OVERLAYS & BENCHMARK PARITY (COLAB SYNC) ──
+        print(f"\n{C_BOLD}── INSTITUTIONAL ALPHA OVERLAYS & BENCHMARK (COLAB PARITY) ──{C_RESET}")
+        print(f"  {C_GREEN}[1]{C_RESET} 🏆  Full Institutional Suite (Residual Momentum + Delivery Veto + Vol Cash Shield) [Recommended / Colab Default]")
+        print(f"  {C_CYAN}[2]{C_RESET} 📊  Canonical Volar Momentum (Pure Price Action, No Overlays)")
+        print(f"  {C_YELLOW}[3]{C_RESET} ⚙️   Custom Configuration (Select individual overlays & custom benchmark)")
+
+        prof_in = safe_input(f"\nSelect Execution Profile [1-3, Default=1]: ", default="1").strip()
+        if prof_in == "2":
+            use_residual_momentum = False
+            use_delivery_veto = False
+            use_vol_targeting = False
+            benchmark = "NIFTY500"
+        elif prof_in == "3":
+            bm_in = safe_input(f"Benchmark Index or Symbol [Default: {benchmark}]: ", default=benchmark).strip().upper()
+            benchmark = bm_in if bm_in else benchmark
+            rm_in = safe_input("Enable Idiosyncratic Residual Momentum (Blitz et al.)? [Y/n]: ", default="y").strip().lower()
+            use_residual_momentum = rm_in in ("y", "yes", "1", "")
+            dv_in = safe_input("Enable Delivery Microstructure Distribution Veto? [Y/n]: ", default="y").strip().lower()
+            use_delivery_veto = dv_in in ("y", "yes", "1", "")
+            vt_in = safe_input("Enable Dynamic Realized Volatility Cash Shield? [y/N]: ", default="n").strip().lower()
+            use_vol_targeting = vt_in in ("y", "yes", "1")
+        else:
+            use_residual_momentum = True
+            use_delivery_veto = True
+            use_vol_targeting = True
+            benchmark = "NIFTY500"
     else:
         selected_mode = resolve_target_universe(universe_mode)
 
@@ -659,10 +686,52 @@ def run_portfolio_orders():
         scanner = PydroidScanner(BASE_DIR)
         scanner.run_scan(as_of_date=latest_date, top_n=top_n, export_csv=True)
 
-    pm = PortfolioManager(BASE_DIR)
-    print(f"\n{C_YELLOW}Computing equal-weight allocation with statutory frictions...{C_RESET}")
+    # Sizing mode prompt
+    print(f"\n  Position Sizing Mode:")
+    print(f"    [1] ATR-14 Volatility Risk Parity (Recommended / Settings Default)")
+    print(f"    [2] Equal Weight")
+    sz_in = safe_input("  Select Sizing Mode [1-2, Default=1]: ", default="1").strip()
+    sizing_mode = "equal_weight" if sz_in == "2" else def_mode
 
-    orders_df = pm.generate_rebalance_orders(capital=capital, cash=capital, top_n=top_n)
+    # Current holdings check (Zerodha integration)
+    holdings_path = BASE_DIR / "data" / "portfolio_holdings.json"
+    holdings = None
+    if holdings_path.exists():
+        try:
+            with open(holdings_path, "r", encoding="utf-8") as hf:
+                holdings = json.load(hf)
+            print(f"\n  {C_CYAN}Found saved portfolio holdings ({len(holdings)} stocks): {holdings}{C_RESET}")
+            use_saved = safe_input("  Rebalance using saved holdings? [Y/n]: ", default="y").strip().lower()
+            if use_saved not in ("y", "yes", "1", ""):
+                holdings = None
+        except Exception:
+            holdings = None
+
+    if holdings is None:
+        custom_h = safe_input("  Enter existing holdings dict e.g. {'STLTECH': 6, 'CUPID': 11} (or Enter for all-cash): ", default="").strip()
+        if custom_h:
+            try:
+                import ast
+                holdings = ast.literal_eval(custom_h)
+                # Auto-save to holdings_path for future rebalances
+                try:
+                    with open(holdings_path, "w", encoding="utf-8") as hf:
+                        json.dump(holdings, hf, indent=2)
+                except Exception:
+                    pass
+            except Exception:
+                holdings = None
+
+    pm = PortfolioManager(BASE_DIR)
+    print(f"\n{C_YELLOW}Computing {sizing_mode} allocation with statutory frictions...{C_RESET}")
+
+    orders_df = pm.generate_rebalance_orders(
+        capital=capital,
+        cash=capital,
+        top_n=top_n,
+        sizing_mode=sizing_mode,
+        current_holdings=holdings,
+    )
     csv_path = pm.export_orders(orders_df)
 
     # Display orders

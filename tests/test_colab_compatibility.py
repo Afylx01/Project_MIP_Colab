@@ -66,6 +66,8 @@ class TestColabCompatibilityAndSecurity(unittest.TestCase):
             "corporate_actions_registry.json",
             "constituent_snapshots.json",
             "investing_settings.example.json",
+            "investing_settings.json",
+            "portfolio_holdings.json",
             "PROVENANCE_MANIFEST.json",
             "PRODUCTION_READINESS_CERTIFICATE.json",
             "RELEASE_DISTRIBUTION_MANIFEST.json",
@@ -129,11 +131,11 @@ class TestColabCompatibilityAndSecurity(unittest.TestCase):
 
         cursor.execute("SELECT COUNT(*) FROM prices;")
         total_rows = cursor.fetchone()[0]
-        self.assertIn(total_rows, (2164420, 2167514, 2169576), "Total rows in prices must match baseline (2,164,420) or updated (2,169,576).")
+        self.assertIn(total_rows, (2164420, 2167514, 2169576, 2170608), "Total rows in prices must match baseline (2,164,420) or updated (2,170,608).")
 
         cursor.execute("SELECT MAX(date) FROM prices;")
         max_date = cursor.fetchone()[0]
-        self.assertIn(max_date, ("2026-10-09", "2026-10-14", "2026-10-16"), "Max date in prices must match baseline (2026-10-09) or updated (2026-10-16).")
+        self.assertIn(max_date, ("2026-10-09", "2026-10-14", "2026-10-16", "2026-10-19"), "Max date in prices must match baseline (2026-10-09) or updated (2026-10-19).")
         conn.close()
 
     def test_07_canonical_strategy_fingerprint(self):
