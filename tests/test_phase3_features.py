@@ -125,3 +125,29 @@ class TestEODHeadlessRunner:
         assert result["capital"] == 1_000_000.0
         assert "telemetry_file" in result
         assert Path(result["telemetry_file"]).exists()
+
+    def test_headless_runner_forwards_sizing_and_sector_guards(self, tmp_path):
+        """Verifies that as_of_date, sizing_mode, and max_sector_allocation are passed to generate_rebalance_orders."""
+        profile = get_default_profile()
+        profile.portfolio.sizing_model = "equal_weight"
+        profile.execution_guards.max_sector_allocation = 3
+
+        runner = EODHeadlessRunner(base_dir=BASE_DIR, profile=profile, reports_dir=tmp_path)
+
+        with patch("scripts.run_production_pipeline.HeadlessProductionPipeline.run_pipeline") as mock_run_pipe, \
+             patch("core.portfolio.PortfolioManager.generate_rebalance_orders") as mock_rebal, \
+             patch("core.portfolio.PortfolioManager.export_kite_basket") as mock_kite:
+
+            mock_run_pipe.return_value = {"pipeline_status": "SUCCESS"}
+            mock_rebal.return_value = MagicMock(empty=True)
+            mock_rebal.return_value.__len__.return_value = 0
+            mock_kite.return_value = (tmp_path / "basket.json", tmp_path / "basket.html")
+
+            result = runner.run_eod_pipeline(dry_run=False, skip_health_check=True, target_date="2026-10-16")
+            assert result["status"] == "SUCCESS"
+
+            mock_rebal.assert_called_once()
+            _, kwargs = mock_rebal.call_args
+            assert kwargs["as_of_date"] == "2026-10-16"
+            assert kwargs["sizing_mode"] == "equal_weight"
+            assert kwargs["max_per_sector"] == 3
