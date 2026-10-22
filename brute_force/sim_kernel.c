@@ -464,6 +464,7 @@ static inline void simulate_single_config(
                 }
 
                 float scale = (total_req > investable_cash && total_req > 0.0f) ? (investable_cash / total_req) : 1.0f;
+                int num_masked_entries = 0;
 
                 for (int i = 0; i < num_selected; i++) {
                     int sym = selected_syms[i];
@@ -472,7 +473,7 @@ static inline void simulate_single_config(
                         nan_bars_count++;
                     }
                     if (cube->valid_price_mask && !cube->valid_price_mask[exec_bar_idx]) {
-                        nan_bars_count++;
+                        num_masked_entries++;
                         continue; // Cannot execute entry on invalid/masked bar
                     }
                     float buy_px = (!isnan(exec_open[sym]) && exec_open[sym] > 0.0f) ? exec_open[sym] :
@@ -495,6 +496,9 @@ static inline void simulate_single_config(
                         holdings[num_holdings].cost_basis_per_share = shares > 0 ? (trade_val / (float)shares) : buy_px;
                         num_holdings++;
                     }
+                }
+                if (num_selected > 0 && num_masked_entries == num_selected) {
+                    nan_bars_count++;
                 }
             }
         }
@@ -530,6 +534,7 @@ static inline void simulate_single_config(
             double daily_nav = cash;
             bool bar_has_nan = false;
             if (num_holdings > 0) {
+                int masked_holdings_count = 0;
                 for (int h = 0; h < num_holdings; h++) {
                     int s = holdings[h].symbol_idx;
                     size_t d_idx = (size_t)d * N + s;
@@ -540,11 +545,13 @@ static inline void simulate_single_config(
                         break;
                     }
                     if (cube->valid_price_mask && !cube->valid_price_mask[d_idx]) {
-                        bar_has_nan = true;
-                        nan_bars_count++;
-                        break;
-                    }
-                    if (px < 0.0f || (px == 0.0f && cube->valid_price_mask && !cube->valid_price_mask[d_idx])) {
+                        masked_holdings_count++;
+                        if (d > 0 && cube->close_px[(size_t)(d - 1) * N + s] > 0.0f) {
+                            px = cube->close_px[(size_t)(d - 1) * N + s];
+                        } else {
+                            px = holdings[h].buy_px;
+                        }
+                    } else if (px <= 0.0f) {
                         if (d > 0 && cube->close_px[(size_t)(d - 1) * N + s] > 0.0f) {
                             px = cube->close_px[(size_t)(d - 1) * N + s];
                         } else {
@@ -552,6 +559,10 @@ static inline void simulate_single_config(
                         }
                     }
                     daily_nav += ((double)holdings[h].shares * (double)px);
+                }
+                if (!bar_has_nan && masked_holdings_count == num_holdings) {
+                    bar_has_nan = true;
+                    nan_bars_count++;
                 }
             } else {
                 if (N == 1) {

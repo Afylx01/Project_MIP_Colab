@@ -395,14 +395,14 @@ class TestForensicIntegrityAudit(unittest.TestCase):
         A6: If effective trading days differ (e.g. one goes to cash while other stays invested),
         is_comparable must be False and drawdown_reduction_pct must be None.
         """
-        legacy_eff_days = 20
-        top_eff_days = 5
-        legacy_cash = 0
-        top_cash = 0
-        is_comparable = bool(legacy_eff_days == top_eff_days and legacy_cash == top_cash)
-        reduction = (30.0 - 5.0) if is_comparable else None
-        self.assertFalse(is_comparable)
+        from scripts.forensic_integrity_audit import compute_comparability
+        is_comp, reduction = compute_comparability(223, 164, 23, 82, 17.53, 7.37)
+        self.assertFalse(is_comp)
         self.assertIsNone(reduction)
+
+        is_comp_match, reduction_match = compute_comparability(224, 224, 22, 22, 26.29, 14.91)
+        self.assertTrue(is_comp_match)
+        self.assertAlmostEqual(reduction_match, 11.38, places=2)
 
     def test_report_narrative_matches_json(self):
         """
