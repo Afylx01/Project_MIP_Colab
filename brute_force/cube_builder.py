@@ -82,12 +82,6 @@ class TensorCubeContainer:
             self.schedule_lengths[s_idx] = arr_len
             rebal_list.append(arr)
             cur_offset += arr_len
-            arr = schedule_indices_map.get(s_name, np.empty(0, dtype=np.int32))
-            arr_len = len(arr)
-            self.schedule_offsets[s_idx] = cur_offset
-            self.schedule_lengths[s_idx] = arr_len
-            rebal_list.append(arr)
-            cur_offset += arr_len
 
         self.rebalance_indices = np.ascontiguousarray(np.concatenate(rebal_list), dtype=np.int32)
         self.num_rebalances = self.schedule_lengths[1] # monthly length for backward compatibility
@@ -348,7 +342,8 @@ def build_tensor_cube(
                     open_px[d, s] = close_px[d - 1, s]
                     high_px[d, s] = close_px[d - 1, s]
                     low_px[d, s] = close_px[d - 1, s]
-                    valid_price_mask[d, s] = True
+                    # Note: valid_price_mask[d, s] remains False to prevent trading/execution on halt days,
+                    # while prices are forward-filled strictly for continuous indicator continuity (e.g. ATR, EMA).
 
     # True Range & ATR-14
     print("[CubeBuilder] Computing vectorized ATR-14...")
