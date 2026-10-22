@@ -81,9 +81,13 @@ class TestMainAllIndicesIntegration(unittest.TestCase):
         import main
         from unittest.mock import patch, MagicMock
 
-        # Preserve shared live deliverables to ensure test isolation
+        # Preserve shared live deliverables and tracked files to ensure test isolation
         csv_path = PROJECT_ROOT / "reports" / "screener_output_live.csv"
         csv_backup = csv_path.read_bytes() if csv_path.exists() else None
+        md_path = PROJECT_ROOT / "reports" / "scan_quality.md"
+        md_backup = md_path.read_bytes() if md_path.exists() else None
+        snap_path = PROJECT_ROOT / "data" / "constituent_snapshots.json"
+        snap_backup = snap_path.read_bytes() if snap_path.exists() else None
 
         # Mock telegram sender to prevent external network calls during unit test
         mock_sender = MagicMock()
@@ -100,9 +104,14 @@ class TestMainAllIndicesIntegration(unittest.TestCase):
         except SystemExit as e:
             self.assertEqual(e.code, 0, "run_scanner_flow must exit 0 or complete cleanly")
         finally:
-            # Restore canonical screener baseline
+            # Restore canonical screener baseline and tracked artifacts
             if csv_backup is not None:
                 csv_path.write_bytes(csv_backup)
+            if md_backup is not None:
+                md_path.write_bytes(md_backup)
+            if snap_backup is not None:
+                snap_path.write_bytes(snap_backup)
+            (PROJECT_ROOT / ".scanner.lock").unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
