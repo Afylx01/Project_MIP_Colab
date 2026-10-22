@@ -340,6 +340,10 @@ static inline void simulate_single_config(
                     retained[num_retained++] = holdings[h];
                     continue;
                 }
+                if (exec_open[s] <= 0.0f && exec_close[s] <= 0.0f) {
+                    nan_bars_count++;
+                    break;
+                }
                 float exit_px = (isfinite(exec_open[s]) && exec_open[s] > 0.0f) ? exec_open[s] :
                                 ((isfinite(exec_close[s]) && exec_close[s] > 0.0f) ? exec_close[s] :
                                 ((isfinite(c_px) && c_px > 0.0f) ? c_px : 0.0f));
@@ -421,7 +425,7 @@ static inline void simulate_single_config(
                 float invested_val = 0.0f;
                 for (int h = 0; h < num_holdings; h++) {
                     int s = holdings[h].symbol_idx;
-                    float px = sig_close[s] > 0.0f ? sig_close[s] : holdings[h].buy_px;
+                    float px = (isfinite(sig_close[s]) && sig_close[s] > 0.0f) ? sig_close[s] : 0.0f;
                     invested_val += (holdings[h].shares * px);
                 }
                 float curr_capital = cash + invested_val;

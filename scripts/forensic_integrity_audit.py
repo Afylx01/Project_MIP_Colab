@@ -191,6 +191,9 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
                 continue
             if cube.valid_price_mask is not None and not cube.valid_price_mask[exec_date, s]:
                 continue
+            if exec_open[s] <= 0.0 and exec_close[s] <= 0.0:
+                data_insufficient = True
+                continue
             exit_px = exec_open[s] if _finite_pos(exec_open[s]) else (
                 exec_close[s] if _finite_pos(exec_close[s]) else (
                     sig_close[s] if _finite_pos(sig_close[s]) else 0.0
@@ -779,17 +782,24 @@ def run_forensic_audit():
         non_comparable_reason = None if is_comparable else f"Non-comparable effective windows (Legacy: {legacy_eff_days} days vs Top: {top_eff_days} days)."
 
         # Status and Warmup Declaration per Task 2, 4, 5
-        max_in_window_cash = max(legacy_cash_days, top_cash_days)
-        cash_fraction = max_in_window_cash / float(trading_days) if trading_days > 0 else 0.0
-        if cash_fraction > 0.30:
+        if ledger_base.get("data_insufficient") or ledger_top.get("data_insufficient") or np.isnan(float(r_base["cagr"])) or np.isnan(float(r_top["cagr"])):
             status = "DATA_INSUFFICIENT"
-            label = f"DATA_INSUFFICIENT — excessive in-window cash masked {cash_fraction*100:.1f}% of window (Legacy: {legacy_cash_days}/{trading_days} days, Top: {top_cash_days}/{trading_days} days). Drawdown numbers cannot be interpreted as stress-test drawdowns."
-        elif not is_comparable:
-            status = "PARTIAL"
-            label = f"excludes warmup lookback ({warmup_sessions} sessions). In-window cash spanned {legacy_cash_days} days for Legacy / {top_cash_days} days for Top."
+            label = "DATA_INSUFFICIENT — non-finite execution prices or corrupted market bars encountered in stress window."
+            is_comparable = False
+            reduction = None
+            calendar_delta = None
         else:
-            status = "VALID"
-            label = f"excludes warmup lookback ({warmup_sessions} sessions). In-window cash spanned {legacy_cash_days} days for Legacy / {top_cash_days} days for Top."
+            max_in_window_cash = max(legacy_cash_days, top_cash_days)
+            cash_fraction = max_in_window_cash / float(trading_days) if trading_days > 0 else 0.0
+            if cash_fraction > 0.30:
+                status = "DATA_INSUFFICIENT"
+                label = f"DATA_INSUFFICIENT — excessive in-window cash masked {cash_fraction*100:.1f}% of window (Legacy: {legacy_cash_days}/{trading_days} days, Top: {top_cash_days}/{trading_days} days). Drawdown numbers cannot be interpreted as stress-test drawdowns."
+            elif not is_comparable:
+                status = "PARTIAL"
+                label = f"excludes warmup lookback ({warmup_sessions} sessions). In-window cash spanned {legacy_cash_days} days for Legacy / {top_cash_days} days for Top."
+            else:
+                status = "VALID"
+                label = f"excludes warmup lookback ({warmup_sessions} sessions). In-window cash spanned {legacy_cash_days} days for Legacy / {top_cash_days} days for Top."
 
         record = {
             "window": str(b_name),

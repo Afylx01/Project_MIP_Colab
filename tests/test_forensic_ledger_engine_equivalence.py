@@ -654,38 +654,161 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
 
     def test_no_sell_fill_on_masked_execution_bar(self):
         """1.20 Orders must never execute fills on masked (halted) execution bars."""
-        T = 10
+        T = 15
         dates = [f"2020-01-{i+1:02d}" for i in range(T)]
-        px = np.full((T, 1), 100.0, dtype=np.float32)
-        mask = np.ones((T, 1), dtype=np.uint8)
-        mask[5, 0] = 0  # Halted on execution day 5
+        symbols = ["SYM0", "SYM1"]
+        px = np.full((T, 2), 100.0, dtype=np.float32)
+        mask = np.ones((T, 2), dtype=np.uint8)
+        mask[5, 0] = 0  # SYM0 halted on execution day 5 (SYM1 active)
 
+        # Rebalances: day 0 (buy both), day 4 (SYM0 exit triggered -> exec day 5 deferred), day 9 (next tradeable rebalance)
         reb = np.array([0, 4, 9], dtype=np.int32)
         sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
-        volar = np.zeros((1, T, 1), dtype=np.float32)
-        volar[0, 0, 0] = 1.0  # Buy at day 0
-        volar[0, 4, 0] = 0.0  # Trigger exit at signal day 4
+        volar = np.zeros((1, T, 2), dtype=np.float32)
+        volar[0, 0, :] = 1.0  # Buy both at day 0
+        volar[0, 4, 0] = 0.0  # SYM0 exit triggered at day 4
+        volar[0, 4, 1] = 1.0  # SYM1 retained at day 4
+        volar[0, 9, 0] = 0.0  # SYM0 exit executes at day 9 (exec day 10)
+        volar[0, 9, 1] = 1.0  # SYM1 retained at day 9
 
         cube = TensorCubeContainer(
-            dates=dates, symbols=["SYM0"], schedule_indices_map=sched,
+            dates=dates, symbols=symbols, schedule_indices_map=sched,
             open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
             lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
         )
         param = {
-            "schedule_idx": 1, "top_n": 1, "filter_flags": 0, "initial_capital": 100_000.0,
+            "schedule_idx": 1, "top_n": 2, "filter_flags": 0, "initial_capital": 100_000.0,
             "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
             "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
         }
-        ledger = generate_window_trade_ledger(cube, param, 0, 9)
+        ledger = generate_window_trade_ledger(cube, param, 0, 14)
         day5_sells = [t for t in ledger["trades"] if t["type"] == "SELL" and t["date"] == dates[5]]
         self.assertEqual(len(day5_sells), 0, "Must never execute SELL on masked execution bar")
 
-        # Native engine check
+        # Native engine check: run is VALID (not data_insufficient) because SYM1 was active!
         param["param_id"] = 1
         param["start_date_idx"] = 0
-        param["end_date_idx"] = 9
+        param["end_date_idx"] = 14
         row = self.engine.run_sweep(cube, [param]).iloc[0]
-        self.assertEqual(row["total_trades"], 0)
+        self.assertEqual(row["status"], "VALID")
+        self.assertFalse(row["data_insufficient"])
+        # Deferred exit executes on day 10 (rebalance 9 + 1)
+        self.assertEqual(row["total_trades"], 1)
+
+    def test_delisted_holding_excluded_from_sizing_capital_in_both_engines(self):
+        """1.23 Written-off delisted holding must not contribute buy_px to sizing capital in either engine."""
+        T = 40
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        symbols = ["A", "B", "C"]
+        px = np.full((T, 3), 100.0, dtype=np.float32)
+        mask = np.ones((T, 3), dtype=np.uint8)
+        # B delists from day 10 onward
+        px[10:, 1] = 0.0
+        mask[10:, 1] = 0
+        # C price jumps to 300 on days 25-39
+        px[25:, 2] = 300.0
+
+        reb = np.array([0, 10, 20, 30], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.zeros((1, T, 3), dtype=np.float32)
+        # Day 0: Buy A and B
+        volar[0, 0, 0] = 1.0
+        volar[0, 0, 1] = 1.0
+        volar[0, 0, 2] = 0.0
+        # Day 10: Retain A, B exits/delists
+        volar[0, 10, 0] = 1.0
+        volar[0, 10, 1] = 0.0
+        volar[0, 10, 2] = 0.0
+        # Day 20: Retain A, Enter C
+        volar[0, 20, 0] = 1.0
+        volar[0, 20, 1] = 0.0
+        volar[0, 20, 2] = 1.0
+
+        cube = TensorCubeContainer(
+            dates=dates, symbols=symbols, schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "param_id": 1, "schedule_idx": 1, "start_date_idx": 0, "end_date_idx": 30,
+            "top_n": 3, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
+        }
+        ledger = generate_window_trade_ledger(cube, param, 0, 30)
+        c_buys = [t for t in ledger["trades"] if t["type"] == "BUY" and t["symbol"] == "C"]
+        self.assertEqual(len(c_buys), 1)
+        self.assertEqual(c_buys[0]["shares"], 222)
+
+        res = self.engine.run_sweep(cube, [param]).iloc[0]
+        self.assertEqual(res["status"], "VALID")
+        self.assertFalse(res["data_insufficient"])
+        self.assertEqual(res["ending_equity"], 111_100.0)
+
+    def test_engine_nonfinite_exit_price_fails_closed(self):
+        """1.24 sim_kernel.c fails closed when exit execution price is non-finite (Inf/NaN)."""
+        T = 10
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        px = np.full((T, 2), 100.0, dtype=np.float32)
+        px[5, 0] = np.inf  # Non-finite on exec day 5
+        mask = np.ones((T, 2), dtype=np.uint8)
+
+        reb = np.array([0, 4, 9], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.zeros((1, T, 2), dtype=np.float32)
+        volar[0, 0, :] = 1.0
+        volar[0, 4, 0] = 0.0  # Exit SYM0
+        volar[0, 4, 1] = 1.0  # Retain SYM1
+
+        cube = TensorCubeContainer(
+            dates=dates, symbols=["SYM0", "SYM1"], schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "param_id": 1, "schedule_idx": 1, "start_date_idx": 0, "end_date_idx": 9,
+            "top_n": 2, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
+        }
+        row = self.engine.run_sweep(cube, [param]).iloc[0]
+        self.assertEqual(row["status"], "DATA_INSUFFICIENT")
+        self.assertTrue(row["data_insufficient"])
+        self.assertTrue(np.isnan(row["cagr"]))
+        self.assertEqual(row["ending_equity"], 0.0)
+
+    def test_engine_unmasked_zero_exit_price_fails_closed(self):
+        """1.25 sim_kernel.c fails closed when unmasked execution bar has zero price (corrupt data)."""
+        T = 10
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        px = np.full((T, 2), 100.0, dtype=np.float32)
+        px[5, 0] = 0.0  # Unmasked zero price on exec day 5
+        mask = np.ones((T, 2), dtype=np.uint8)
+
+        reb = np.array([0, 4, 9], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.zeros((1, T, 2), dtype=np.float32)
+        volar[0, 0, :] = 1.0
+        volar[0, 4, 0] = 0.0  # Exit SYM0
+        volar[0, 4, 1] = 1.0  # Retain SYM1
+
+        cube = TensorCubeContainer(
+            dates=dates, symbols=["SYM0", "SYM1"], schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "param_id": 1, "schedule_idx": 1, "start_date_idx": 0, "end_date_idx": 9,
+            "top_n": 2, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
+        }
+        row = self.engine.run_sweep(cube, [param]).iloc[0]
+        self.assertEqual(row["status"], "DATA_INSUFFICIENT")
+        self.assertTrue(row["data_insufficient"])
+
+        ledger = generate_window_trade_ledger(cube, param, 0, 9)
+        self.assertTrue(ledger.get("data_insufficient", False))
 
     def test_ledger_nonfinite_exit_prices_fail_closed(self):
         """1.21 Ledger must fail closed (data_insufficient) on non-finite execution prices."""
