@@ -68,12 +68,20 @@ class TensorCubeContainer:
             schedule_indices_map = {s: reb for s in self.schedule_names}
 
         # Concatenate rebalance indices for all schedules into a single 1D int32 array (MAX_SCHEDULES=7)
-        self.schedule_offsets = np.zeros(7, dtype=np.uint32)
-        self.schedule_lengths = np.zeros(7, dtype=np.uint32)
+        MAX_SCHEDULES = 7
+        self.schedule_offsets = np.zeros(MAX_SCHEDULES, dtype=np.uint32)
+        self.schedule_lengths = np.zeros(MAX_SCHEDULES, dtype=np.uint32)
         rebal_list = []
         cur_offset = 0
 
-        for s_idx, s_name in enumerate(self.schedule_names[:7]):
+        for s_idx in range(MAX_SCHEDULES):
+            s_name = self.schedule_names[s_idx] if s_idx < len(self.schedule_names) else None
+            arr = schedule_indices_map.get(s_name, np.empty(0, dtype=np.int32)) if s_name else np.empty(0, dtype=np.int32)
+            arr_len = len(arr)
+            self.schedule_offsets[s_idx] = cur_offset
+            self.schedule_lengths[s_idx] = arr_len
+            rebal_list.append(arr)
+            cur_offset += arr_len
             arr = schedule_indices_map.get(s_name, np.empty(0, dtype=np.int32))
             arr_len = len(arr)
             self.schedule_offsets[s_idx] = cur_offset
@@ -328,6 +336,20 @@ def build_tensor_cube(
     vol_mat[d_indices, s_indices] = raw_bars["volume"].to_numpy(dtype=np.float32)
     valid_price_mask[d_indices, s_indices] = True
 
+    # Forward-fill prices across internal trading halts for actively listed symbols
+    for s in range(N):
+        s_mask = valid_price_mask[:, s]
+        if np.any(s_mask):
+            first_idx = int(np.argmax(s_mask))
+            last_idx = int(len(s_mask) - 1 - np.argmax(s_mask[::-1]))
+            for d in range(first_idx + 1, last_idx + 1):
+                if not valid_price_mask[d, s]:
+                    close_px[d, s] = close_px[d - 1, s]
+                    open_px[d, s] = close_px[d - 1, s]
+                    high_px[d, s] = close_px[d - 1, s]
+                    low_px[d, s] = close_px[d - 1, s]
+                    valid_price_mask[d, s] = True
+
     # True Range & ATR-14
     print("[CubeBuilder] Computing vectorized ATR-14...")
     prev_close = np.vstack([close_px[:1], close_px[:-1]])
@@ -494,6 +516,7 @@ def build_tensor_cube(
         bench_closes=bench_closes,
         benchmark_name=benchmark_name,
         corporate_actions_bypassed=corporate_actions_bypassed,
+        valid_price_mask=valid_price_mask,
     )
     container.valid_price_mask = valid_price_mask
 

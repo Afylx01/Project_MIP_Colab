@@ -472,6 +472,7 @@ static inline void simulate_single_config(
                         nan_bars_count++;
                     }
                     if (cube->valid_price_mask && !cube->valid_price_mask[exec_bar_idx]) {
+                        nan_bars_count++;
                         continue; // Cannot execute entry on invalid/masked bar
                     }
                     float buy_px = (!isnan(exec_open[sym]) && exec_open[sym] > 0.0f) ? exec_open[sym] :
@@ -491,7 +492,7 @@ static inline void simulate_single_config(
                         holdings[num_holdings].shares = shares;
                         holdings[num_holdings].buy_px = buy_px;
                         holdings[num_holdings].cost_basis = total_cost;
-                        holdings[num_holdings].cost_basis_per_share = shares > 0 ? (total_cost / (float)shares) : buy_px;
+                        holdings[num_holdings].cost_basis_per_share = shares > 0 ? (trade_val / (float)shares) : buy_px;
                         num_holdings++;
                     }
                 }
@@ -538,7 +539,7 @@ static inline void simulate_single_config(
                         nan_bars_count++;
                         break;
                     }
-                    if (N == 1 && cube->valid_price_mask && !cube->valid_price_mask[d_idx]) {
+                    if (cube->valid_price_mask && !cube->valid_price_mask[d_idx]) {
                         bar_has_nan = true;
                         nan_bars_count++;
                         break;
@@ -706,6 +707,12 @@ static void* worker_thread_entry(void* arg) {
     return NULL;
 }
 
+static atomic_int g_calloc_fallback_occurred = 0;
+
+int get_calloc_fallback_status(void) {
+    return atomic_load(&g_calloc_fallback_occurred);
+}
+
 // Main parallel entry point called via ctypes
 void run_parallel_brute_force(
     const SimParams* param_grid,
@@ -717,6 +724,7 @@ void run_parallel_brute_force(
     atomic_uint* shared_task_counter = (atomic_uint*)calloc(1, sizeof(atomic_uint));
     if (!shared_task_counter) {
         // Fallback: single-threaded execution on caller thread (Pillar 5 Defensive Guard)
+        atomic_store(&g_calloc_fallback_occurred, 1);
         atomic_uint fallback_counter = 0;
         atomic_init(&fallback_counter, 0);
         WorkerContext fallback_ctx = {
