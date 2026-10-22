@@ -586,7 +586,140 @@
       "assertion_a1_top_pass": true,
       "assertion_cagr_1yr_legacy_pass": true,
       "assertion_cagr_1yr_top_pass": true,
-      "trade_ledger": []
+      "trade_ledger": [
+        {
+          "date": "2008-05-02",
+          "type": "BUY",
+          "symbol": "BALRAMCHIN",
+          "shares": 1096,
+          "price": 84.09,
+          "cash_before": 1000000.0,
+          "cash_after": 907655.38,
+          "pos_before": 0,
+          "pos_after": 1096
+        },
+        {
+          "date": "2008-05-02",
+          "type": "BUY",
+          "symbol": "ABBOTINDIA",
+          "shares": 774,
+          "price": 215.1,
+          "cash_before": 907655.38,
+          "cash_after": 740835.69,
+          "pos_before": 0,
+          "pos_after": 774
+        },
+        {
+          "date": "2008-05-02",
+          "type": "BUY",
+          "symbol": "COROMANDEL",
+          "shares": 1416,
+          "price": 45.5,
+          "cash_before": 740835.69,
+          "cash_after": 676283.56,
+          "pos_before": 0,
+          "pos_after": 1416
+        },
+        {
+          "date": "2008-05-02",
+          "type": "BUY",
+          "symbol": "ASIANPAINT",
+          "shares": 1788,
+          "price": 106.81,
+          "cash_before": 676283.56,
+          "cash_after": 484919.94,
+          "pos_before": 0,
+          "pos_after": 1788
+        },
+        {
+          "date": "2008-06-02",
+          "type": "SELL",
+          "symbol": "BALRAMCHIN",
+          "shares": 1096,
+          "price": 73.47,
+          "cash_before": 484919.94,
+          "cash_after": 565278.81,
+          "pos_before": 1096,
+          "pos_after": 0
+        },
+        {
+          "date": "2008-07-01",
+          "type": "SELL",
+          "symbol": "COROMANDEL",
+          "shares": 1416,
+          "price": 38.0,
+          "cash_before": 565278.81,
+          "cash_after": 618974.75,
+          "pos_before": 1416,
+          "pos_after": 0
+        },
+        {
+          "date": "2008-08-01",
+          "type": "SELL",
+          "symbol": "ASIANPAINT",
+          "shares": 1788,
+          "price": 100.96,
+          "cash_before": 618974.75,
+          "cash_after": 799130.81,
+          "pos_before": 1788,
+          "pos_after": 0
+        },
+        {
+          "date": "2008-08-01",
+          "type": "BUY",
+          "symbol": "CHAMBLFERT",
+          "shares": 1335,
+          "price": 46.64,
+          "cash_before": 799130.81,
+          "cash_after": 736742.88,
+          "pos_before": 0,
+          "pos_after": 1335
+        },
+        {
+          "date": "2008-09-01",
+          "type": "SELL",
+          "symbol": "CHAMBLFERT",
+          "shares": 1335,
+          "price": 45.38,
+          "cash_before": 736742.88,
+          "cash_after": 797202.31,
+          "pos_before": 1335,
+          "pos_after": 0
+        },
+        {
+          "date": "2008-09-01",
+          "type": "BUY",
+          "symbol": "AARTIIND",
+          "shares": 12845,
+          "price": 7.65,
+          "cash_before": 797202.31,
+          "cash_after": 698678.62,
+          "pos_before": 0,
+          "pos_after": 12845
+        },
+        {
+          "date": "2008-09-01",
+          "type": "BUY",
+          "symbol": "CASTROLIND",
+          "shares": 5958,
+          "price": 21.02,
+          "cash_before": 698678.62,
+          "cash_after": 573170.31,
+          "pos_before": 0,
+          "pos_after": 5958
+        },
+        {
+          "date": "2008-10-01",
+          "type": "SELL",
+          "symbol": "AARTIIND",
+          "shares": 12845,
+          "price": 6.51,
+          "cash_before": 573170.31,
+          "cash_after": 656633.94,
+          "pos_before": 12845,
+          "pos_after": 0
+        }
+      ]
     },
     {
       "window": "2011 European Debt Crisis",
@@ -1665,7 +1798,118 @@
       "assertion_a1_top_pass": true,
       "assertion_cagr_1yr_legacy_pass": true,
       "assertion_cagr_1yr_top_pass": true,
-      "trade_ledger": [],
+      "trade_ledger": [
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "ADANIGREEN",
+          "shares": 490,
+          "price": 199.95,
+          "cash_before": 1000000.0,
+          "cash_after": 901828.56,
+          "pos_before": 0,
+          "pos_after": 490
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "DMART",
+          "shares": 50,
+          "price": 2310.2,
+          "cash_before": 901828.56,
+          "cash_after": 786087.56,
+          "pos_before": 0,
+          "pos_after": 50
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "TATACONSUM",
+          "shares": 279,
+          "price": 340.0,
+          "cash_before": 786087.56,
+          "cash_after": 691037.88,
+          "pos_before": 0,
+          "pos_after": 279
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "NAVINFLUOR",
+          "shares": 50,
+          "price": 1555.0,
+          "cash_before": 691037.88,
+          "cash_after": 613132.38,
+          "pos_before": 0,
+          "pos_after": 50
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "ABBOTINDIA",
+          "shares": 5,
+          "price": 17500.0,
+          "cash_before": 613132.38,
+          "cash_after": 525457.38,
+          "pos_before": 0,
+          "pos_after": 5
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "BHARTIARTL",
+          "shares": 221,
+          "price": 502.45,
+          "cash_before": 525457.38,
+          "cash_after": 414193.84,
+          "pos_before": 0,
+          "pos_after": 221
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "INDIACEM",
+          "shares": 946,
+          "price": 101.1,
+          "cash_before": 414193.84,
+          "cash_after": 318361.97,
+          "pos_before": 0,
+          "pos_after": 946
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "WHIRLPOOL",
+          "shares": 43,
+          "price": 1971.33,
+          "cash_before": 318361.97,
+          "cash_after": 233425.31,
+          "pos_before": 0,
+          "pos_after": 43
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "TIMKEN",
+          "shares": 127,
+          "price": 881.0,
+          "cash_before": 233425.31,
+          "cash_after": 121314.54,
+          "pos_before": 0,
+          "pos_after": 127
+        },
+        {
+          "date": "2020-05-04",
+          "type": "BUY",
+          "symbol": "IGL",
+          "shares": 234,
+          "price": 463.05,
+          "cash_before": 121314.54,
+          "cash_after": 12744.13,
+          "pos_before": 0,
+          "pos_after": 234
+        }
+      ],
       "cash_event_audit": {
         "claim_tested": "went 100% to cash before the crash",
         "claim_verdict": "VIOLATED",
@@ -1682,7 +1926,7 @@
   ],
   "investigation_2008_half_cash": {
     "verdict": "cash_artifact",
-    "summary": "17.53% MaxDD is a cash artifact caused by severe filter dry-up (retrace & 200-EMA) leaving 55.1-89.8% of the portfolio in uninvested cash under fixed 1/N (5%) sizing, not genuine fully-invested equity resilience.",
+    "summary": "17.53% MaxDD is a cash artifact caused by severe filter dry-up (retrace & 200-EMA) leaving 55.1%-89.8% of the portfolio in uninvested cash under fixed 1/N (5%) sizing, not genuine fully-invested equity resilience.",
     "before_fix_maxdd": 17.53,
     "after_fix_normalized_maxdd": 62.1,
     "monthly_rebalance_log": [

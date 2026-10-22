@@ -703,16 +703,111 @@ class TestForensicIntegrityAudit(unittest.TestCase):
         self.assertIn('"legacy_cagr": null', serialized)
         self.assertIn('"legacy_maxdd": null', serialized)
 
-    def test_data_insufficient_ledger_trades_not_published(self):
-        """When data_insufficient is True, stress trades must not be published to all_stress_trades."""
-        all_stress_trades = []
-        ledger_base = {"data_insufficient": True, "trades": [{"symbol": "BAD", "shares": 100, "price": 0.0}]}
-        ledger_top = {"data_insufficient": False, "trades": []}
-        b_name = "2008_Test"
-        if not ledger_base.get("data_insufficient") and not ledger_top.get("data_insufficient"):
-            for t in ledger_base["trades"]:
-                all_stress_trades.append({"window": b_name, "strategy": "Legacy MIP", **t})
-        self.assertEqual(len(all_stress_trades), 0)
+    def test_should_publish_ledger_production_helper(self):
+        """When data_insufficient is True, should_publish_ledger must return False; otherwise True."""
+        from scripts.forensic_integrity_audit import should_publish_ledger
+        ledger_base_bad = {"data_insufficient": True, "trades": [{"symbol": "BAD", "shares": 100, "price": 0.0}]}
+        ledger_top_ok = {"data_insufficient": False, "trades": []}
+        self.assertFalse(should_publish_ledger(ledger_base_bad, ledger_top_ok))
+        self.assertFalse(should_publish_ledger(ledger_top_ok, ledger_base_bad))
+        self.assertTrue(should_publish_ledger(ledger_top_ok, ledger_top_ok))
+        # Cash-artifact windows do not set data_insufficient=True, so their ledgers are published
+        ledger_cash_artifact = {"cash_days": 100, "data_insufficient": False, "trades": [{"symbol": "A"}]}
+        self.assertTrue(should_publish_ledger(ledger_cash_artifact, ledger_cash_artifact))
+
+    def test_cash_artifact_status_does_not_suppress_valid_ledger(self):
+        """Reproduces the on-disk regression: status==DATA_INSUFFICIENT via cash_fraction>0.30,
+        but ledger data_insufficient==False and effective days > 0.
+        Build the record through the SAME production helper used by run_forensic_audit,
+        then assert the valid ledger is retained."""
+        from scripts.forensic_integrity_audit import classify_stress_window, _get_val
+        r_base = {"cagr": -10.0, "max_drawdown": 25.0, "total_return": -15.0, "ending_equity": 850_000.0}
+        r_top = {"cagr": -5.0, "max_drawdown": 20.0, "total_return": -10.0, "ending_equity": 900_000.0}
+        dummy_trades = [{"date": "2020-05-04", "type": "BUY", "symbol": "TEST", "shares": 100, "price": 100.0}]
+        ledger_base = {"cash_days": 150, "effective_trading_days": 100, "data_insufficient": False, "trades": dummy_trades}
+        ledger_top = {"cash_days": 150, "effective_trading_days": 100, "data_insufficient": False, "trades": dummy_trades}
+
+        status, label, is_comparable, reduction, calendar_delta, cagr_b, maxdd_b, calmar_b, a1_ok = classify_stress_window(
+            r_base, r_top, ledger_base, ledger_top, trading_days=250, warmup_sessions=0
+        )
+        self.assertEqual(status, "DATA_INSUFFICIENT")
+
+        record = {
+            "window": "2020_Test",
+            "status": status,
+            "trade_ledger": [] if _get_val(ledger_top, "data_insufficient", False) else ledger_top["trades"],
+            "cash_event_audit": {"total_trades_in_window": len(ledger_top["trades"])}
+        }
+        self.assertNotEqual(len(record["trade_ledger"]), 0)
+        self.assertEqual(record["cash_event_audit"]["total_trades_in_window"], len(record["trade_ledger"]))
+
+    def test_classify_cash_fraction_comparable_nulls_deltas(self):
+        """eff days equal for both, cash days equal, cash/trading_days > 0.30, finite cagr/maxdd,
+        data_insufficient False -> status DATA_INSUFFICIENT AND reduction/calendar_delta are None."""
+        from scripts.forensic_integrity_audit import classify_stress_window
+        r_base = {"cagr": -10.0, "max_drawdown": 20.0, "total_return": -15.0, "ending_equity": 850_000.0}
+        r_top = {"cagr": -5.0, "max_drawdown": 15.0, "total_return": -10.0, "ending_equity": 900_000.0}
+        ledger_base = {"cash_days": 100, "effective_trading_days": 150, "data_insufficient": False, "trades": []}
+        ledger_top = {"cash_days": 100, "effective_trading_days": 150, "data_insufficient": False, "trades": []}
+
+        status, label, is_comparable, reduction, calendar_delta, cagr_b, maxdd_b, calmar_b, a1_ok = classify_stress_window(
+            r_base, r_top, ledger_base, ledger_top, trading_days=250, warmup_sessions=0
+        )
+        self.assertEqual(status, "DATA_INSUFFICIENT")
+        self.assertIsNone(reduction)
+        self.assertIsNone(calendar_delta)
+        self.assertFalse(is_comparable)
+
+    def test_markdown_report_renders_corrupt_data_safely(self):
+        """Corrupt/None metrics in stress windows must format cleanly as 'N/A' without raising TypeError."""
+        from scripts.forensic_integrity_audit import render_markdown_report
+        corrupt_bear_results = [
+            {
+                "window": "2020 COVID Crash",
+                "date_range": "2020-01-01 to 2020-04-30",
+                "trading_days": 82,
+                "warmup_days": 0,
+                "cash_days_legacy": 63,
+                "effective_trading_days_legacy": 19,
+                "legacy_total_return": None,
+                "legacy_cagr": None,
+                "legacy_maxdd_raw": None,
+                "cash_days_top": 63,
+                "effective_trading_days_top": 19,
+                "top_total_return": None,
+                "top_cagr": None,
+                "top_maxdd_raw": None,
+                "top_calmar": None,
+                "status": "DATA_INSUFFICIENT",
+                "non_comparable_reason": "excessive cash",
+                "drawdown_reduction_pct": None,
+                "legacy_first_invested_date": "2020-04-01",
+                "top_first_invested_date": "2020-04-01",
+                "top_last_valuation_date": "2020-04-30",
+                "label": "DATA_INSUFFICIENT test",
+            }
+        ]
+        reconcile_results = []
+        deduped_top = []
+        reclassified_ablation = []
+        half_cash_2008_audit = []
+        canonical_baseline = {"cagr": 35.01, "max_drawdown": 41.65, "calmar": 0.84}
+        md_text = render_markdown_report(
+            bear_results=corrupt_bear_results,
+            reconcile_results=reconcile_results,
+            deduped_top=deduped_top,
+            reclassified_ablation=reclassified_ablation,
+            half_cash_2008_audit=half_cash_2008_audit,
+            canonical_baseline=canonical_baseline,
+            K=12,
+            required_sharpe=1.5,
+            sharpes=[1.0],
+            distinct_count=4,
+            duplicate_count=16,
+            top20=[{}] * 20,
+        )
+        self.assertIn("N/A", md_text)
+        self.assertIn("DATA_INSUFFICIENT", md_text)
 
     def test_analyze_2008_half_cash_does_not_fill_masked_or_price_at_cost(self):
         """analyze_2008_half_cash must not execute sells at buy_px cost fallback on masked/zero execution bars."""

@@ -376,6 +376,10 @@ static inline void simulate_single_config(
             }
             if (!is_delisted) {
                 holdings[num_surviving++] = retained[h];
+            } else {
+                // Book the write-off so loss statistics and trade count reflect total loss of the position
+                total_trades++;
+                gross_losses += retained[h].cost_basis;
             }
         }
         num_holdings = num_surviving;

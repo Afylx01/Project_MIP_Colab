@@ -1,7 +1,7 @@
 # FORENSIC BACKTEST INTEGRITY AUDIT REPORT
 
-**Status**: VERIFIED & MATHEMATICALLY RECONCILED
-**Date**: 2026-10-22 22:28:25 UTC
+**Status**: AUDITED WITH CAVEATS (2 DATA_INSUFFICIENT, 1 PARTIAL)
+**Date**: 2026-10-22 22:50:40 UTC
 **Target Dataset**: NIFTY500 (`data/universe.db`, 2007-01-02 to 2026-10-19)
 
 ## 1. TASK 1: VARIABLE WIRING AUDIT & CANONICAL BASELINE RECONCILIATION
@@ -64,15 +64,15 @@ Classification criteria:
 
 | ID | Feature Name | Old Label | New Calmar Label | CAGR (%) | MaxDD (%) | Calmar | ΔCalmar (%) | Reason / IS vs OOS |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `RUN_0_BASELINE` | Legacy MIP Baseline | `PROVEN_BASELINE` | **`CANONICAL_BASELINE`** | 35.01% | 41.65% | 0.84 | +0.0% | Single-engine reconciled baseline reference (CAGR 35.01%, MaxDD 41.65%, Calmar 0.84) |
-| `RUN_1_REGIME` | + Benchmark 20 EMA Regime Gate | `HARMFUL` | **`REGIME_DEPENDENT`** | 29.13% | 40.83% | 0.71 | -15.5% | Flips between IS (Δ-6.6%) and OOS (Δ+5.2%) |
-| `RUN_2_SECTOR_CAP` | + Sector Hard Cap (Max 2) | `NEUTRAL` | **`REGIME_DEPENDENT`** | 35.09% | 33.71% | 1.04 | +23.8% | Flips between IS (Δ+32.9%) and OOS (Δ-22.7%) |
-| `RUN_3_ATR_SIZING` | + ATR Risk Parity Sizing | `PROVEN_PROFITABLE` | **`NEUTRAL`** | 39.42% | 46.37% | 0.85 | +1.2% | Calmar within ±5% (+1.2%) vs canonical baseline (0.84) |
-| `RUN_4_NO_BUFFER` | - Exit Buffer Removed (Buffer = 20) | `JUST_COMPLEXITY` | **`HARMFUL`** | 37.72% | 52.10% | 0.72 | -14.3% | Calmar degraded by -14.3% vs canonical baseline (0.84) |
-| `RUN_5_BUFFER_60` | + Wide Exit Buffer (Buffer = 60) | `NEUTRAL` | **`HARMFUL`** | 33.58% | 47.61% | 0.71 | -15.5% | Calmar degraded by -15.5% vs canonical baseline (0.84) |
-| `RUN_6_TOP_10` | + High Concentration (Top 10) | `HARMFUL` | **`REGIME_DEPENDENT`** | 34.80% | 56.90% | 0.61 | -27.4% | Flips between IS (Δ-27.6%) and OOS (Δ+6.4%) |
-| `RUN_7_TOP_30` | + Diversified Breadth (Top 30) | `NEUTRAL` | **`REGIME_DEPENDENT`** | 34.31% | 42.19% | 0.81 | -3.6% | Flips between IS (Δ+5.3%) and OOS (Δ-15.7%) |
-| `RUN_8_MODERN_STACK` | + Full Modern Production Stack | `HARMFUL` | **`PROVEN`** | 30.35% | 23.34% | 1.30 | +54.8% | Calmar improved by +54.8% vs canonical baseline (0.84) |
+| `RUN_0_BASELINE` | Legacy MIP Baseline | `PROVEN_BASELINE` | **`CANONICAL_BASELINE`** | 35.01% | 41.65% | 0.84 | +0.00% | Single-engine reconciled baseline reference (CAGR 35.01%, MaxDD 41.65%, Calmar 0.84) |
+| `RUN_1_REGIME` | + Benchmark 20 EMA Regime Gate | `HARMFUL` | **`REGIME_DEPENDENT`** | 29.13% | 40.83% | 0.71 | -15.50% | Flips between IS (Δ-6.6%) and OOS (Δ+5.2%) |
+| `RUN_2_SECTOR_CAP` | + Sector Hard Cap (Max 2) | `NEUTRAL` | **`REGIME_DEPENDENT`** | 35.09% | 33.71% | 1.04 | +23.80% | Flips between IS (Δ+32.9%) and OOS (Δ-22.7%) |
+| `RUN_3_ATR_SIZING` | + ATR Risk Parity Sizing | `PROVEN_PROFITABLE` | **`NEUTRAL`** | 39.42% | 46.37% | 0.85 | +1.20% | Calmar within ±5% (+1.2%) vs canonical baseline (0.84) |
+| `RUN_4_NO_BUFFER` | - Exit Buffer Removed (Buffer = 20) | `JUST_COMPLEXITY` | **`HARMFUL`** | 37.72% | 52.10% | 0.72 | -14.30% | Calmar degraded by -14.3% vs canonical baseline (0.84) |
+| `RUN_5_BUFFER_60` | + Wide Exit Buffer (Buffer = 60) | `NEUTRAL` | **`HARMFUL`** | 33.58% | 47.61% | 0.71 | -15.50% | Calmar degraded by -15.5% vs canonical baseline (0.84) |
+| `RUN_6_TOP_10` | + High Concentration (Top 10) | `HARMFUL` | **`REGIME_DEPENDENT`** | 34.80% | 56.90% | 0.61 | -27.40% | Flips between IS (Δ-27.6%) and OOS (Δ+6.4%) |
+| `RUN_7_TOP_30` | + Diversified Breadth (Top 30) | `NEUTRAL` | **`REGIME_DEPENDENT`** | 34.31% | 42.19% | 0.81 | -3.60% | Flips between IS (Δ+5.3%) and OOS (Δ-15.7%) |
+| `RUN_8_MODERN_STACK` | + Full Modern Production Stack | `HARMFUL` | **`PROVEN`** | 30.35% | 23.34% | 1.30 | +54.80% | Calmar improved by +54.8% vs canonical baseline (0.84) |
 
 ## 4. TASK 4: CANONICAL RECONCILIATION ON NIFTY 500 (SINGLE ENGINE, 2016-2026)
 
@@ -83,14 +83,14 @@ Classification criteria:
 
 | Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | ΔCalmar (%) | Classification |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Legacy MIP Baseline** | 33.91% | 50.66% | 0.67 | 0.98 | 0.15 | 1.000 | `FAIL` | 593 | 21,505,882 | -20.2% | `LEGACY_MIP_SIMULATED` |
-| **+ ATR Risk Parity Sizing ON** | 33.74% | 47.88% | 0.70 | 0.98 | 0.15 | 1.000 | `FAIL` | 594 | 21,225,754 | -16.7% | `HARMFUL` |
-| **+ Regime Gate ON** | 28.65% | 41.35% | 0.69 | 0.95 | 0.09 | 1.000 | `FAIL` | 499 | 14,109,075 | -17.9% | `HARMFUL` |
-| **+ Sector Cap = 2** | 35.30% | 37.60% | 0.94 | 1.04 | 0.32 | 1.000 | `FAIL` | 735 | 23,978,166 | +11.9% | `NOT_STATISTICALLY_SIGNIFICANT` |
-| **+ Buffer = 60** | 33.06% | 45.31% | 0.73 | 0.96 | 0.11 | 1.000 | `FAIL` | 508 | 20,107,862 | -13.1% | `HARMFUL` |
-| **+ Top N = 10** | 33.99% | 51.18% | 0.66 | 0.90 | 0.03 | 1.000 | `FAIL` | 265 | 21,632,416 | -21.4% | `HARMFUL` |
-| **+ Residual Momentum ON** | 30.07% | 42.20% | 0.71 | 0.99 | 0.17 | 1.000 | `FAIL` | 734 | 15,845,284 | -15.5% | `HARMFUL` |
-| **+ Combined Production Stack** | 27.94% | 22.63% | 1.23 | 1.08 | 0.46 | 1.000 | `FAIL` | 716 | 13,322,584 | +46.4% | `NOT_STATISTICALLY_SIGNIFICANT` |
+| **Legacy MIP Baseline** | 33.91% | 50.66% | 0.67 | 0.98 | 0.15 | 1.000 | `FAIL` | 593 | 21,505,882 | -20.20% | `LEGACY_MIP_SIMULATED` |
+| **+ ATR Risk Parity Sizing ON** | 33.74% | 47.88% | 0.70 | 0.98 | 0.15 | 1.000 | `FAIL` | 594 | 21,225,754 | -16.70% | `HARMFUL` |
+| **+ Regime Gate ON** | 28.65% | 41.35% | 0.69 | 0.95 | 0.09 | 1.000 | `FAIL` | 499 | 14,109,075 | -17.90% | `HARMFUL` |
+| **+ Sector Cap = 2** | 35.30% | 37.60% | 0.94 | 1.04 | 0.32 | 1.000 | `FAIL` | 735 | 23,978,166 | +11.90% | `NOT_STATISTICALLY_SIGNIFICANT` |
+| **+ Buffer = 60** | 33.06% | 45.31% | 0.73 | 0.96 | 0.11 | 1.000 | `FAIL` | 508 | 20,107,862 | -13.10% | `HARMFUL` |
+| **+ Top N = 10** | 33.99% | 51.18% | 0.66 | 0.90 | 0.03 | 1.000 | `FAIL` | 265 | 21,632,416 | -21.40% | `HARMFUL` |
+| **+ Residual Momentum ON** | 30.07% | 42.20% | 0.71 | 0.99 | 0.17 | 1.000 | `FAIL` | 734 | 15,845,284 | -15.50% | `HARMFUL` |
+| **+ Combined Production Stack** | 27.94% | 22.63% | 1.23 | 1.08 | 0.46 | 1.000 | `FAIL` | 716 | 13,322,584 | +46.40% | `NOT_STATISTICALLY_SIGNIFICANT` |
 
 ## 5. TASK 5: BEAR-MARKET STRESS TESTS & ARITHMETIC PROOF
 
@@ -114,11 +114,11 @@ Mathematical Identity: For any negative-return window, $\text{MaxDD} \ge |\text{
 - **Formula Mechanism**: In `sim_kernel.c:612`, CAGR is calculated as:
   $$\text{CAGR} = \left(\frac{\text{Final Equity}}{\text{Initial Capital}}\right)^{\frac{1}{Y}} - 1, \quad \text{where } Y = \frac{\text{End Session} - \text{Start Session}}{252}$$
 - When a negative-return window spans a fraction of a year ($Y < 1$), annualizing compounds the loss over 12 months, producing a CAGR that is *more negative* than the actual period loss:
-  - **2008 Global Financial Crisis (Legacy MIP)**: Spans 223 active sessions ($Y = 0.8849$ yr). Cumulative total return is **-16.05%**, whereas CAGR is **-17.94%**. MaxDD is **17.53%**, which strictly satisfies $17.53\% \ge 16.05\%$.
-  - **2011 European Debt Crisis (Legacy MIP)**: Spans 226 active sessions ($Y = 0.8968$ yr). Cumulative total return is **-0.56%**, whereas CAGR is **-0.62%**. MaxDD is **13.71%**, which strictly satisfies $13.71\% \ge 0.56\%$.
-  - **2018 Midcap Crash / Correction (Legacy MIP)**: Spans 224 active sessions ($Y = 0.8889$ yr). Cumulative total return is **-19.55%**, whereas CAGR is **-21.71%**. MaxDD is **26.29%**, which strictly satisfies $26.29\% \ge 19.55\%$.
-  - **2020 COVID Crash (Legacy MIP)**: Spans 77 active sessions ($Y = 0.3056$ yr). Cumulative total return is **-18.24%**, whereas CAGR is **-48.27%**. MaxDD is **38.83%**, which strictly satisfies $38.83\% \ge 18.24\%$.
-- The mathematical identity $\text{MaxDD} \ge |\text{total\_return}|$ is **100% verified and universally holds across all negative-return crisis windows**.
+  - **2008 Global Financial Crisis (Legacy MIP)**: Spans 223 active sessions ($Y = 0.8849$ yr). Cumulative total return is **-16.05%**, whereas CAGR is **-17.94%**. MaxDD is **17.53%**, which strictly satisfies $17.53%\% \ge 16.05%\$.
+  - **2011 European Debt Crisis (Legacy MIP)**: Spans 226 active sessions ($Y = 0.8968$ yr). Cumulative total return is **-0.56%**, whereas CAGR is **-0.62%**. MaxDD is **13.71%**, which strictly satisfies $13.71%\% \ge 0.56%\$.
+  - **2018 Midcap Crash / Correction (Legacy MIP)**: Spans 224 active sessions ($Y = 0.8889$ yr). Cumulative total return is **-19.55%**, whereas CAGR is **-21.71%**. MaxDD is **26.29%**, which strictly satisfies $26.29%\% \ge 19.55%\$.
+  - **2020 COVID Crash (Legacy MIP)**: Spans 77 active sessions ($Y = 0.3056$ yr). Cumulative total return is **-18.24%**, whereas CAGR is **-48.27%**. MaxDD is **38.83%**, which strictly satisfies $38.83%\% \ge 18.24%\$.
+- The mathematical identity $\text{MaxDD} \ge |\text{total\_return}|$ holds strictly across all evaluated negative-return windows where trade data is sufficient.
 
 ### Warmup Declaration & Cash Accounting (Task 2)
 - **2008 Global Financial Crisis** (246 trading days):
@@ -173,7 +173,7 @@ A deep forensic audit of the 2008 Global Financial Crisis window was performed t
 2. **Retrace Filter Bottleneck**: During severe market declines, momentum names violated the 80% 52-week high threshold (`brute_force/sim_kernel.c:385`). In March and June 2008, only 5–6 stocks passed.
 3. **200-Day EMA Trend Bottleneck**: The severe bear market pushed most stocks below their 200-day EMA (`brute_force/sim_kernel.c:386`). By October/November 2008, only 2 stocks passed the 200-EMA filter.
 4. **Relative Strength Pass**: Candidates were further restricted by the RS filter (`brute_force/sim_kernel.c:387`).
-5. **Fixed 1/N Sizing & Cash Drag**: The engine implements fixed $1/N$ allocation ($1/20 = 5\%$ per position slot) via `sim_kernel.c:423`. Unallocated slots remain in cash. Because only 2–9 stocks ever qualified, the portfolio held 55.1% to 89.8% in idle cash throughout 2008.
+5. **Fixed 1/N Sizing & Cash Drag**: The engine implements fixed $1/N$ allocation ($1/20 = 5\%$ per position slot) via `sim_kernel.c:423`. Unallocated slots remain in cash. Because only 2–9 stocks ever qualified, the portfolio held significant idle cash throughout 2008.
 
 #### Before/After Fix MaxDD Side-by-Side Comparison
 

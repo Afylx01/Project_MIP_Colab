@@ -274,10 +274,11 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
                 self.assertGreaterEqual(t["cash_after"], 0.0)
 
     def test_no_hardcoded_2008_drawdown_values(self):
-        """1.10 Verify no literal hardcoded 43.18 or 18.05 strings in forensic_integrity_audit.py."""
+        """1.10 Verify no literal hardcoded 43.18, 18.05, or 17.53 strings in forensic_integrity_audit.py."""
         audit_src = (PROJECT_ROOT / "scripts" / "forensic_integrity_audit.py").read_text()
         self.assertNotIn("43.18", audit_src)
         self.assertNotIn("18.05", audit_src)
+        self.assertNotIn("17.53", audit_src)
 
     def test_compute_comparability_flags(self):
         """1.11 Verify comparability helper matches required criteria."""
@@ -964,6 +965,40 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         self.assertFalse(res["data_insufficient"])
         # A, C, and D are active; ending equity reflects 2/3 invested (66,700) after B's 1/3 write-off
         self.assertAlmostEqual(res["ending_equity"], 66_700.0, delta=200.0)
+
+    def test_engine_frees_delisted_slot_total_trades(self):
+        """Delisted holding compaction records write-off trade count so engine reports all closed trades."""
+        T = 40
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        symbols = ["A", "B", "C", "D"]
+        px = np.full((T, 4), 100.0, dtype=np.float32)
+        mask = np.ones((T, 4), dtype=np.uint8)
+        px[10:, 1] = 0.0
+        mask[10:, 1] = 0
+
+        reb = np.array([0, 10, 20, 30], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.zeros((1, T, 4), dtype=np.float32)
+        volar[0, 0, 0] = 1.0
+        volar[0, 0, 1] = 1.0
+        volar[0, 10, 0] = 1.0
+        volar[0, 20, 0] = 1.0
+        volar[0, 20, 2] = 1.0
+        volar[0, 20, 3] = 1.0
+
+        cube = TensorCubeContainer(
+            dates=dates, symbols=symbols, schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "param_id": 1, "schedule_idx": 1, "start_date_idx": 0, "end_date_idx": 35,
+            "top_n": 3, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
+        }
+        res = self.engine.run_sweep(cube, [param]).iloc[0]
+        self.assertEqual(res["total_trades"], 4, "Engine must count 4 closed trades: 1 delisted write-off (B) + 3 exits (A, C, D)")
 
     def test_ledger_entry_nonfinite_exec_price_fails_closed(self):
         """1.27 Entry execution bar with non-finite prices fails closed in both engine and ledger."""
