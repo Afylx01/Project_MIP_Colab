@@ -808,6 +808,66 @@ class TestForensicIntegrityAudit(unittest.TestCase):
         )
         self.assertIn("N/A", md_text)
         self.assertIn("DATA_INSUFFICIENT", md_text)
+        self.assertNotIn(r"%\%", md_text)
+        self.assertNotIn(r"\$", md_text)
+
+    def test_comparability_tolerance_must_not_report_reduction(self):
+        """Strict A6 gate: Differing effective days even by 3 sessions must not report drawdown reduction."""
+        from scripts.forensic_integrity_audit import classify_stress_window
+        status, label, is_comparable, reduction, calendar_delta, *_ = classify_stress_window(
+            {"cagr": -1.0, "max_drawdown": 10.0, "ending_equity": 990_000.0},
+            {"cagr": -1.0, "max_drawdown": 8.0,  "ending_equity": 992_000.0},
+            {"cash_days": 10, "effective_trading_days": 224, "data_insufficient": False},
+            {"cash_days": 10, "effective_trading_days": 227, "data_insufficient": False},
+            trading_days=246, warmup_sessions=0,
+        )
+        self.assertIsNone(reduction)
+        self.assertFalse(is_comparable)
+
+    def test_report_status_data_unavailable_is_never_verified(self):
+        """Any non-VALID stress window must cause the status header to emit a caveat, never VERIFIED."""
+        from scripts.forensic_integrity_audit import render_markdown_report
+        md = render_markdown_report(
+            bear_results=[{"window": "X", "status": "DATA_UNAVAILABLE"}],
+            reconcile_results=[], deduped_top=[], reclassified_ablation=[],
+            half_cash_2008_audit=[], canonical_baseline={"cagr": 35.01, "max_drawdown": 41.65, "calmar": 0.84},
+            K=8, required_sharpe=1.25, sharpes=[1.0], distinct_count=0,
+            duplicate_count=0, top20=[],
+        )
+        self.assertNotIn("VERIFIED & MATHEMATICALLY RECONCILED", md)
+
+    def test_should_publish_ledger_none_fails_closed(self):
+        """should_publish_ledger must return False if either ledger argument is None or missing trades."""
+        from scripts.forensic_integrity_audit import should_publish_ledger
+        ok = {"data_insufficient": False, "trades": []}
+        self.assertFalse(should_publish_ledger(None, ok))
+        self.assertFalse(should_publish_ledger(ok, None))
+        self.assertFalse(should_publish_ledger({}, ok))
+        self.assertFalse(should_publish_ledger(ok, {}))
+
+    def test_required_sharpe_monotonicity_and_bonferroni_sensitivity(self):
+        """required_sharpe must increase monotonically with trial count K, and Bonferroni p-value must detect high SR."""
+        from nextgen.risk_statistics import _normal_ppf
+        benchmark_sharpe = 1.0
+        n_sessions = 2600
+        n_years = n_sessions / 252.0
+        se_bench = math.sqrt((1.0 + 0.5 * (benchmark_sharpe ** 2)) / n_years)
+
+        req_sharpes = []
+        for k in [2, 5, 10, 20, 50]:
+            z_crit = _normal_ppf(1.0 - 0.05 / k)
+            req = benchmark_sharpe + se_bench * z_crit
+            req_sharpes.append(req)
+
+        self.assertTrue(all(x < y for x, y in zip(req_sharpes, req_sharpes[1:])), "required_sharpe must increase monotonically with K")
+
+        sr = 2.0
+        se = math.sqrt((1.0 + 0.5 * (sr ** 2)) / n_years)
+        z = (sr - benchmark_sharpe) / se
+        p_val_raw = 0.5 * math.erfc(z / math.sqrt(2.0))
+        p_val_bonf = min(1.0, round(p_val_raw * 8, 4))
+        self.assertLess(p_val_bonf, 1.0, "p_value_bonferroni must not be identically 1.0 for SR=2.0, n=2600")
+        self.assertLess(p_val_bonf, 0.5, "Strong excess Sharpe over 10 years should have statistically meaningful p-value")
 
     def test_analyze_2008_half_cash_does_not_fill_masked_or_price_at_cost(self):
         """analyze_2008_half_cash must not execute sells at buy_px cost fallback on masked/zero execution bars."""

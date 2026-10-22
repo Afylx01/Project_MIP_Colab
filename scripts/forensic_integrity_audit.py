@@ -39,6 +39,7 @@ from brute_force.grid import (
     FILTER_DELIVERY_VETO,
     SCHEDULE_MAP,
 )
+from nextgen.risk_statistics import compute_expected_max_sharpe_ratio, _normal_ppf
 
 
 def compute_comparability(legacy_eff: int, top_eff: int, legacy_cash: int, top_cash: int, legacy_dd: float = 0.0, top_dd: float = 0.0):
@@ -564,7 +565,11 @@ def _get_val(rec, key, default=np.nan):
 
 
 def should_publish_ledger(ledger_base, ledger_top):
-    """Returns True if both ledgers have valid data and no data_insufficient flag."""
+    """Returns True if both ledgers are valid dicts containing trades and no data_insufficient flag."""
+    if not isinstance(ledger_base, dict) or not isinstance(ledger_top, dict):
+        return False
+    if "trades" not in ledger_base or "trades" not in ledger_top:
+        return False
     return not bool(
         _get_val(ledger_base, "data_insufficient", False) or
         _get_val(ledger_top, "data_insufficient", False)
@@ -614,10 +619,15 @@ def classify_stress_window(r_base, r_top, ledger_base, ledger_top, trading_days,
     legacy_eff_days = int(_get_val(ledger_base, "effective_trading_days", 0))
     top_eff_days = int(_get_val(ledger_top, "effective_trading_days", 0))
 
-    is_comparable, reduction = compute_comparability(
-        legacy_eff_days, top_eff_days, legacy_cash_days, top_cash_days, maxdd_b, maxdd_t
+    is_comparable = bool(
+        legacy_eff_days == top_eff_days and legacy_cash_days == top_cash_days
     )
-    calendar_delta = float(round(maxdd_b - maxdd_t, 2)) if (is_comparable and maxdd_b is not None and maxdd_t is not None) else None
+    reduction = float(round(maxdd_b - maxdd_t, 2)) if (
+        is_comparable and maxdd_b is not None and maxdd_t is not None
+    ) else None
+    calendar_delta = float(round(maxdd_b - maxdd_t, 2)) if (
+        is_comparable and maxdd_b is not None and maxdd_t is not None
+    ) else None
 
     is_data_insufficient = bool(
         _get_val(ledger_base, "data_insufficient", False) or
@@ -683,10 +693,9 @@ def render_markdown_report(
     if timestamp_str is None:
         timestamp_str = time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
 
-    num_data_insufficient = sum(1 for b in bear_results if b.get("status") == "DATA_INSUFFICIENT")
-    num_partial = sum(1 for b in bear_results if b.get("status") == "PARTIAL")
-    if num_data_insufficient > 0 or num_partial > 0:
-        status_line = f"**Status**: AUDITED WITH CAVEATS ({num_data_insufficient} DATA_INSUFFICIENT, {num_partial} PARTIAL)\n"
+    num_not_valid = sum(1 for b in bear_results if b.get("status") != "VALID")
+    if not bear_results or num_not_valid > 0:
+        status_line = f"**Status**: AUDITED WITH CAVEATS ({num_not_valid} WINDOWS NON-VALID)\n"
     else:
         status_line = "**Status**: VERIFIED & MATHEMATICALLY RECONCILED\n"
 
@@ -781,7 +790,7 @@ def render_markdown_report(
     best_sharpe_str = fmt_num(max(sharpes)) if sharpes else "N/A"
     req_sharpe_str = fmt_num(required_sharpe)
     lines.append(f"> **Required Sharpe Statement**: With {K} trials at α=0.05, required Sharpe is {req_sharpe_str}. Best observed is {best_sharpe_str}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio.\n\n")
-    lines.append("| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | ΔCalmar (%) | Classification |\n")
+    lines.append("| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs cross-engine baseline (%) | Classification |\n")
     lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
     for r in reconcile_results:
         sig_mark = "PASS" if r.get('statistically_significant_05') else "FAIL"
@@ -852,7 +861,14 @@ def render_markdown_report(
         leg_dd = b.get("legacy_maxdd_raw")
         if leg_tot is not None and leg_tot < 0 and leg_eff is not None:
             y_val = leg_eff / 252.0
-            lines.append(f"  - **{w_name} (Legacy MIP)**: Spans {leg_eff} active sessions ($Y = {y_val:.4f}$ yr). Cumulative total return is **{fmt_pct(leg_tot, signed=True)}**, whereas CAGR is **{fmt_pct(leg_cagr, signed=True)}**. MaxDD is **{fmt_pct(leg_dd)}**, which strictly satisfies ${fmt_pct(leg_dd)}\\% \\ge {fmt_pct(abs(leg_tot))}\\$.\n")
+            dd_s = fmt_pct(leg_dd).replace("%", r"\%")
+            tr_s = fmt_pct(abs(leg_tot)).replace("%", r"\%")
+            lines.append(
+                f"  - **{w_name} (Legacy MIP)**: Spans {leg_eff} active sessions "
+                f"($Y = {y_val:.4f}$ yr). Cumulative total return is **{fmt_pct(leg_tot, signed=True)}**, "
+                f"whereas CAGR is **{fmt_pct(leg_cagr, signed=True)}**. MaxDD is **{fmt_pct(leg_dd)}**, "
+                f"which strictly satisfies ${dd_s} \\ge {tr_s}$.\n"
+            )
     lines.append("- The mathematical identity $\\text{MaxDD} \\ge |\\text{total\\_return}|$ holds strictly across all evaluated negative-return windows where trade data is sufficient.\n\n")
 
     # Warmup Declaration & Cash Accounting
@@ -1072,16 +1088,23 @@ def run_forensic_audit():
         })
 
     # Pillar 4: Statistical Validity - Multiple-Testing Correction (Bailey & López de Prado, 2014)
+    s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= "2016-01-01"])
+    e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= "2026-10-15"])
+    n_sessions = e_idx - s_idx + 1
+    n_years = max(1.0, n_sessions / 252.0)
+
     K = len(reconcile_results)
     benchmark_sharpe = reconcile_results[0]["sharpe"]
     sharpes = [r["sharpe"] for r in reconcile_results]
     var_sharpe = float(np.var(sharpes, ddof=1)) if len(sharpes) > 1 else 0.01
-    expected_max_sharpe = benchmark_sharpe + math.sqrt(max(1e-4, var_sharpe)) * math.sqrt(2.0 * math.log(max(2, K)))
-    required_sharpe = round(benchmark_sharpe + math.sqrt((1.0 + 0.5 * (benchmark_sharpe ** 2)) / 128.0) * 2.498, 2)
+    expected_max_sharpe = compute_expected_max_sharpe_ratio(n_trials=K, n_samples=n_sessions, var_sr=var_sharpe)
+    z_crit = _normal_ppf(1.0 - 0.05 / K) if K > 0 else 1.96
+    se_benchmark = math.sqrt((1.0 + 0.5 * (benchmark_sharpe ** 2)) / n_years)
+    required_sharpe = round(benchmark_sharpe + se_benchmark * z_crit, 2)
 
     for r in reconcile_results:
         sr = r["sharpe"]
-        se = math.sqrt((1.0 + 0.5 * (sr ** 2)) / 128.0)
+        se = math.sqrt((1.0 + 0.5 * (sr ** 2)) / n_years)
         z = (sr - benchmark_sharpe) / se if se > 0 else 0.0
         p_val_raw = 0.5 * math.erfc(z / math.sqrt(2.0)) if z > 0 else 1.0
         p_val_bonf = min(1.0, round(p_val_raw * K, 4))
@@ -1220,7 +1243,16 @@ def run_forensic_audit():
             maxdd_t = round(maxdd_t_raw, 2) if maxdd_t_raw is not None else None
             calmar_t = round(cagr_t / maxdd_t, 2) if (cagr_t is not None and maxdd_t is not None and maxdd_t >= 0.01) else None
             maxdd_b_raw = float(_get_val(r_base, "max_drawdown", np.nan)) if np.isfinite(float(_get_val(r_base, "max_drawdown", np.nan))) else None
-            non_comparable_reason = None if is_comparable else f"Non-comparable effective windows (Legacy: {legacy_eff_days} days vs Top: {top_eff_days} days)."
+            if is_comparable:
+                non_comparable_reason = None
+            elif legacy_eff_days != top_eff_days:
+                non_comparable_reason = f"Non-comparable effective windows (Legacy: {legacy_eff_days} days vs Top: {top_eff_days} days)."
+            elif legacy_cash_days > 30 or top_cash_days > 30:
+                non_comparable_reason = f"In-window cash exceeded 30-day threshold (Legacy: {legacy_cash_days} days, Top: {top_cash_days} days)."
+            elif legacy_cash_days != top_cash_days:
+                non_comparable_reason = f"Differing in-window cash days (Legacy: {legacy_cash_days} days vs Top: {top_cash_days} days)."
+            else:
+                non_comparable_reason = "Non-comparable conditions."
             a1_legacy_pass = True if (maxdd_b is None or tot_ret_b is None) else ((maxdd_b >= -tot_ret_b) if tot_ret_b < 0 else True)
             a1_top_pass = True if (maxdd_t is None or tot_ret_t is None) else ((maxdd_t >= -tot_ret_t) if tot_ret_t < 0 else True)
             cagr_1yr_legacy_pass = (maxdd_b >= abs(cagr_b)) if (trading_days == 252 and tot_ret_b is not None and tot_ret_b < 0 and cagr_b is not None and maxdd_b is not None) else True
@@ -1242,7 +1274,7 @@ def run_forensic_audit():
             "effective_trading_days_legacy": int(legacy_eff_days),
             "effective_trading_days_top": int(top_eff_days),
             "comparable": is_comparable,
-            "effective_window_differs": not is_comparable,
+            "effective_window_differs": bool(legacy_eff_days != top_eff_days),
             "calendar_window_drawdown_delta_pct": calendar_delta,
             "drawdown_reduction_pct": reduction,
             "non_comparable_reason": non_comparable_reason,

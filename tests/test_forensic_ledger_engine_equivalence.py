@@ -1000,6 +1000,42 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         res = self.engine.run_sweep(cube, [param]).iloc[0]
         self.assertEqual(res["total_trades"], 4, "Engine must count 4 closed trades: 1 delisted write-off (B) + 3 exits (A, C, D)")
 
+    def test_engine_delisted_writeoff_populates_loss_statistics(self):
+        """Delisted write-off must populate gross_losses and zero win rate when all closed positions are losses."""
+        T = 40
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        symbols = ["A", "B", "C", "D"]
+        px = np.full((T, 4), 100.0, dtype=np.float32)
+        mask = np.ones((T, 4), dtype=np.uint8)
+        px[10:, 1] = 0.0
+        mask[10:, 1] = 0
+
+        reb = np.array([0, 10, 20, 30], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.zeros((1, T, 4), dtype=np.float32)
+        volar[0, 0, 0] = 1.0
+        volar[0, 0, 1] = 1.0
+        volar[0, 10, 0] = 1.0
+        volar[0, 20, 0] = 1.0
+        volar[0, 20, 2] = 1.0
+        volar[0, 20, 3] = 1.0
+
+        cube = TensorCubeContainer(
+            dates=dates, symbols=symbols, schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "param_id": 1, "schedule_idx": 1, "start_date_idx": 0, "end_date_idx": 35,
+            "top_n": 3, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
+        }
+        res = self.engine.run_sweep(cube, [param]).iloc[0]
+        self.assertEqual(res["total_trades"], 4)
+        self.assertEqual(res["winning_trades"], 0)
+        self.assertEqual(res["profit_factor"], 0.0)
+
     def test_ledger_entry_nonfinite_exec_price_fails_closed(self):
         """1.27 Entry execution bar with non-finite prices fails closed in both engine and ledger."""
         T = 10

@@ -189,7 +189,7 @@ class TestOperationalFailureModes(unittest.TestCase):
             self.assertIn("date", df.columns)
             dates = df["date"].unique()
             self.assertEqual(len(dates), 1, "Screener CSV must contain exactly one homogeneous scan date")
-            self.assertIn(dates[0], ("2026-10-09", "2026-10-14", "2026-10-16"))
+            self.assertIn(dates[0], ("2026-10-09", "2026-10-14", "2026-10-16", "2026-10-19"))
 
     def test_database_read_only_protection_against_mutations(self):
         """10. Read-only connection to universe.db prevents accidental write mutations."""

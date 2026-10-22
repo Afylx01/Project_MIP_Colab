@@ -419,7 +419,7 @@
       "classification": "LEGACY_MIP_SIMULATED",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.1483,
+      "deflated_sharpe_ratio": 0.9919,
       "statistically_significant_05": false
     },
     {
@@ -435,7 +435,7 @@
       "classification": "HARMFUL",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.1483,
+      "deflated_sharpe_ratio": 0.9919,
       "statistically_significant_05": false
     },
     {
@@ -451,7 +451,7 @@
       "classification": "HARMFUL",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.0908,
+      "deflated_sharpe_ratio": 0.9906,
       "statistically_significant_05": false
     },
     {
@@ -465,9 +465,9 @@
       "ending_equity": 23978166.0,
       "delta_calmar_pct": 11.9,
       "classification": "NOT_STATISTICALLY_SIGNIFICANT",
-      "p_value_raw": 0.2922,
+      "p_value_raw": 0.4375,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.317,
+      "deflated_sharpe_ratio": 0.9941,
       "statistically_significant_05": false
     },
     {
@@ -483,7 +483,7 @@
       "classification": "HARMFUL",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.1079,
+      "deflated_sharpe_ratio": 0.9911,
       "statistically_significant_05": false
     },
     {
@@ -499,7 +499,7 @@
       "classification": "HARMFUL",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.0333,
+      "deflated_sharpe_ratio": 0.9878,
       "statistically_significant_05": false
     },
     {
@@ -513,9 +513,9 @@
       "ending_equity": 15845284.0,
       "delta_calmar_pct": -15.5,
       "classification": "HARMFUL",
-      "p_value_raw": 0.4631,
+      "p_value_raw": 0.4894,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.1717,
+      "deflated_sharpe_ratio": 0.9923,
       "statistically_significant_05": false
     },
     {
@@ -529,9 +529,9 @@
       "ending_equity": 13322584.0,
       "delta_calmar_pct": 46.4,
       "classification": "NOT_STATISTICALLY_SIGNIFICANT",
-      "p_value_raw": 0.1843,
+      "p_value_raw": 0.398,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.4562,
+      "deflated_sharpe_ratio": 0.9951,
       "statistically_significant_05": false
     }
   ],
@@ -540,11 +540,11 @@
     "family_wise_error_threshold": 0.05,
     "bonferroni_adjusted_alpha": 0.00625,
     "benchmark_sharpe": 0.98,
-    "expected_max_sharpe_null": 1.092,
-    "required_sharpe_bonferroni": 1.25,
+    "expected_max_sharpe_null": 0.08,
+    "required_sharpe_bonferroni": 1.91,
     "best_observed_sharpe": 1.08,
     "significance_verdict": "FAIL",
-    "statement": "With 8 trials at \u03b1=0.05, required Sharpe is 1.25. Best observed is 1.08. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio.",
+    "statement": "With 8 trials at \u03b1=0.05, required Sharpe is 1.91. Best observed is 1.08. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio.",
     "methodology": "Bailey & Lopez de Prado (2014) Deflated Sharpe Ratio + Bonferroni FWER Control (Policy A: p_bonf > 0.05 OR DSR < 0.5 -> NOT_STATISTICALLY_SIGNIFICANT)"
   },
   "bear_market_stress_tests": [
