@@ -612,7 +612,7 @@ static inline void simulate_single_config(
         int s = holdings[h].symbol_idx;
         size_t d_idx = (size_t)end_session * N + s;
         float px = cube->close_px[d_idx];
-        if (px < 0.0f || (px == 0.0f && cube->valid_price_mask && !cube->valid_price_mask[d_idx])) {
+        if ((cube->valid_price_mask && !cube->valid_price_mask[d_idx]) || px <= 0.0f) {
             if (end_session > 0 && cube->close_px[(size_t)(end_session - 1) * N + s] > 0.0f) {
                 px = cube->close_px[(size_t)(end_session - 1) * N + s];
             } else {

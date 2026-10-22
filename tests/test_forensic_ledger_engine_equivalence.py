@@ -296,6 +296,106 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         row2 = {"max_drawdown_pct": 0.0, "cagr_pct": 10.0}
         self.assertEqual(compute_calmar(row2), 0.0)
 
+    def test_retained_holdings_valued_at_sig_close_in_sizing(self):
+        """1.13 Verify retained holdings are valued at sig_close (matching sim_kernel.c:413)
+        when computing investable capital for new entrants."""
+        num_dates, num_syms = 8, 3
+        dates = [f"2020-01-{i+1:02d}" for i in range(num_dates)]
+        px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)
+        # Retained stock A gaps: sig_close(d4)=200.0, exec_open(d5)=100.0
+        px[4, 0] = 200.0
+        px[5, 0] = 100.0
+        # Exited stock B sells at 200.0
+        px[5, 1] = 200.0
+
+        reb = np.array([0, 4], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.zeros((1, num_dates, num_syms), dtype=np.float32)
+        volar[0, 0, :] = 1.0
+        volar[0, 4, 0] = 1.0  # Retain A
+        volar[0, 4, 1] = 0.0  # Exit B
+        volar[0, 4, 2] = 1.0  # Enter C
+
+        cube = TensorCubeContainer(
+            dates=dates,
+            symbols=["A", "B", "C"],
+            schedule_indices_map=sched,
+            open_px=px,
+            close_px=px,
+            volar_cubes=volar,
+            lookback_values=[63, 126, 252, 504],
+            ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "schedule_idx": 1,
+            "top_n": 2,
+            "filter_flags": 0,
+            "initial_capital": 100_000.0,
+            "friction_bps": 0.0,
+            "slippage_bps": 0.0,
+            "sizing_mode": "equal_weight",
+            "lookback_idx": 0,
+            "ema_idx": 0,
+            "exit_buffer_rank": 40,
+            "max_per_sector": 99
+        }
+        ledger = generate_window_trade_ledger(cube, param, 0, 7)
+        c_buys = [t for t in ledger["trades"] if t["type"] == "BUY" and t["symbol"] == "C"]
+        self.assertEqual(len(c_buys), 1)
+        # Under sig_close valuation: capital = 100k cash + 500 * 200.0 = 200k.
+        # Alloc per stock = 200k / 2 = 100k. C price = 100.0 -> 1000 shares.
+        self.assertEqual(c_buys[0]["shares"], 1000)
+
+    def test_final_session_masked_holding_forward_fills_prior_close(self):
+        """1.14 sim_kernel.c forward-fills prior close when a held stock is masked on final session."""
+        num_dates, num_syms = 10, 2
+        dates = [f"2020-03-{i+1:02d}" for i in range(num_dates)]
+        px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)
+        # Corrupt unmasked price on final session
+        px[num_dates - 1, 0] = 999.0
+        mask = np.ones((num_dates, num_syms), dtype=np.uint8)
+        mask[num_dates - 1, 0] = 0  # SYM0 masked on final session
+
+        reb = np.array([0, num_dates - 1], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.zeros((1, num_dates, num_syms), dtype=np.float32)
+        volar[0, 0, :] = 1.0
+
+        cube = TensorCubeContainer(
+            dates=dates,
+            symbols=["SYM0", "SYM1"],
+            schedule_indices_map=sched,
+            open_px=px,
+            close_px=px,
+            volar_cubes=volar,
+            valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504],
+            ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "param_id": 1,
+            "schedule_idx": 1,
+            "start_date_idx": 0,
+            "end_date_idx": num_dates - 1,
+            "top_n": 2,
+            "filter_flags": 0,
+            "initial_capital": 100_000.0,
+            "friction_bps": 0.0,
+            "slippage_bps": 0.0,
+            "sizing_mode": "equal_weight",
+            "lookback_idx": 0,
+            "ema_idx": 0,
+            "exit_buffer_rank": 40,
+            "max_per_sector": 99
+        }
+        res = self.engine.run_sweep(cube, [param])
+        row = res.iloc[0]
+        self.assertEqual(row["status"], "VALID")
+        self.assertFalse(row["data_insufficient"])
+        # With SYM0 forward-filled to 100.0 on final session, ending equity is exactly 100k
+        self.assertEqual(row["ending_equity"], 100_000.0)
+
 
 if __name__ == "__main__":
     unittest.main()
+

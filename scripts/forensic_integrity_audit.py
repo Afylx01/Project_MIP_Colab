@@ -231,7 +231,7 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
                         investable_cash *= shield
 
                 invested_val = sum(
-                    h["shares"] * (exec_open[s] if not np.isnan(exec_open[s]) and exec_open[s] > 0 else (exec_close[s] if not np.isnan(exec_close[s]) and exec_close[s] > 0 else h["buy_px"]))
+                    h["shares"] * (sig_close[s] if not np.isnan(sig_close[s]) and sig_close[s] > 0 else h["buy_px"])
                     for s, h in holdings.items()
                 )
                 curr_capital = cash + invested_val
