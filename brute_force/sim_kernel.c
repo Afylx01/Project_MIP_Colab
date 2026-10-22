@@ -218,6 +218,8 @@ static inline void simulate_single_config(
     double peak_equity = (double)initial_capital;
     double max_dd = 0.0;
     double total_traded_val = 0.0;
+    int end_session = (int)end_d;
+    if (end_session >= (int)T) end_session = (int)T - 1;
 
     Holding holdings[MAX_HOLDINGS];
     int num_holdings = 0;
@@ -329,9 +331,13 @@ static inline void simulate_single_config(
                 retained[num_retained++] = holdings[h];
             } else {
                 // Liquidate on T+1 Open
-                float exit_px = (!isnan(exec_open[s]) && exec_open[s] > 0.0f) ? exec_open[s] :
-                                ((!isnan(exec_close[s]) && exec_close[s] > 0.0f) ? exec_close[s] :
-                                ((!isnan(c_px) && c_px > 0.0f) ? c_px : 0.0f));
+                if (!isfinite(exec_open[s]) || !isfinite(exec_close[s])) {
+                    nan_bars_count++;
+                    break;
+                }
+                float exit_px = (isfinite(exec_open[s]) && exec_open[s] > 0.0f) ? exec_open[s] :
+                                ((isfinite(exec_close[s]) && exec_close[s] > 0.0f) ? exec_close[s] :
+                                ((isfinite(c_px) && c_px > 0.0f) ? c_px : 0.0f));
                 float gross_proceeds = holdings[h].shares * exit_px;
                 float friction = gross_proceeds * total_friction_rate;
                 float net_proceeds = gross_proceeds > friction ? (gross_proceeds - friction) : 0.0f;
@@ -476,9 +482,9 @@ static inline void simulate_single_config(
                         num_masked_entries++;
                         continue; // Cannot execute entry on invalid/masked bar
                     }
-                    float buy_px = (!isnan(exec_open[sym]) && exec_open[sym] > 0.0f) ? exec_open[sym] :
-                                   ((!isnan(exec_close[sym]) && exec_close[sym] > 0.0f) ? exec_close[sym] : 0.0f);
-                    if (buy_px <= 0.0f || isnan(buy_px)) continue;
+                    float buy_px = (isfinite(exec_open[sym]) && exec_open[sym] > 0.0f) ? exec_open[sym] :
+                                   ((isfinite(exec_close[sym]) && exec_close[sym] > 0.0f) ? exec_close[sym] : 0.0f);
+                    if (buy_px <= 0.0f || !isfinite(buy_px)) continue;
                     int shares = (int)(target_shares[i] * scale);
                     if (shares <= 0) continue;
 
@@ -507,7 +513,15 @@ static inline void simulate_single_config(
         double period_nav = cash;
         for (int h = 0; h < num_holdings; h++) {
             int s = holdings[h].symbol_idx;
-            float px = (!isnan(exec_close[s]) && exec_close[s] > 0.0f) ? exec_close[s] : holdings[h].buy_px;
+            float px = exec_close[s];
+            bool is_masked = (cube->valid_price_mask && !cube->valid_price_mask[(size_t)exec_date * N + s]);
+            if (is_masked || !isfinite(px) || px < 0.0f) {
+                if (exec_date > 0 && cube->close_px[(size_t)(exec_date - 1) * N + s] > 0.0f) {
+                    px = cube->close_px[(size_t)(exec_date - 1) * N + s];
+                } else {
+                    px = holdings[h].buy_px;
+                }
+            }
             period_nav += ((double)holdings[h].shares * (double)px);
         }
 
@@ -551,12 +565,13 @@ static inline void simulate_single_config(
                         } else {
                             px = holdings[h].buy_px;
                         }
-                    } else if (px < 0.0f) {
-                        if (d > 0 && cube->close_px[(size_t)(d - 1) * N + s] > 0.0f) {
-                            px = cube->close_px[(size_t)(d - 1) * N + s];
-                        } else {
-                            px = holdings[h].buy_px;
+                    } else if (px <= 0.0f) {
+                        if (d + 1 < (int)T && cube->close_px[(size_t)(d + 1) * N + s] > 0.0f) {
+                            bar_has_nan = true;
+                            nan_bars_count++;
+                            break;
                         }
+                        px = 0.0f;
                     }
                     daily_nav += ((double)holdings[h].shares * (double)px);
                 }
@@ -604,8 +619,6 @@ static inline void simulate_single_config(
 
     // 6. Compute Final Financial Performance Metrics
     int start_session = sched_indices[r_start];
-    int end_session = (int)end_d;
-    if (end_session >= (int)T) end_session = (int)T - 1;
 
     double final_equity_calc = cash;
     for (int h = 0; h < num_holdings; h++) {

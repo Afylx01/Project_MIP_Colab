@@ -69,6 +69,10 @@ def compute_calmar(row: dict) -> float:
     return float(cagr / dd)
 
 
+def _finite_pos(v):
+    return v is not None and not np.isnan(v) and np.isfinite(v) and v > 0
+
+
 def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
     """
     Executes a faithful bar-by-bar trade simulation across the window,
@@ -181,11 +185,14 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
 
         for s in to_exit:
             h = holdings[s]
-            exit_px = exec_open[s] if (not np.isnan(exec_open[s]) and exec_open[s] > 0) else (
-                exec_close[s] if (not np.isnan(exec_close[s]) and exec_close[s] > 0) else (
-                    sig_close[s] if (not np.isnan(sig_close[s]) and sig_close[s] > 0) else 0.0
+            if not np.isfinite(exec_open[s]) or not np.isfinite(exec_close[s]):
+                exit_px = 0.0
+            else:
+                exit_px = exec_open[s] if _finite_pos(exec_open[s]) else (
+                    exec_close[s] if _finite_pos(exec_close[s]) else (
+                        sig_close[s] if _finite_pos(sig_close[s]) else 0.0
+                    )
                 )
-            )
             gross = h["shares"] * exit_px
             fric = gross * friction_rate
             net = max(0.0, gross - fric)
@@ -233,7 +240,7 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
                         investable_cash *= shield
 
                 invested_val = sum(
-                    h["shares"] * (sig_close[s] if not np.isnan(sig_close[s]) and sig_close[s] > 0 else h["buy_px"])
+                    h["shares"] * (sig_close[s] if _finite_pos(sig_close[s]) else h["buy_px"])
                     for s, h in holdings.items()
                 )
                 curr_capital = cash + invested_val
@@ -245,8 +252,8 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
                     risk_per_trade_pct = float(params.get("risk_per_trade_pct", 1.0))
                     risk_budget = curr_capital * (risk_per_trade_pct / 100.0)
                     for s in chosen:
-                        buy_px = exec_open[s] if (not np.isnan(exec_open[s]) and exec_open[s] > 0) else (
-                            exec_close[s] if (not np.isnan(exec_close[s]) and exec_close[s] > 0) else 0.0
+                        buy_px = exec_open[s] if _finite_pos(exec_open[s]) else (
+                            exec_close[s] if _finite_pos(exec_close[s]) else 0.0
                         )
                         if buy_px <= 0.0:
                             target_shares[s] = 0
@@ -265,8 +272,8 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
                     # Equal weight
                     alloc_per_slot = curr_capital / float(top_n)
                     for s in chosen:
-                        buy_px = exec_open[s] if (not np.isnan(exec_open[s]) and exec_open[s] > 0) else (
-                            exec_close[s] if (not np.isnan(exec_close[s]) and exec_close[s] > 0) else 0.0
+                        buy_px = exec_open[s] if _finite_pos(exec_open[s]) else (
+                            exec_close[s] if _finite_pos(exec_close[s]) else 0.0
                         )
                         if buy_px <= 0.0:
                             target_shares[s] = 0
@@ -283,10 +290,10 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
                 for s in chosen:
                     if cube.valid_price_mask is not None and not cube.valid_price_mask[exec_date, s]:
                         continue  # Cannot execute entry on invalid/masked bar
-                    buy_px = exec_open[s] if (not np.isnan(exec_open[s]) and exec_open[s] > 0) else (
-                        exec_close[s] if (not np.isnan(exec_close[s]) and exec_close[s] > 0) else 0.0
+                    buy_px = exec_open[s] if _finite_pos(exec_open[s]) else (
+                        exec_close[s] if _finite_pos(exec_close[s]) else 0.0
                     )
-                    if buy_px <= 0.0 or np.isnan(buy_px):
+                    if buy_px <= 0.0 or not np.isfinite(buy_px):
                         continue
                     shares = int(target_shares.get(s, 0) * scale)
                     if shares <= 0:
