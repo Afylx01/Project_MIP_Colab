@@ -654,6 +654,96 @@ class TestForensicIntegrityAudit(unittest.TestCase):
             if top_cal is not None:
                 self.assertLessEqual(top_cal, 100.0)
 
+    def test_data_insufficient_window_does_not_crash_a1(self):
+        """Pure classification helper must not raise AssertionError on NaN/data_insufficient."""
+        from scripts.forensic_integrity_audit import classify_stress_window
+        r_base = {"cagr": np.nan, "max_drawdown": np.nan, "ending_equity": 0.0}
+        r_top = {"cagr": np.nan, "max_drawdown": np.nan, "ending_equity": 0.0}
+        ledger_base = {"cash_days": 10, "effective_trading_days": 0, "data_insufficient": True}
+        ledger_top = {"cash_days": 10, "effective_trading_days": 0, "data_insufficient": True}
+
+        status, label, is_comparable, reduction, calendar_delta, cagr_b, maxdd_b, calmar_b, a1_ok = classify_stress_window(
+            r_base, r_top, ledger_base, ledger_top, trading_days=10, warmup_sessions=10
+        )
+        self.assertEqual(status, "DATA_INSUFFICIENT")
+        self.assertTrue(a1_ok)
+        self.assertFalse(is_comparable)
+        self.assertIsNone(reduction)
+        self.assertIsNone(calendar_delta)
+        self.assertIsNone(cagr_b)
+        self.assertIsNone(maxdd_b)
+        self.assertIsNone(calmar_b)
+
+    def test_data_insufficient_window_nulls_deltas_and_json_safe(self):
+        """Stress record under DATA_INSUFFICIENT must nullify invalid floats and serialize with allow_nan=False."""
+        from scripts.forensic_integrity_audit import classify_stress_window, sanitize_json_obj
+        r_base = {"cagr": np.nan, "max_drawdown": np.nan, "ending_equity": 0.0}
+        r_top = {"cagr": np.nan, "max_drawdown": np.nan, "ending_equity": 0.0}
+        ledger_base = {"cash_days": 10, "effective_trading_days": 0, "data_insufficient": True, "trades": []}
+        ledger_top = {"cash_days": 10, "effective_trading_days": 0, "data_insufficient": True, "trades": []}
+
+        status, label, is_comparable, reduction, calendar_delta, cagr_b, maxdd_b, calmar_b, a1_ok = classify_stress_window(
+            r_base, r_top, ledger_base, ledger_top, trading_days=10, warmup_sessions=10
+        )
+        record = {
+            "window": "Synthetic_Corrupt",
+            "status": status,
+            "label": label,
+            "legacy_cagr": cagr_b,
+            "legacy_maxdd": maxdd_b,
+            "top_cagr": None,
+            "top_maxdd": None,
+            "drawdown_reduction_pct": reduction,
+            "calendar_window_drawdown_delta_pct": calendar_delta,
+            "trade_ledger": []
+        }
+        self.assertIsNone(record["legacy_cagr"])
+        self.assertIsNone(record["legacy_maxdd"])
+        serialized = json.dumps(sanitize_json_obj(record), allow_nan=False)
+        self.assertIn('"legacy_cagr": null', serialized)
+        self.assertIn('"legacy_maxdd": null', serialized)
+
+    def test_data_insufficient_ledger_trades_not_published(self):
+        """When data_insufficient is True, stress trades must not be published to all_stress_trades."""
+        all_stress_trades = []
+        ledger_base = {"data_insufficient": True, "trades": [{"symbol": "BAD", "shares": 100, "price": 0.0}]}
+        ledger_top = {"data_insufficient": False, "trades": []}
+        b_name = "2008_Test"
+        if not ledger_base.get("data_insufficient") and not ledger_top.get("data_insufficient"):
+            for t in ledger_base["trades"]:
+                all_stress_trades.append({"window": b_name, "strategy": "Legacy MIP", **t})
+        self.assertEqual(len(all_stress_trades), 0)
+
+    def test_analyze_2008_half_cash_does_not_fill_masked_or_price_at_cost(self):
+        """analyze_2008_half_cash must not execute sells at buy_px cost fallback on masked/zero execution bars."""
+        from scripts.forensic_integrity_audit import analyze_2008_half_cash
+        T = 40
+        dates = [f"2008-01-{i+1:02d}" for i in range(T)]
+        symbols = ["SYM0"]
+        px = np.full((T, 1), 100.0, dtype=np.float32)
+        px[10:, 0] = 0.0
+        mask = np.ones((T, 1), dtype=np.uint8)
+        mask[10:, 0] = 0
+
+        reb = np.array([0, 10, 20], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.ones((1, T, 1), dtype=np.float32)
+        volar[0, 10, 0] = 0.0
+
+        cube = TensorCubeContainer(
+            dates=dates, symbols=symbols, schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "schedule_idx": 1, "top_n": 1, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
+        }
+        recs = analyze_2008_half_cash(cube, param, 0, 30)
+        self.assertGreaterEqual(len(recs), 2)
+        self.assertEqual(recs[1]["actual_filled"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

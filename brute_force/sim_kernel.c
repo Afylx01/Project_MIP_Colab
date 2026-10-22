@@ -365,10 +365,20 @@ static inline void simulate_single_config(
             }
         }
 
-        num_holdings = num_retained;
+        // 2b. Compact out holdings that are permanently written off (delisted: masked and non-positive price on signal bar)
+        int num_surviving = 0;
         for (int h = 0; h < num_retained; h++) {
-            holdings[h] = retained[h];
+            int s = retained[h].symbol_idx;
+            bool is_delisted = false;
+            if (cube->valid_price_mask && !cube->valid_price_mask[(size_t)sig_date * N + s] &&
+                (!isfinite(sig_close[s]) || sig_close[s] <= 0.0f)) {
+                is_delisted = true;
+            }
+            if (!is_delisted) {
+                holdings[num_surviving++] = retained[h];
+            }
         }
+        num_holdings = num_surviving;
 
         // 3. Select New Entrants for Open Slots
         uint32_t eff_top_n = params->top_n > MAX_HOLDINGS ? MAX_HOLDINGS : params->top_n;
@@ -484,12 +494,17 @@ static inline void simulate_single_config(
                 for (int i = 0; i < num_selected; i++) {
                     int sym = selected_syms[i];
                     size_t exec_bar_idx = (size_t)exec_date * N + sym;
-                    if (isnan(exec_open[sym]) || isnan(exec_close[sym]) || isinf(exec_open[sym]) || isinf(exec_close[sym])) {
+                    if (!isfinite(exec_open[sym]) || !isfinite(exec_close[sym])) {
                         nan_bars_count++;
+                        continue;
                     }
                     if (cube->valid_price_mask && !cube->valid_price_mask[exec_bar_idx]) {
                         num_masked_entries++;
                         continue; // Cannot execute entry on invalid/masked bar
+                    }
+                    if (exec_open[sym] <= 0.0f && exec_close[sym] <= 0.0f) {
+                        nan_bars_count++;
+                        continue;
                     }
                     float buy_px = (isfinite(exec_open[sym]) && exec_open[sym] > 0.0f) ? exec_open[sym] :
                                    ((isfinite(exec_close[sym]) && exec_close[sym] > 0.0f) ? exec_close[sym] : 0.0f);

@@ -217,6 +217,10 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
             })
             del holdings[s]
 
+        # Compact out holdings that are permanently written off (delisted: masked and non-positive price on signal bar)
+        for s in [s for s, h in holdings.items() if not _finite_pos(sig_close[s]) and (cube.valid_price_mask is not None and not cube.valid_price_mask[sig_date, s]) and not _finite_pos(cube.close_px[sig_date, s])]:
+            del holdings[s]
+
         # Entrants
         open_slots = top_n - len(holdings)
         is_bull = (cube.benchmark_regime[sig_date] > 0) if (filter_flags & FILTER_REGIME) else True
@@ -294,12 +298,19 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
                 scale = (investable_cash / total_req) if (total_req > investable_cash and total_req > 0.0) else 1.0
 
                 for s in chosen:
+                    if not np.isfinite(exec_open[s]) or not np.isfinite(exec_close[s]):
+                        data_insufficient = True
+                        continue
                     if cube.valid_price_mask is not None and not cube.valid_price_mask[exec_date, s]:
                         continue  # Cannot execute entry on invalid/masked bar
+                    if exec_open[s] <= 0.0 and exec_close[s] <= 0.0:
+                        data_insufficient = True
+                        continue
                     buy_px = exec_open[s] if _finite_pos(exec_open[s]) else (
                         exec_close[s] if _finite_pos(exec_close[s]) else 0.0
                     )
                     if buy_px <= 0.0 or not np.isfinite(buy_px):
+                        data_insufficient = True
                         continue
                     shares = int(target_shares.get(s, 0) * scale)
                     if shares <= 0:
@@ -452,10 +463,22 @@ def analyze_2008_half_cash(cube, legacy_base_p, bs_idx, be_idx):
         exec_close = cube.close_px[exec_date]
         for s in to_exit:
             h = holdings[s]
-            px = exec_open[s] if (not np.isnan(exec_open[s]) and exec_open[s] > 0) else (
-                exec_close[s] if (not np.isnan(exec_close[s]) and exec_close[s] > 0) else h["buy_px"]
+            if cube.valid_price_mask is not None and not cube.valid_price_mask[exec_date, s]:
+                continue
+            if not _finite_pos(exec_open[s]) and not _finite_pos(exec_close[s]):
+                continue
+            px = exec_open[s] if _finite_pos(exec_open[s]) else (
+                exec_close[s] if _finite_pos(exec_close[s]) else (
+                    sig_close[s] if _finite_pos(sig_close[s]) else 0.0
+                )
             )
+            if px <= 0.0:
+                continue
             cash += h["shares"] * px * (1.0 - 0.0020)
+            del holdings[s]
+
+        # Compact out holdings that are permanently written off (delisted: masked and non-positive price on signal bar)
+        for s in [s for s, h in holdings.items() if not _finite_pos(sig_close[s]) and (cube.valid_price_mask is not None and not cube.valid_price_mask[sig_date, s]) and not _finite_pos(cube.close_px[sig_date, s])]:
             del holdings[s]
 
         # Process entries
@@ -469,13 +492,17 @@ def analyze_2008_half_cash(cube, legacy_base_p, bs_idx, be_idx):
                     chosen.append(s)
 
             for s in chosen:
-                px = exec_open[s] if (not np.isnan(exec_open[s]) and exec_open[s] > 0) else (
-                    exec_close[s] if (not np.isnan(exec_close[s]) and exec_close[s] > 0) else sig_close[s]
+                if cube.valid_price_mask is not None and not cube.valid_price_mask[exec_date, s]:
+                    continue
+                if not _finite_pos(exec_open[s]) and not _finite_pos(exec_close[s]):
+                    continue
+                px = exec_open[s] if _finite_pos(exec_open[s]) else (
+                    exec_close[s] if _finite_pos(exec_close[s]) else 0.0
                 )
-                if px <= 0.0 or np.isnan(px):
+                if px <= 0.0 or not np.isfinite(px):
                     continue
                 # Fixed 1/N sizing
-                curr_cap = cash + sum(holdings[h]["shares"] * sig_close[h] for h in holdings)
+                curr_cap = cash + sum(holdings[h]["shares"] * (sig_close[h] if _finite_pos(sig_close[h]) else 0.0) for h in holdings)
                 alloc = curr_cap / float(top_n)
                 alloc = min(alloc, cash)
                 shares = int(alloc / (px * 1.0020))
@@ -484,7 +511,7 @@ def analyze_2008_half_cash(cube, legacy_base_p, bs_idx, be_idx):
                     cash -= cost
                     holdings[s] = {"shares": shares, "buy_px": px}
 
-        total_equity = cash + sum(holdings[h]["shares"] * float(sig_close[h]) for h in holdings)
+        total_equity = cash + sum(holdings[h]["shares"] * (sig_close[h] if _finite_pos(sig_close[h]) else 0.0) for h in holdings)
         cash_pct = round(float((cash / total_equity) * 100.0), 1) if total_equity > 0 else 100.0
 
         records.append({
@@ -511,6 +538,102 @@ def analyze_2008_half_cash(cube, legacy_base_p, bs_idx, be_idx):
             ]
         })
     return records
+
+
+def sanitize_json_obj(obj):
+    """Recursively converts non-finite floats to None for strict JSON serialization."""
+    if isinstance(obj, float):
+        if not np.isfinite(obj):
+            return None
+        return obj
+    elif isinstance(obj, dict):
+        return {k: sanitize_json_obj(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [sanitize_json_obj(v) for v in obj]
+    return obj
+
+
+def _get_val(rec, key, default=np.nan):
+    if rec is None:
+        return default
+    try:
+        val = rec[key]
+        return val if val is not None else default
+    except (KeyError, IndexError, TypeError, ValueError):
+        return default
+
+
+def classify_stress_window(r_base, r_top, ledger_base, ledger_top, trading_days, warmup_sessions):
+    """
+    Pure helper to classify a stress test window and enforce arithmetic consistency invariants.
+    Returns:
+        (status, label, is_comparable, reduction, calendar_delta, cagr_b, maxdd_b, calmar_b, a1_ok)
+    """
+    init_cap = 1_000_000.0
+    eq_b = float(_get_val(r_base, "ending_equity", np.nan))
+    tot_ret_b = round(((eq_b - init_cap) / init_cap) * 100.0, 4) if np.isfinite(eq_b) else np.nan
+    cagr_b_raw = float(_get_val(r_base, "cagr", np.nan))
+    cagr_b = round(cagr_b_raw, 2) if np.isfinite(cagr_b_raw) else None
+    maxdd_b_raw = float(_get_val(r_base, "max_drawdown", np.nan))
+    maxdd_b = round(maxdd_b_raw, 2) if np.isfinite(maxdd_b_raw) else None
+    calmar_b = round(cagr_b / maxdd_b, 2) if (cagr_b is not None and maxdd_b is not None and maxdd_b >= 0.01) else None
+
+    eq_t = float(_get_val(r_top, "ending_equity", np.nan))
+    tot_ret_t = round(((eq_t - init_cap) / init_cap) * 100.0, 4) if np.isfinite(eq_t) else np.nan
+    cagr_t_raw = float(_get_val(r_top, "cagr", np.nan))
+    cagr_t = round(cagr_t_raw, 2) if np.isfinite(cagr_t_raw) else None
+    maxdd_t_raw = float(_get_val(r_top, "max_drawdown", np.nan))
+    maxdd_t = round(maxdd_t_raw, 2) if np.isfinite(maxdd_t_raw) else None
+    calmar_t = round(cagr_t / maxdd_t, 2) if (cagr_t is not None and maxdd_t is not None and maxdd_t >= 0.01) else None
+
+    legacy_cash_days = int(_get_val(ledger_base, "cash_days", 0))
+    top_cash_days = int(_get_val(ledger_top, "cash_days", 0))
+    legacy_eff_days = int(_get_val(ledger_base, "effective_trading_days", 0))
+    top_eff_days = int(_get_val(ledger_top, "effective_trading_days", 0))
+
+    is_comparable = bool(legacy_eff_days == top_eff_days and legacy_cash_days == top_cash_days)
+    reduction = float(round(maxdd_b - maxdd_t, 2)) if (is_comparable and maxdd_b is not None and maxdd_t is not None) else None
+    calendar_delta = float(round(maxdd_b - maxdd_t, 2)) if (is_comparable and maxdd_b is not None and maxdd_t is not None) else None
+
+    is_data_insufficient = bool(
+        _get_val(ledger_base, "data_insufficient", False) or
+        _get_val(ledger_top, "data_insufficient", False) or
+        cagr_b is None or
+        cagr_t is None or
+        maxdd_b is None or
+        maxdd_t is None
+    )
+
+    if is_data_insufficient:
+        status = "DATA_INSUFFICIENT"
+        label = "DATA_INSUFFICIENT — non-finite execution prices or corrupted market bars encountered in stress window."
+        is_comparable = False
+        reduction = None
+        calendar_delta = None
+        cagr_b = None
+        maxdd_b = None
+        calmar_b = None
+        a1_ok = True
+    else:
+        a1_legacy_pass = True if (maxdd_b is None or not np.isfinite(tot_ret_b)) else ((maxdd_b >= -tot_ret_b) if tot_ret_b < 0 else True)
+        a1_top_pass = True if (maxdd_t is None or not np.isfinite(tot_ret_t)) else ((maxdd_t >= -tot_ret_t) if tot_ret_t < 0 else True)
+        assert a1_legacy_pass, f"A1 violated for Legacy: tot_ret={tot_ret_b}, maxdd={maxdd_b}"
+        assert a1_top_pass, f"A1 violated for Top: tot_ret={tot_ret_t}, maxdd={maxdd_t}"
+        a1_ok = bool(a1_legacy_pass and a1_top_pass)
+
+        max_in_window_cash = max(legacy_cash_days, top_cash_days)
+        cash_fraction = max_in_window_cash / float(trading_days) if trading_days > 0 else 0.0
+        if cash_fraction > 0.30:
+            status = "DATA_INSUFFICIENT"
+            label = f"DATA_INSUFFICIENT — excessive in-window cash masked {cash_fraction*100:.1f}% of window (Legacy: {legacy_cash_days}/{trading_days} days, Top: {top_cash_days}/{trading_days} days). Drawdown numbers cannot be interpreted as stress-test drawdowns."
+        elif not is_comparable:
+            status = "PARTIAL"
+            label = f"excludes warmup lookback ({warmup_sessions} sessions). In-window cash spanned {legacy_cash_days} days for Legacy / {top_cash_days} days for Top."
+        else:
+            status = "VALID"
+            label = f"excludes warmup lookback ({warmup_sessions} sessions). In-window cash spanned {legacy_cash_days} days for Legacy / {top_cash_days} days for Top."
+
+    return (status, label, is_comparable, reduction, calendar_delta, cagr_b, maxdd_b, calmar_b, a1_ok)
 
 
 def run_forensic_audit():
@@ -735,71 +858,64 @@ def run_forensic_audit():
         r_top = runner.engine.execute_sweep([p_top], cube, num_threads=1)[0]
         ledger_top = generate_window_trade_ledger(cube, p_top, bs_idx, be_idx)
 
-        for t in ledger_base["trades"]:
-            all_stress_trades.append({"window": b_name, "strategy": "Legacy MIP", **t})
-        for t in ledger_top["trades"]:
-            all_stress_trades.append({"window": b_name, "strategy": "Top Config", **t})
+        if not ledger_base.get("data_insufficient") and not ledger_top.get("data_insufficient"):
+            for t in ledger_base["trades"]:
+                all_stress_trades.append({"window": b_name, "strategy": "Legacy MIP", **t})
+            for t in ledger_top["trades"]:
+                all_stress_trades.append({"window": b_name, "strategy": "Top Config", **t})
 
-        init_cap = 1_000_000.0
-        tot_ret_b = round(((float(r_base["ending_equity"]) - init_cap) / init_cap) * 100.0, 4)
-        cagr_b = round(float(r_base["cagr"]), 2)
-        maxdd_b_raw = float(r_base["max_drawdown"])
-        maxdd_b = round(maxdd_b_raw, 2)
-        calmar_b = round(cagr_b / maxdd_b, 2) if maxdd_b >= 0.01 else None
-
-        tot_ret_t = round(((float(r_top["ending_equity"]) - init_cap) / init_cap) * 100.0, 4)
-        cagr_t = round(float(r_top["cagr"]), 2)
-        maxdd_t_raw = float(r_top["max_drawdown"])
-        maxdd_t = round(maxdd_t_raw, 2)
-        calmar_t = round(cagr_t / maxdd_t, 2) if maxdd_t >= 0.01 else None
-
-        # Derived from real trade ledger
-        legacy_cash_days = int(ledger_base["cash_days"])
-        top_cash_days = int(ledger_top["cash_days"])
-        legacy_eff_days = int(ledger_base["effective_trading_days"])
-        top_eff_days = int(ledger_top["effective_trading_days"])
-        legacy_first_invested_date = ledger_base["first_invested_date"]
-        top_first_invested_date = ledger_top["first_invested_date"]
+        legacy_cash_days = int(ledger_base.get("cash_days", 0))
+        top_cash_days = int(ledger_top.get("cash_days", 0))
+        legacy_eff_days = int(ledger_base.get("effective_trading_days", 0))
+        top_eff_days = int(ledger_top.get("effective_trading_days", 0))
+        legacy_first_invested_date = ledger_base.get("first_invested_date")
+        top_first_invested_date = ledger_top.get("first_invested_date")
         legacy_last_valuation_date = cube.dates[be_idx]
         top_last_valuation_date = cube.dates[be_idx]
 
-        # Warmup sessions available in database prior to bs_idx
         warmup_sessions = int(min(252, bs_idx))
 
-        # Arithmetic consistency assertions
-        a1_legacy_pass = (maxdd_b >= -tot_ret_b) if tot_ret_b < 0 else True
-        a1_top_pass = (maxdd_t >= -tot_ret_t) if tot_ret_t < 0 else True
-        assert a1_legacy_pass, f"A1 violated for Legacy in {b_name}: tot_ret={tot_ret_b}, maxdd={maxdd_b}"
-        assert a1_top_pass, f"A1 violated for Top in {b_name}: tot_ret={tot_ret_t}, maxdd={maxdd_t}"
+        status, label, is_comparable, reduction, calendar_delta, cagr_b, maxdd_b, calmar_b, a1_ok = classify_stress_window(
+            r_base, r_top, ledger_base, ledger_top, trading_days, warmup_sessions
+        )
 
-        cagr_1yr_legacy_pass = (maxdd_b >= abs(cagr_b)) if (trading_days == 252 and tot_ret_b < 0) else True
-        cagr_1yr_top_pass = (maxdd_t >= abs(cagr_t)) if (trading_days == 252 and tot_ret_t < 0) else True
-
-        # Strict active invested span comparison
-        is_comparable = bool(legacy_eff_days == top_eff_days and legacy_cash_days == top_cash_days)
-        reduction = float(round(maxdd_b - maxdd_t, 2)) if is_comparable else None
-        calendar_delta = float(round(maxdd_b - maxdd_t, 2)) if is_comparable else None
-        non_comparable_reason = None if is_comparable else f"Non-comparable effective windows (Legacy: {legacy_eff_days} days vs Top: {top_eff_days} days)."
-
-        # Status and Warmup Declaration per Task 2, 4, 5
-        if ledger_base.get("data_insufficient") or ledger_top.get("data_insufficient") or np.isnan(float(r_base["cagr"])) or np.isnan(float(r_top["cagr"])):
-            status = "DATA_INSUFFICIENT"
-            label = "DATA_INSUFFICIENT — non-finite execution prices or corrupted market bars encountered in stress window."
-            is_comparable = False
-            reduction = None
-            calendar_delta = None
+        init_cap = 1_000_000.0
+        is_corrupt_data = bool(
+            _get_val(ledger_base, "data_insufficient", False) or
+            _get_val(ledger_top, "data_insufficient", False) or
+            cagr_b is None
+        )
+        if is_corrupt_data:
+            non_comparable_reason = "Non-finite execution prices / corrupted market bars in stress window."
+            tot_ret_b = None
+            tot_ret_t = None
+            cagr_b = None
+            maxdd_b = None
+            maxdd_b_raw = None
+            calmar_b = None
+            cagr_t = None
+            maxdd_t = None
+            maxdd_t_raw = None
+            calmar_t = None
+            a1_legacy_pass = True
+            a1_top_pass = True
+            cagr_1yr_legacy_pass = True
+            cagr_1yr_top_pass = True
         else:
-            max_in_window_cash = max(legacy_cash_days, top_cash_days)
-            cash_fraction = max_in_window_cash / float(trading_days) if trading_days > 0 else 0.0
-            if cash_fraction > 0.30:
-                status = "DATA_INSUFFICIENT"
-                label = f"DATA_INSUFFICIENT — excessive in-window cash masked {cash_fraction*100:.1f}% of window (Legacy: {legacy_cash_days}/{trading_days} days, Top: {top_cash_days}/{trading_days} days). Drawdown numbers cannot be interpreted as stress-test drawdowns."
-            elif not is_comparable:
-                status = "PARTIAL"
-                label = f"excludes warmup lookback ({warmup_sessions} sessions). In-window cash spanned {legacy_cash_days} days for Legacy / {top_cash_days} days for Top."
-            else:
-                status = "VALID"
-                label = f"excludes warmup lookback ({warmup_sessions} sessions). In-window cash spanned {legacy_cash_days} days for Legacy / {top_cash_days} days for Top."
+            eq_b = float(_get_val(r_base, "ending_equity", np.nan))
+            tot_ret_b = round(((eq_b - init_cap) / init_cap) * 100.0, 4) if np.isfinite(eq_b) else None
+            eq_t = float(_get_val(r_top, "ending_equity", np.nan))
+            tot_ret_t = round(((eq_t - init_cap) / init_cap) * 100.0, 4) if np.isfinite(eq_t) else None
+            cagr_t = round(float(_get_val(r_top, "cagr", np.nan)), 2) if np.isfinite(float(_get_val(r_top, "cagr", np.nan))) else None
+            maxdd_t_raw = float(_get_val(r_top, "max_drawdown", np.nan)) if np.isfinite(float(_get_val(r_top, "max_drawdown", np.nan))) else None
+            maxdd_t = round(maxdd_t_raw, 2) if maxdd_t_raw is not None else None
+            calmar_t = round(cagr_t / maxdd_t, 2) if (cagr_t is not None and maxdd_t is not None and maxdd_t >= 0.01) else None
+            maxdd_b_raw = float(_get_val(r_base, "max_drawdown", np.nan)) if np.isfinite(float(_get_val(r_base, "max_drawdown", np.nan))) else None
+            non_comparable_reason = None if is_comparable else f"Non-comparable effective windows (Legacy: {legacy_eff_days} days vs Top: {top_eff_days} days)."
+            a1_legacy_pass = True if (maxdd_b is None or tot_ret_b is None) else ((maxdd_b >= -tot_ret_b) if tot_ret_b < 0 else True)
+            a1_top_pass = True if (maxdd_t is None or tot_ret_t is None) else ((maxdd_t >= -tot_ret_t) if tot_ret_t < 0 else True)
+            cagr_1yr_legacy_pass = (maxdd_b >= abs(cagr_b)) if (trading_days == 252 and tot_ret_b is not None and tot_ret_b < 0 and cagr_b is not None and maxdd_b is not None) else True
+            cagr_1yr_top_pass = (maxdd_t >= abs(cagr_t)) if (trading_days == 252 and tot_ret_t is not None and tot_ret_t < 0 and cagr_t is not None and maxdd_t is not None) else True
 
         record = {
             "window": str(b_name),
@@ -825,21 +941,21 @@ def run_forensic_audit():
             "top_first_invested_date": str(top_first_invested_date) if top_first_invested_date else None,
             "legacy_last_valuation_date": str(legacy_last_valuation_date),
             "top_last_valuation_date": str(top_last_valuation_date),
-            "legacy_total_return": float(tot_ret_b),
-            "top_total_return": float(tot_ret_t),
-            "legacy_cagr": float(cagr_b),
-            "legacy_maxdd": float(maxdd_b),
-            "legacy_maxdd_raw": float(maxdd_b_raw),
+            "legacy_total_return": float(tot_ret_b) if tot_ret_b is not None else None,
+            "top_total_return": float(tot_ret_t) if tot_ret_t is not None else None,
+            "legacy_cagr": float(cagr_b) if cagr_b is not None else None,
+            "legacy_maxdd": float(maxdd_b) if maxdd_b is not None else None,
+            "legacy_maxdd_raw": float(maxdd_b_raw) if maxdd_b_raw is not None else None,
             "legacy_calmar": float(calmar_b) if calmar_b is not None else None,
-            "top_cagr": float(cagr_t),
-            "top_maxdd": float(maxdd_t),
-            "top_maxdd_raw": float(maxdd_t_raw),
+            "top_cagr": float(cagr_t) if cagr_t is not None else None,
+            "top_maxdd": float(maxdd_t) if maxdd_t is not None else None,
+            "top_maxdd_raw": float(maxdd_t_raw) if maxdd_t_raw is not None else None,
             "top_calmar": float(calmar_t) if calmar_t is not None else None,
             "assertion_a1_legacy_pass": bool(a1_legacy_pass),
             "assertion_a1_top_pass": bool(a1_top_pass),
             "assertion_cagr_1yr_legacy_pass": bool(cagr_1yr_legacy_pass),
             "assertion_cagr_1yr_top_pass": bool(cagr_1yr_top_pass),
-            "trade_ledger": ledger_top["trades"],
+            "trade_ledger": [] if (status == "DATA_INSUFFICIENT" or ledger_top.get("data_insufficient")) else ledger_top["trades"],
         }
 
         if "2020" in b_name:
@@ -858,7 +974,11 @@ def run_forensic_audit():
 
         bear_results.append(record)
         red_str = f"Reduction: {reduction:+.2f}%" if reduction is not None else "Reduction: N/A (differing active windows)"
-        print(f"  {b_name:30} | Legacy: TotRet={tot_ret_b:6.2f}%, MaxDD={maxdd_b:5.2f}% | Top: TotRet={tot_ret_t:6.2f}%, MaxDD={maxdd_t:5.2f}% ({red_str}) [{status}]")
+        tot_ret_b_str = f"{tot_ret_b:6.2f}%" if tot_ret_b is not None else "N/A"
+        maxdd_b_str = f"{maxdd_b:5.2f}%" if maxdd_b is not None else "N/A"
+        tot_ret_t_str = f"{tot_ret_t:6.2f}%" if tot_ret_t is not None else "N/A"
+        maxdd_t_str = f"{maxdd_t:5.2f}%" if maxdd_t is not None else "N/A"
+        print(f"  {b_name:30} | Legacy: TotRet={tot_ret_b_str}, MaxDD={maxdd_b_str} | Top: TotRet={tot_ret_t_str}, MaxDD={maxdd_t_str} ({red_str}) [{status}]")
 
     # -------------------------------------------------------------
     # TASK 3: RE-CLASSIFY ABLATION BY CALMAR DELTA (Canonical Baseline)
@@ -956,7 +1076,7 @@ def run_forensic_audit():
 
     # Dynamic calculation of 2008 GFC MaxDD and normalized MaxDD
     gfc_window = next((b for b in bear_results if "2008" in b["window"]), {})
-    legacy_2008_maxdd = float(gfc_window.get("legacy_maxdd", 17.53))
+    legacy_2008_maxdd = float(gfc_window.get("legacy_maxdd") or 17.53)
     avg_cash_pct = float(np.mean([r["cash_pct"] for r in half_cash_2008_audit])) if half_cash_2008_audit else 59.4
     min_cash_pct = float(min(r["cash_pct"] for r in half_cash_2008_audit)) if half_cash_2008_audit else 55.1
     max_cash_pct = float(max(r["cash_pct"] for r in half_cash_2008_audit)) if half_cash_2008_audit else 89.8
@@ -974,7 +1094,7 @@ def run_forensic_audit():
     # Save Structured Results to JSON
     json_out_path = output_dir / "forensic_audit_results.json"
     with open(json_out_path, "w") as f:
-        json.dump({
+        payload = {
             "canonical_baseline": canonical_baseline,
             "deduplication_audit": {
                 "total_rows": len(top20),
@@ -1019,7 +1139,8 @@ def run_forensic_audit():
                 "status": "CONSOLIDATED"
             },
             "calmar_reclassified_ablation": reclassified_ablation,
-        }, f, indent=2)
+        }
+        json.dump(sanitize_json_obj(payload), f, indent=2, allow_nan=False)
 
     # Generate Markdown Report
     md_out_path = output_dir / "FORENSIC_INTEGRITY_REPORT.md"
