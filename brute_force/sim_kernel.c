@@ -106,6 +106,7 @@ typedef struct {
     int   shares;
     float buy_px;
     float cost_basis;
+    float cost_basis_per_share;
 } Holding;
 
 typedef struct {
@@ -314,7 +315,7 @@ static inline void simulate_single_config(
             int r_rank = candidate_rank[s];
 
             bool should_exit = false;
-            if (isnan(c_px) || isinf(c_px) || c_px <= 0.0f) {
+            if (isnan(c_px) || isinf(c_px) || c_px <= 0.0f || (cube->valid_price_mask && !cube->valid_price_mask[(size_t)sig_date * N + s])) {
                 should_exit = true;
             } else if ((filter_flags & FILTER_RETRACE) && (!isnan(h_px)) && (c_px < (retrace_thresh * h_px))) {
                 should_exit = true;
@@ -394,6 +395,10 @@ static inline void simulate_single_config(
 
             // 4. Position Sizing & Allocation
             if (num_selected > 0 && cash > 1000.0f) {
+                // Institutional Cash Allocation Policy (Pillar 3):
+                // Investable cash equals available cash (zero uninvested cash buffer drag).
+                // Execution frictions (brokerage, STT, slippage) are modeled and deducted per trade
+                // (trade_val + buy_fric <= cash), strictly enforcing zero leverage and cash conservation.
                 float investable_cash = cash;
                 if ((filter_flags & FILTER_VOL_TARGETING) && cube->vol_target_scalar) {
                     float shield = cube->vol_target_scalar[sig_date];
@@ -467,7 +472,7 @@ static inline void simulate_single_config(
                         nan_bars_count++;
                     }
                     if (cube->valid_price_mask && !cube->valid_price_mask[exec_bar_idx]) {
-                        if (N == 1) nan_bars_count++;
+                        continue; // Cannot execute entry on invalid/masked bar
                     }
                     float buy_px = (!isnan(exec_open[sym]) && exec_open[sym] > 0.0f) ? exec_open[sym] :
                                    ((!isnan(exec_close[sym]) && exec_close[sym] > 0.0f) ? exec_close[sym] : 0.0f);
@@ -486,6 +491,7 @@ static inline void simulate_single_config(
                         holdings[num_holdings].shares = shares;
                         holdings[num_holdings].buy_px = buy_px;
                         holdings[num_holdings].cost_basis = total_cost;
+                        holdings[num_holdings].cost_basis_per_share = shares > 0 ? (total_cost / (float)shares) : buy_px;
                         num_holdings++;
                     }
                 }
@@ -709,9 +715,21 @@ void run_parallel_brute_force(
     const TensorCube* cube
 ) {
     atomic_uint* shared_task_counter = (atomic_uint*)calloc(1, sizeof(atomic_uint));
-    if (shared_task_counter) {
-        atomic_init(shared_task_counter, 0);
+    if (!shared_task_counter) {
+        // Fallback: single-threaded execution on caller thread (Pillar 5 Defensive Guard)
+        atomic_uint fallback_counter = 0;
+        atomic_init(&fallback_counter, 0);
+        WorkerContext fallback_ctx = {
+            .param_grid = param_grid,
+            .results = results,
+            .total_tasks = total_tasks,
+            .cube = cube,
+            .task_counter = &fallback_counter
+        };
+        worker_thread_entry(&fallback_ctx);
+        return;
     }
+    atomic_init(shared_task_counter, 0);
     if (num_threads == 0 || num_threads > 16) {
         num_threads = 8;
     }

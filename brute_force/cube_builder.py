@@ -67,13 +67,13 @@ class TensorCubeContainer:
             reb = kwargs.get("rebalance_indices", np.array([0, min(1, len(dates)-1)], dtype=np.int32))
             schedule_indices_map = {s: reb for s in self.schedule_names}
 
-        # Concatenate rebalance indices for all schedules into a single 1D int32 array
-        self.schedule_offsets = np.zeros(8, dtype=np.uint32)
-        self.schedule_lengths = np.zeros(8, dtype=np.uint32)
+        # Concatenate rebalance indices for all schedules into a single 1D int32 array (MAX_SCHEDULES=7)
+        self.schedule_offsets = np.zeros(7, dtype=np.uint32)
+        self.schedule_lengths = np.zeros(7, dtype=np.uint32)
         rebal_list = []
         cur_offset = 0
 
-        for s_idx, s_name in enumerate(self.schedule_names):
+        for s_idx, s_name in enumerate(self.schedule_names[:7]):
             arr = schedule_indices_map.get(s_name, np.empty(0, dtype=np.int32))
             arr_len = len(arr)
             self.schedule_offsets[s_idx] = cur_offset
@@ -187,9 +187,12 @@ def load_point_in_time_constituents(
         best_snap = valid_snaps[-1][1]
         raw_symbols = best_snap.get("symbols") or best_snap.get("constituents") or []
         return set(str(sym).strip().upper() for sym in raw_symbols if sym)
+    except FileNotFoundError:
+        return None  # Expected: no snapshot file
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Corrupt constituent_snapshots.json: {e}") from e
     except Exception as e:
-        print(f"[CubeBuilder] Notice: Point-in-time constituent lookup bypassed: {e}")
-        return None
+        raise RuntimeError(f"Unexpected error loading point-in-time constituents: {e}") from e
 
 
 def build_tensor_cube(
