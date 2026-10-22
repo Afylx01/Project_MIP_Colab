@@ -182,7 +182,9 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
         for s in to_exit:
             h = holdings[s]
             exit_px = exec_open[s] if (not np.isnan(exec_open[s]) and exec_open[s] > 0) else (
-                exec_close[s] if (not np.isnan(exec_close[s]) and exec_close[s] > 0) else h["buy_px"]
+                exec_close[s] if (not np.isnan(exec_close[s]) and exec_close[s] > 0) else (
+                    sig_close[s] if (not np.isnan(sig_close[s]) and sig_close[s] > 0) else 0.0
+                )
             )
             gross = h["shares"] * exit_px
             fric = gross * friction_rate

@@ -331,7 +331,7 @@ static inline void simulate_single_config(
                 // Liquidate on T+1 Open
                 float exit_px = (!isnan(exec_open[s]) && exec_open[s] > 0.0f) ? exec_open[s] :
                                 ((!isnan(exec_close[s]) && exec_close[s] > 0.0f) ? exec_close[s] :
-                                ((!isnan(c_px) && c_px > 0.0f) ? c_px : holdings[h].buy_px));
+                                ((!isnan(c_px) && c_px > 0.0f) ? c_px : 0.0f));
                 float gross_proceeds = holdings[h].shares * exit_px;
                 float friction = gross_proceeds * total_friction_rate;
                 float net_proceeds = gross_proceeds > friction ? (gross_proceeds - friction) : 0.0f;
@@ -551,7 +551,7 @@ static inline void simulate_single_config(
                         } else {
                             px = holdings[h].buy_px;
                         }
-                    } else if (px <= 0.0f) {
+                    } else if (px < 0.0f) {
                         if (d > 0 && cube->close_px[(size_t)(d - 1) * N + s] > 0.0f) {
                             px = cube->close_px[(size_t)(d - 1) * N + s];
                         } else {
@@ -612,9 +612,14 @@ static inline void simulate_single_config(
         int s = holdings[h].symbol_idx;
         size_t d_idx = (size_t)end_session * N + s;
         float px = cube->close_px[d_idx];
-        if ((cube->valid_price_mask && !cube->valid_price_mask[d_idx]) || px <= 0.0f) {
-            if (end_session > 0 && cube->close_px[(size_t)(end_session - 1) * N + s] > 0.0f) {
-                px = cube->close_px[(size_t)(end_session - 1) * N + s];
+        bool invalid_px = (cube->valid_price_mask && !cube->valid_price_mask[d_idx]) ||
+                          isnan(px) || isinf(px) || px < 0.0f;
+        if (invalid_px) {
+            float prev = (end_session > 0)
+                ? cube->close_px[(size_t)(end_session - 1) * N + s]
+                : 0.0f;
+            if (isfinite(prev) && prev > 0.0f) {
+                px = prev;
             } else {
                 px = holdings[h].buy_px;
             }
