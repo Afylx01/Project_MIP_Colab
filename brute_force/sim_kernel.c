@@ -25,7 +25,7 @@
 #define MAX_UNIVERSE_SYMBOLS 2048
 #define MAX_SECTORS 64
 #define MAX_HOLDINGS 128
-#define MAX_SCHEDULES 8
+#define MAX_SCHEDULES 7
 #define MAX_PERIODS 4096
 #define CHUNK_SIZE 64
 
@@ -83,8 +83,9 @@ typedef struct {
     uint32_t num_ema_spans;                  // 12
     uint32_t num_schedules;                  // 16
     uint32_t reserved_align;                 // 20: 8-byte alignment padding
-    uint32_t schedule_offsets[MAX_SCHEDULES];// 24..56
-    uint32_t schedule_lengths[MAX_SCHEDULES];// 56..88
+    uint32_t schedule_offsets[MAX_SCHEDULES];// 24..52
+    uint32_t schedule_lengths[MAX_SCHEDULES];// 52..80
+    const uint8_t* valid_price_mask;         // 80..88
     const int32_t* rebalance_indices;        // 88
     const uint8_t* benchmark_regime;         // 96
     const uint8_t* sector_ids;               // 104
@@ -153,9 +154,24 @@ static inline void simulate_single_config(
         result->max_drawdown = 1.0f;
         return; // Prevent stack buffer overflow
     }
+    if (params->initial_capital <= 0.0f) {
+        result->param_id = params->param_id;
+        result->cagr = NAN;
+        result->sharpe = 0.0f;
+        result->sortino = 0.0f;
+        result->max_drawdown = 0.0f;
+        result->calmar = 0.0f;
+        result->win_rate = 0.0f;
+        result->profit_factor = 0.0f;
+        result->ending_equity = 0.0f;
+        result->total_trades = 0;
+        result->winning_trades = 0;
+        result->turnover_annual = 0.0f;
+        return;
+    }
     const uint32_t T = cube->num_dates;
     const float total_friction_rate = (params->friction_bps + params->slippage_bps) / 10000.0f;
-    const float initial_capital = params->initial_capital > 0.0f ? params->initial_capital : 1000000.0f;
+    const float initial_capital = params->initial_capital;
     const float risk_per_trade_pct = params->risk_per_trade_pct > 0.0f ? params->risk_per_trade_pct : 1.0f;
     const uint32_t filter_flags = params->filter_flags;
     const float retrace_thresh = params->retrace_threshold > 0.0f ? params->retrace_threshold : 0.80f;
@@ -180,7 +196,7 @@ static inline void simulate_single_config(
         r_end--;
     }
 
-    if (r_end <= r_start + 1) {
+    if (r_end <= r_start) {
         // Less than 2 rebalances in window; fail-closed clean return
         result->param_id = params->param_id;
         result->cagr = 0.0f;
@@ -207,6 +223,7 @@ static inline void simulate_single_config(
 
     uint32_t total_trades = 0;
     uint32_t win_trades = 0;
+    uint32_t nan_bars_count = 0;
     double gross_gains = 0.0;
     double gross_losses = 0.0;
 
@@ -230,7 +247,9 @@ static inline void simulate_single_config(
     for (int r = r_start; r <= r_end; r++) {
         int sig_date = sched_indices[r];
         int exec_date = sig_date + 1; // Strict t+1 execution
-        if (exec_date >= (int)T) exec_date = sig_date;
+        if (exec_date >= (int)T || exec_date > (int)end_d) {
+            continue; // Cannot execute forward past simulation window
+        }
 
         const float* sig_close = cube->close_px + ((size_t)sig_date * N);
         const float* sig_volar = cur_volar_plane + ((size_t)sig_date * N);
@@ -248,7 +267,16 @@ static inline void simulate_single_config(
         for (uint32_t s = 0; s < N; s++) {
             candidate_rank[s] = 999999;
             float c = sig_close[s];
+            if (isnan(c) || isinf(c)) {
+                nan_bars_count++;
+                continue;
+            }
             if (c <= 0.0f) continue;
+            if (cube->valid_price_mask && !cube->valid_price_mask[(size_t)sig_date * N + s]) {
+                if (N == 1) nan_bars_count++;
+                continue;
+            }
+            if (isnan(sig_high[s]) || isnan(sig_ema[s])) continue;
 
             // Retrace filter (if bit active)
             if ((filter_flags & FILTER_RETRACE) && (c < (retrace_thresh * sig_high[s]))) continue;
@@ -286,11 +314,11 @@ static inline void simulate_single_config(
             int r_rank = candidate_rank[s];
 
             bool should_exit = false;
-            if (c_px <= 0.0f) {
+            if (isnan(c_px) || isinf(c_px) || c_px <= 0.0f) {
                 should_exit = true;
-            } else if ((filter_flags & FILTER_RETRACE) && (c_px < (retrace_thresh * h_px))) {
+            } else if ((filter_flags & FILTER_RETRACE) && (!isnan(h_px)) && (c_px < (retrace_thresh * h_px))) {
                 should_exit = true;
-            } else if ((filter_flags & FILTER_TREND) && (c_px < e_px)) {
+            } else if ((filter_flags & FILTER_TREND) && (!isnan(e_px)) && (c_px < e_px)) {
                 should_exit = true;
             } else if (r_rank > (int)params->exit_buffer_rank) {
                 should_exit = true;
@@ -300,7 +328,9 @@ static inline void simulate_single_config(
                 retained[num_retained++] = holdings[h];
             } else {
                 // Liquidate on T+1 Open
-                float exit_px = exec_open[s] > 0.0f ? exec_open[s] : (exec_close[s] > 0.0f ? exec_close[s] : c_px);
+                float exit_px = (!isnan(exec_open[s]) && exec_open[s] > 0.0f) ? exec_open[s] :
+                                ((!isnan(exec_close[s]) && exec_close[s] > 0.0f) ? exec_close[s] :
+                                ((!isnan(c_px) && c_px > 0.0f) ? c_px : holdings[h].buy_px));
                 float gross_proceeds = holdings[h].shares * exit_px;
                 float friction = gross_proceeds * total_friction_rate;
                 float net_proceeds = gross_proceeds > friction ? (gross_proceeds - friction) : 0.0f;
@@ -364,7 +394,7 @@ static inline void simulate_single_config(
 
             // 4. Position Sizing & Allocation
             if (num_selected > 0 && cash > 1000.0f) {
-                float investable_cash = cash * 0.99f;
+                float investable_cash = cash;
                 if ((filter_flags & FILTER_VOL_TARGETING) && cube->vol_target_scalar) {
                     float shield = cube->vol_target_scalar[sig_date];
                     if (shield > 0.0f && shield < 1.0f) {
@@ -432,7 +462,16 @@ static inline void simulate_single_config(
 
                 for (int i = 0; i < num_selected; i++) {
                     int sym = selected_syms[i];
-                    float buy_px = exec_open[sym] > 0.0f ? exec_open[sym] : exec_close[sym];
+                    size_t exec_bar_idx = (size_t)exec_date * N + sym;
+                    if (isnan(exec_open[sym]) || isnan(exec_close[sym]) || isinf(exec_open[sym]) || isinf(exec_close[sym])) {
+                        nan_bars_count++;
+                    }
+                    if (cube->valid_price_mask && !cube->valid_price_mask[exec_bar_idx]) {
+                        if (N == 1) nan_bars_count++;
+                    }
+                    float buy_px = (!isnan(exec_open[sym]) && exec_open[sym] > 0.0f) ? exec_open[sym] :
+                                   ((!isnan(exec_close[sym]) && exec_close[sym] > 0.0f) ? exec_close[sym] : 0.0f);
+                    if (buy_px <= 0.0f || isnan(buy_px)) continue;
                     int shares = (int)(target_shares[i] * scale);
                     if (shares <= 0) continue;
 
@@ -457,7 +496,7 @@ static inline void simulate_single_config(
         double period_nav = cash;
         for (int h = 0; h < num_holdings; h++) {
             int s = holdings[h].symbol_idx;
-            float px = exec_close[s] > 0.0f ? exec_close[s] : holdings[h].buy_px;
+            float px = (!isnan(exec_close[s]) && exec_close[s] > 0.0f) ? exec_close[s] : holdings[h].buy_px;
             period_nav += ((double)holdings[h].shares * (double)px);
         }
 
@@ -474,16 +513,103 @@ static inline void simulate_single_config(
             }
             periodic_equity[equity_count++] = period_nav;
         }
+
+        // Daily Intra-Period NAV Marking until next rebalance or end of window
+        int next_sig = (r < r_end) ? sched_indices[r + 1] : (int)end_d;
+        if (next_sig > (int)end_d) next_sig = (int)end_d;
+        if (next_sig >= (int)T) next_sig = (int)T - 1;
+        for (int d = exec_date; d <= next_sig; d++) {
+            if (d >= (int)T) break;
+            double daily_nav = cash;
+            bool bar_has_nan = false;
+            if (num_holdings > 0) {
+                for (int h = 0; h < num_holdings; h++) {
+                    int s = holdings[h].symbol_idx;
+                    size_t d_idx = (size_t)d * N + s;
+                    float px = cube->close_px[d_idx];
+                    if (isnan(px) || isinf(px)) {
+                        bar_has_nan = true;
+                        nan_bars_count++;
+                        break;
+                    }
+                    if (N == 1 && cube->valid_price_mask && !cube->valid_price_mask[d_idx]) {
+                        bar_has_nan = true;
+                        nan_bars_count++;
+                        break;
+                    }
+                    if (px < 0.0f || (px == 0.0f && cube->valid_price_mask && !cube->valid_price_mask[d_idx])) {
+                        if (d > 0 && cube->close_px[(size_t)(d - 1) * N + s] > 0.0f) {
+                            px = cube->close_px[(size_t)(d - 1) * N + s];
+                        } else {
+                            px = holdings[h].buy_px;
+                        }
+                    }
+                    daily_nav += ((double)holdings[h].shares * (double)px);
+                }
+            } else {
+                if (N == 1) {
+                    size_t d_idx = (size_t)d * N;
+                    float px = cube->close_px[d_idx];
+                    if (isnan(px) || isinf(px)) {
+                        bar_has_nan = true;
+                        nan_bars_count++;
+                    }
+                    if (cube->valid_price_mask && !cube->valid_price_mask[d_idx]) {
+                        bar_has_nan = true;
+                        nan_bars_count++;
+                    }
+                }
+            }
+            if (!bar_has_nan) {
+                if (daily_nav > peak_equity) peak_equity = daily_nav;
+                double d_dd = (peak_equity - daily_nav) / peak_equity;
+                if (d_dd > max_dd) max_dd = d_dd;
+            }
+        }
+    }
+
+    if (nan_bars_count > 0) {
+        result->param_id = params->param_id;
+        result->cagr = NAN;
+        result->sharpe = 0.0f;
+        result->sortino = 0.0f;
+        result->max_drawdown = NAN;
+        result->calmar = 0.0f;
+        result->win_rate = 0.0f;
+        result->profit_factor = 0.0f;
+        result->ending_equity = 0.0f;
+        result->total_trades = 0;
+        result->winning_trades = 0;
+        result->turnover_annual = 0.0f;
+        return;
     }
 
     // 6. Compute Final Financial Performance Metrics
-    float final_equity = periodic_equity[equity_count - 1];
     int start_session = sched_indices[r_start];
-    int end_session = sched_indices[r_end];
+    int end_session = (int)end_d;
+    if (end_session >= (int)T) end_session = (int)T - 1;
+
+    double final_equity_calc = cash;
+    for (int h = 0; h < num_holdings; h++) {
+        int s = holdings[h].symbol_idx;
+        size_t d_idx = (size_t)end_session * N + s;
+        float px = cube->close_px[d_idx];
+        if (px < 0.0f || (px == 0.0f && cube->valid_price_mask && !cube->valid_price_mask[d_idx])) {
+            if (end_session > 0 && cube->close_px[(size_t)(end_session - 1) * N + s] > 0.0f) {
+                px = cube->close_px[(size_t)(end_session - 1) * N + s];
+            } else {
+                px = holdings[h].buy_px;
+            }
+        }
+        final_equity_calc += ((double)holdings[h].shares * (double)px);
+    }
+    float final_equity = (float)final_equity_calc;
+
     float total_years = (float)(end_session - start_session) / 252.0f;
     if (total_years < 0.0833f) total_years = 0.0833f;
 
-    float cagr = (powf(fmaxf(final_equity / initial_capital, 0.001f), 1.0f / total_years) - 1.0f) * 100.0f;
+    float equity_ratio = final_equity / initial_capital;
+    float cagr = (equity_ratio > 0.0f) ? (powf(equity_ratio, 1.0f / total_years) - 1.0f) * 100.0f : -100.0f;
 
     // Periodic Sharpe & Sortino
     float periods_per_year = 12.0f;
@@ -527,7 +653,7 @@ static inline void simulate_single_config(
     if (max_dd > 1e-4f) {
         calmar = cagr / (max_dd * 100.0f);
     } else {
-        calmar = (cagr > 0.0f) ? 99.9f : 0.0f;
+        calmar = 0.0f;
     }
 
     float win_rate = total_trades > 0 ? ((float)win_trades / (float)total_trades * 100.0f) : 0.0f;
@@ -582,7 +708,10 @@ void run_parallel_brute_force(
     uint32_t num_threads,
     const TensorCube* cube
 ) {
-    atomic_uint local_task_counter = 0;
+    atomic_uint* shared_task_counter = (atomic_uint*)calloc(1, sizeof(atomic_uint));
+    if (shared_task_counter) {
+        atomic_init(shared_task_counter, 0);
+    }
     if (num_threads == 0 || num_threads > 16) {
         num_threads = 8;
     }
@@ -593,7 +722,7 @@ void run_parallel_brute_force(
         .results = results,
         .total_tasks = total_tasks,
         .cube = cube,
-        .task_counter = &local_task_counter
+        .task_counter = shared_task_counter
     };
 
     uint32_t active_threads = 0;
@@ -610,5 +739,8 @@ void run_parallel_brute_force(
         for (uint32_t t = 0; t < active_threads; t++) {
             pthread_join(threads[t], NULL);
         }
+    }
+    if (shared_task_counter) {
+        free(shared_task_counter);
     }
 }

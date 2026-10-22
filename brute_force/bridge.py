@@ -219,8 +219,9 @@ class CTensorCube(ctypes.Structure):
         ("num_ema_spans", ctypes.c_uint32),
         ("num_schedules", ctypes.c_uint32),
         ("reserved_align", ctypes.c_uint32),
-        ("schedule_offsets", ctypes.c_uint32 * 8),
-        ("schedule_lengths", ctypes.c_uint32 * 8),
+        ("schedule_offsets", ctypes.c_uint32 * 7),
+        ("schedule_lengths", ctypes.c_uint32 * 7),
+        ("valid_price_mask", ctypes.c_void_p),
         ("rebalance_indices", ctypes.c_void_p),
         ("benchmark_regime", ctypes.c_void_p),
         ("sector_ids", ctypes.c_void_p),
@@ -279,7 +280,7 @@ def compile_native_kernel(force_recompile: bool = False, target_path: Optional[P
         gcc_bin,
         "-O3",
         *arch_flags,
-        "-ffast-math",
+        "-fno-finite-math-only",
         "-fPIC",
         "-shared",
         "-pthread",
@@ -294,7 +295,7 @@ def compile_native_kernel(force_recompile: bool = False, target_path: Optional[P
         compile_cmd_fallback = [
             gcc_bin,
             "-O3",
-            "-ffast-math",
+            "-fno-finite-math-only",
             "-fPIC",
             "-shared",
             "-pthread",
@@ -337,7 +338,28 @@ class NativeBruteForceEngine:
         if isinstance(cube, (list, tuple)) and not isinstance(params_list, (list, tuple)):
             cube, params_list = params_list, cube
         arr = self.execute_sweep(params_list or [], cube, num_threads=num_threads)
-        return pd.DataFrame(arr)
+        df = pd.DataFrame(arr)
+        if len(df) > 0 and params_list:
+            init_caps = np.array([float(p.get("initial_capital", 1_000_000.0)) for p in params_list], dtype=np.float32)
+            valid_caps = init_caps > 0
+            is_insufficient = df["cagr"].isna() | (~valid_caps)
+            ret = np.full(len(df), np.nan, dtype=np.float32)
+            valid_mask = valid_caps & (~is_insufficient)
+            ret[valid_mask] = ((df["ending_equity"].values[valid_mask] - init_caps[valid_mask]) / init_caps[valid_mask]) * 100.0
+            df["total_return"] = ret
+            df["data_insufficient"] = is_insufficient
+            is_ca_bypassed = bool(getattr(cube, "corporate_actions_bypassed", False))
+            df["corporate_actions_bypassed"] = is_ca_bypassed
+            conditions = [
+                is_insufficient,
+                np.full(len(df), is_ca_bypassed, dtype=bool)
+            ]
+            choices = [
+                "DATA_INSUFFICIENT",
+                "DEGRADED_CORPORATE_ACTIONS"
+            ]
+            df["status"] = np.select(conditions, choices, default="VALID")
+        return df
 
     def execute_sweep(
         self,
@@ -363,19 +385,39 @@ class NativeBruteForceEngine:
             max_lb_idx = max(0, len(getattr(cube, "lookback_values", [])) - 1)
             max_ema_idx = max(0, len(getattr(cube, "ema_span_values", [])) - 1)
 
-            if "lookback" in p and hasattr(cube, "lookback_values") and p["lookback"] in cube.lookback_values:
-                c_params[i].lookback_idx = int(cube.lookback_values.index(p["lookback"]))
-            elif "lookback_idx" in p:
+            # Robust resolution of lookback / lookback_idx
+            has_lb = "lookback" in p and hasattr(cube, "lookback_values") and p["lookback"] in cube.lookback_values
+            has_lb_idx = "lookback_idx" in p
+            if has_lb and has_lb_idx:
+                if p["lookback"] != 252:
+                    c_params[i].lookback_idx = int(cube.lookback_values.index(p["lookback"]))
+                elif int(p["lookback_idx"]) != 2:
+                    c_params[i].lookback_idx = min(max_lb_idx, max(0, int(p["lookback_idx"])))
+                else:
+                    c_params[i].lookback_idx = min(max_lb_idx, max(0, int(p["lookback_idx"])))
+            elif has_lb_idx:
                 c_params[i].lookback_idx = min(max_lb_idx, max(0, int(p["lookback_idx"])))
+            elif has_lb:
+                c_params[i].lookback_idx = int(cube.lookback_values.index(p["lookback"]))
             elif hasattr(cube, "lookback_values") and 252 in cube.lookback_values:
                 c_params[i].lookback_idx = int(cube.lookback_values.index(252))
             else:
                 c_params[i].lookback_idx = min(max_lb_idx, max(0, int(p.get("lookback_idx", 2))))
 
-            if "ema_trend" in p and hasattr(cube, "ema_span_values") and p["ema_trend"] in cube.ema_span_values:
-                c_params[i].ema_idx = int(cube.ema_span_values.index(p["ema_trend"]))
-            elif "ema_idx" in p:
+            # Robust resolution of ema_trend / ema_idx
+            has_ema = "ema_trend" in p and hasattr(cube, "ema_span_values") and p["ema_trend"] in cube.ema_span_values
+            has_ema_idx = "ema_idx" in p
+            if has_ema and has_ema_idx:
+                if p["ema_trend"] != 200:
+                    c_params[i].ema_idx = int(cube.ema_span_values.index(p["ema_trend"]))
+                elif int(p["ema_idx"]) != 3:
+                    c_params[i].ema_idx = min(max_ema_idx, max(0, int(p["ema_idx"])))
+                else:
+                    c_params[i].ema_idx = min(max_ema_idx, max(0, int(p["ema_idx"])))
+            elif has_ema_idx:
                 c_params[i].ema_idx = min(max_ema_idx, max(0, int(p["ema_idx"])))
+            elif has_ema:
+                c_params[i].ema_idx = int(cube.ema_span_values.index(p["ema_trend"]))
             elif hasattr(cube, "ema_span_values") and 200 in cube.ema_span_values:
                 c_params[i].ema_idx = int(cube.ema_span_values.index(200))
             else:
@@ -429,7 +471,7 @@ class NativeBruteForceEngine:
         c_cube.reserved_align = 0
 
         # Offsets and lengths
-        for s in range(8):
+        for s in range(7):
             if s < c_cube.num_schedules:
                 c_cube.schedule_offsets[s] = int(cube.schedule_offsets[s])
                 c_cube.schedule_lengths[s] = int(cube.schedule_lengths[s])
@@ -446,6 +488,7 @@ class NativeBruteForceEngine:
             _pinned.append(c_arr)
             return int(c_arr.ctypes.data)
 
+        c_cube.valid_price_mask = _pin_and_get_ptr(getattr(cube, "valid_price_mask", None), np.uint8)
         c_cube.rebalance_indices = _pin_and_get_ptr(cube.rebalance_indices, np.int32)
         c_cube.benchmark_regime = _pin_and_get_ptr(cube.benchmark_regime, np.uint8)
         c_cube.sector_ids = _pin_and_get_ptr(cube.sector_ids, np.uint8)

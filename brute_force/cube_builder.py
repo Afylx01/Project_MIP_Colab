@@ -5,10 +5,11 @@ Builds C-contiguous float32 indicator arrays for ultra-fast multi-schedule, mult
 
 import sys
 import math
+import json
 import datetime
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Set
 import numpy as np
 import pandas as pd
 
@@ -57,6 +58,7 @@ class TensorCubeContainer:
         self.num_dates = len(dates)
         self.num_symbols = len(symbols)
         self.benchmark_name = benchmark_name
+        self.corporate_actions_bypassed = kwargs.get("corporate_actions_bypassed", False)
 
         self.schedule_names = ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]
         self.num_schedules = len(self.schedule_names)
@@ -101,6 +103,11 @@ class TensorCubeContainer:
         deliv = delivery_veto_plane if delivery_veto_plane is not None else kwargs.get("delivery_veto_plane")
         self.delivery_veto_plane = np.ascontiguousarray(deliv, dtype=np.uint8) if deliv is not None else None
 
+        valid_mask = kwargs.get("valid_price_mask")
+        if valid_mask is None and self.close_px is not None:
+            valid_mask = (~np.isnan(self.close_px)) & (~np.isinf(self.close_px))
+        self.valid_price_mask = np.ascontiguousarray(valid_mask, dtype=np.uint8) if valid_mask is not None else None
+
         if bench_closes is not None:
             self.bench_closes = np.ascontiguousarray(bench_closes, dtype=np.float32)
         else:
@@ -134,6 +141,57 @@ class TensorCubeContainer:
         return total_bytes / (1024 * 1024)
 
 
+def load_point_in_time_constituents(
+    universe_name: str,
+    as_of_date: Optional[str] = None,
+    base_dir: Optional[Path] = None,
+) -> Optional[Set[str]]:
+    """
+    Loads point-in-time index constituents from snapshot repository.
+    Interrogates data/constituent_snapshots.json for the most recent valid snapshot
+    on or before as_of_date, preventing survivorship and look-ahead bias per Pillar 1.
+    """
+    base = Path(base_dir) if base_dir else get_base_dir()
+    snap_path = base / "data" / "constituent_snapshots.json"
+    if not snap_path.exists():
+        return None
+    try:
+        with open(snap_path, "r", encoding="utf-8") as f:
+            snapshots_data = json.load(f)
+
+        u_norm = str(universe_name).strip().upper().replace(" ", "").replace("_", "").replace("-", "")
+        matching_key = None
+        for k in snapshots_data:
+            if k.upper().replace(" ", "").replace("_", "").replace("-", "") == u_norm:
+                matching_key = k
+                break
+        if not matching_key:
+            return None
+
+        snap_list = snapshots_data[matching_key]
+        if not snap_list:
+            return None
+
+        valid_snaps = []
+        for s in snap_list:
+            s_date = s.get("snapshot_date") or s.get("date")
+            if s_date is None:
+                continue
+            if as_of_date is None or str(s_date) <= str(as_of_date):
+                valid_snaps.append((str(s_date), s))
+
+        if not valid_snaps:
+            return None
+
+        valid_snaps.sort(key=lambda x: x[0])
+        best_snap = valid_snaps[-1][1]
+        raw_symbols = best_snap.get("symbols") or best_snap.get("constituents") or []
+        return set(str(sym).strip().upper() for sym in raw_symbols if sym)
+    except Exception as e:
+        print(f"[CubeBuilder] Notice: Point-in-time constituent lookup bypassed: {e}")
+        return None
+
+
 def build_tensor_cube(
     start_date: str = "2007-01-02",
     end_date: Optional[str] = None,
@@ -160,16 +218,33 @@ def build_tensor_cube(
         from core.data_engine import get_latest_date
         end_date = get_latest_date(db_path=db_path)
 
+    as_of_date = kwargs.get("as_of_date", start_date)
+    point_in_time = kwargs.get("point_in_time", False)
+    allow_fallback = kwargs.get("allow_constituent_fallback", not point_in_time)
+
     if symbols is not None:
         all_symbols = sorted(list(set(symbols)))
         N = len(all_symbols)
         print(f"\n[CubeBuilder] Using {N} explicit symbols for universe '{universe_name}'.")
     else:
         print(f"\n[CubeBuilder] Loading constituents for universe '{universe_name}'...")
-        sym_set = load_universe_constituents(universe_name)
+        sym_set = None
+        if point_in_time:
+            sym_set = load_point_in_time_constituents(universe_name, as_of_date=as_of_date, base_dir=base_path)
+            if sym_set:
+                print(f"[CubeBuilder] Loaded {len(sym_set)} point-in-time constituents from snapshots (as of {as_of_date}).")
+        if not sym_set:
+            if allow_fallback or not point_in_time:
+                sym_set = load_universe_constituents(universe_name)
+                print(f"[CubeBuilder] Loaded {len(sym_set)} constituents from {universe_name}.")
+            else:
+                raise ValueError(
+                    f"No point-in-time snapshot for {universe_name} as of {as_of_date}. "
+                    f"Set allow_constituent_fallback=True to override."
+                )
         all_symbols = sorted(list(sym_set))
         N = len(all_symbols)
-        print(f"[CubeBuilder] Loaded {N} constituents from {universe_name}.")
+        print(f"[CubeBuilder] Final active symbol count: {N}.")
 
     # Sector mapping
     raw_sector_map = load_symbol_sector_map()
@@ -190,6 +265,7 @@ def build_tensor_cube(
     conn.close()
 
     # Corporate action adjustment for constituent bars
+    corporate_actions_bypassed = False
     try:
         from core.analytical_price import AnalyticalPriceEngine
         ape = AnalyticalPriceEngine(base_dir=base_path)
@@ -203,6 +279,7 @@ def build_tensor_cube(
                     adj_chunks.append(group)
             raw_bars = pd.concat(adj_chunks, ignore_index=True)
     except Exception as e_ca:
+        corporate_actions_bypassed = True
         print(f"[CubeBuilder] Notice: Analytical corporate adjustment bypassed: {e_ca}")
 
     raw_bars["date"] = raw_bars["date"].astype(str)
@@ -236,6 +313,7 @@ def build_tensor_cube(
     high_px = np.zeros((T, N), dtype=np.float32)
     low_px = np.zeros((T, N), dtype=np.float32)
     vol_mat = np.zeros((T, N), dtype=np.float32)
+    valid_price_mask = np.zeros((T, N), dtype=bool)
 
     d_indices = raw_bars["date"].map(date_to_idx).to_numpy(dtype=np.int32)
     s_indices = raw_bars["symbol"].map(sym_to_idx).to_numpy(dtype=np.int32)
@@ -245,6 +323,7 @@ def build_tensor_cube(
     high_px[d_indices, s_indices] = raw_bars["high"].to_numpy(dtype=np.float32)
     low_px[d_indices, s_indices] = raw_bars["low"].to_numpy(dtype=np.float32)
     vol_mat[d_indices, s_indices] = raw_bars["volume"].to_numpy(dtype=np.float32)
+    valid_price_mask[d_indices, s_indices] = True
 
     # True Range & ATR-14
     print("[CubeBuilder] Computing vectorized ATR-14...")
@@ -411,7 +490,9 @@ def build_tensor_cube(
         sector_names=unique_sectors,
         bench_closes=bench_closes,
         benchmark_name=benchmark_name,
+        corporate_actions_bypassed=corporate_actions_bypassed,
     )
+    container.valid_price_mask = valid_price_mask
 
     print(f"\n[CubeBuilder] Tensor Cube created: {container.memory_footprint_mb:.2f} MB RAM footprint.")
     print(f"[CubeBuilder] Dates: {T} ({all_dates[0]} to {all_dates[-1]}), Symbols: {N} ({universe_name}).")
