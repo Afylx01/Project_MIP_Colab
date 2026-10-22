@@ -76,7 +76,9 @@ class TestCAGRInvariant(unittest.TestCase):
         """Catastrophic 100% loss (ending_equity == 0) is a valid financial outcome, not DATA_INSUFFICIENT."""
         num_dates = 30
         px = np.ones((num_dates, 1), dtype=np.float32) * 100.0
-        px[1:, 0] = np.linspace(100.0, 0.0, num_dates - 1, dtype=np.float32)
+        px[29, 0] = 0.0
+        mask = np.ones((num_dates, 1), dtype=np.uint8)
+        mask[29, 0] = 0  # Delisted on final session
 
         dates = [f"2020-01-{i+1:02d}" for i in range(num_dates)]
         reb = np.array([0, 29], dtype=np.int32)
@@ -88,6 +90,7 @@ class TestCAGRInvariant(unittest.TestCase):
             schedule_indices_map=sched_map,
             open_px=px,
             close_px=px,
+            valid_price_mask=mask,
             lookback_values=[63, 126, 252, 504],
             ema_span_values=[20, 50, 100, 150, 200]
         )

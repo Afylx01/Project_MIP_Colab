@@ -1,7 +1,7 @@
 # FORENSIC BACKTEST INTEGRITY AUDIT REPORT
 
 **Status**: VERIFIED & MATHEMATICALLY RECONCILED
-**Date**: 2026-10-22 21:22:18 UTC
+**Date**: 2026-10-22 21:47:14 UTC
 **Target Dataset**: NIFTY500 (`data/universe.db`, 2007-01-02 to 2026-10-19)
 
 ## 1. TASK 1: VARIABLE WIRING AUDIT & CANONICAL BASELINE RECONCILIATION
@@ -83,14 +83,14 @@ Classification criteria:
 
 | Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | ΔCalmar (%) | Classification |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Legacy MIP Baseline** | 33.91% | 50.66% | 0.67 | 0.98 | 0.14 | 1.000 | `FAIL` | 593 | 21,505,882 | -20.2% | `LEGACY_MIP_SIMULATED` |
-| **+ ATR Risk Parity Sizing ON** | 33.74% | 47.88% | 0.70 | 0.98 | 0.14 | 1.000 | `FAIL` | 594 | 21,225,754 | -16.7% | `HARMFUL` |
+| **Legacy MIP Baseline** | 33.91% | 50.66% | 0.67 | 0.98 | 0.15 | 1.000 | `FAIL` | 593 | 21,505,882 | -20.2% | `LEGACY_MIP_SIMULATED` |
+| **+ ATR Risk Parity Sizing ON** | 33.74% | 47.88% | 0.70 | 0.98 | 0.15 | 1.000 | `FAIL` | 594 | 21,225,754 | -16.7% | `HARMFUL` |
 | **+ Regime Gate ON** | 28.65% | 41.35% | 0.69 | 0.95 | 0.09 | 1.000 | `FAIL` | 499 | 14,109,075 | -17.9% | `HARMFUL` |
-| **+ Sector Cap = 2** | 35.30% | 37.60% | 0.94 | 1.04 | 0.31 | 1.000 | `FAIL` | 735 | 23,978,166 | +11.9% | `NOT_STATISTICALLY_SIGNIFICANT` |
-| **+ Buffer = 60** | 32.98% | 45.31% | 0.73 | 0.95 | 0.09 | 1.000 | `FAIL` | 509 | 19,980,016 | -13.1% | `HARMFUL` |
+| **+ Sector Cap = 2** | 35.30% | 37.60% | 0.94 | 1.04 | 0.32 | 1.000 | `FAIL` | 735 | 23,978,166 | +11.9% | `NOT_STATISTICALLY_SIGNIFICANT` |
+| **+ Buffer = 60** | 33.06% | 45.31% | 0.73 | 0.96 | 0.11 | 1.000 | `FAIL` | 508 | 20,107,862 | -13.1% | `HARMFUL` |
 | **+ Top N = 10** | 33.99% | 51.18% | 0.66 | 0.90 | 0.03 | 1.000 | `FAIL` | 265 | 21,632,416 | -21.4% | `HARMFUL` |
 | **+ Residual Momentum ON** | 30.07% | 42.20% | 0.71 | 0.99 | 0.17 | 1.000 | `FAIL` | 734 | 15,845,284 | -15.5% | `HARMFUL` |
-| **+ Combined Production Stack** | 27.88% | 22.63% | 1.23 | 1.08 | 0.45 | 1.000 | `FAIL` | 717 | 13,247,521 | +46.4% | `NOT_STATISTICALLY_SIGNIFICANT` |
+| **+ Combined Production Stack** | 27.94% | 22.63% | 1.23 | 1.08 | 0.46 | 1.000 | `FAIL` | 716 | 13,322,584 | +46.4% | `NOT_STATISTICALLY_SIGNIFICANT` |
 
 ## 5. TASK 5: BEAR-MARKET STRESS TESTS & ARITHMETIC PROOF
 

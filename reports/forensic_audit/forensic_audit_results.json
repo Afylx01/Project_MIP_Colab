@@ -419,7 +419,7 @@
       "classification": "LEGACY_MIP_SIMULATED",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.145,
+      "deflated_sharpe_ratio": 0.1483,
       "statistically_significant_05": false
     },
     {
@@ -435,7 +435,7 @@
       "classification": "HARMFUL",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.145,
+      "deflated_sharpe_ratio": 0.1483,
       "statistically_significant_05": false
     },
     {
@@ -451,7 +451,7 @@
       "classification": "HARMFUL",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.0885,
+      "deflated_sharpe_ratio": 0.0908,
       "statistically_significant_05": false
     },
     {
@@ -467,23 +467,23 @@
       "classification": "NOT_STATISTICALLY_SIGNIFICANT",
       "p_value_raw": 0.2922,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.312,
+      "deflated_sharpe_ratio": 0.317,
       "statistically_significant_05": false
     },
     {
       "feature": "+ Buffer = 60",
-      "cagr": 32.98,
+      "cagr": 33.06,
       "max_drawdown": 45.31,
       "calmar": 0.73,
-      "sharpe": 0.95,
-      "sortino": 1.52,
-      "trades": 509,
-      "ending_equity": 19980016.0,
+      "sharpe": 0.96,
+      "sortino": 1.53,
+      "trades": 508,
+      "ending_equity": 20107862.0,
       "delta_calmar_pct": -13.1,
       "classification": "HARMFUL",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.0885,
+      "deflated_sharpe_ratio": 0.1079,
       "statistically_significant_05": false
     },
     {
@@ -499,7 +499,7 @@
       "classification": "HARMFUL",
       "p_value_raw": 1.0,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.0322,
+      "deflated_sharpe_ratio": 0.0333,
       "statistically_significant_05": false
     },
     {
@@ -515,23 +515,23 @@
       "classification": "HARMFUL",
       "p_value_raw": 0.4631,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.1681,
+      "deflated_sharpe_ratio": 0.1717,
       "statistically_significant_05": false
     },
     {
       "feature": "+ Combined Production Stack",
-      "cagr": 27.88,
+      "cagr": 27.94,
       "max_drawdown": 22.63,
       "calmar": 1.23,
       "sharpe": 1.08,
-      "sortino": 1.89,
-      "trades": 717,
-      "ending_equity": 13247521.0,
+      "sortino": 1.9,
+      "trades": 716,
+      "ending_equity": 13322584.0,
       "delta_calmar_pct": 46.4,
       "classification": "NOT_STATISTICALLY_SIGNIFICANT",
       "p_value_raw": 0.1843,
       "p_value_bonferroni": 1.0,
-      "deflated_sharpe_ratio": 0.4507,
+      "deflated_sharpe_ratio": 0.4562,
       "statistically_significant_05": false
     }
   ],
@@ -540,7 +540,7 @@
     "family_wise_error_threshold": 0.05,
     "bonferroni_adjusted_alpha": 0.00625,
     "benchmark_sharpe": 0.98,
-    "expected_max_sharpe_null": 1.094,
+    "expected_max_sharpe_null": 1.092,
     "required_sharpe_bonferroni": 1.25,
     "best_observed_sharpe": 1.08,
     "significance_verdict": "FAIL",

@@ -335,6 +335,11 @@ static inline void simulate_single_config(
                     nan_bars_count++;
                     break;
                 }
+                if (cube->valid_price_mask && !cube->valid_price_mask[(size_t)exec_date * N + s]) {
+                    // Execution bar is masked (halted), defer exit to tradeable bar!
+                    retained[num_retained++] = holdings[h];
+                    continue;
+                }
                 float exit_px = (isfinite(exec_open[s]) && exec_open[s] > 0.0f) ? exec_open[s] :
                                 ((isfinite(exec_close[s]) && exec_close[s] > 0.0f) ? exec_close[s] :
                                 ((isfinite(c_px) && c_px > 0.0f) ? c_px : 0.0f));
@@ -515,12 +520,16 @@ static inline void simulate_single_config(
             int s = holdings[h].symbol_idx;
             float px = exec_close[s];
             bool is_masked = (cube->valid_price_mask && !cube->valid_price_mask[(size_t)exec_date * N + s]);
-            if (is_masked || !isfinite(px) || px < 0.0f) {
-                if (exec_date > 0 && cube->close_px[(size_t)(exec_date - 1) * N + s] > 0.0f) {
-                    px = cube->close_px[(size_t)(exec_date - 1) * N + s];
+            if (is_masked) {
+                if (px <= 0.0f) {
+                    px = 0.0f;
                 } else {
-                    px = holdings[h].buy_px;
+                    float prev = (exec_date > 0) ? cube->close_px[(size_t)(exec_date - 1) * N + s] : 0.0f;
+                    px = (isfinite(prev) && prev > 0.0f) ? prev : 0.0f;
                 }
+            } else if (!isfinite(px) || px <= 0.0f) {
+                nan_bars_count++;
+                px = 0.0f;
             }
             period_nav += ((double)holdings[h].shares * (double)px);
         }
@@ -548,34 +557,32 @@ static inline void simulate_single_config(
             double daily_nav = cash;
             bool bar_has_nan = false;
             if (num_holdings > 0) {
-                int masked_holdings_count = 0;
+                int halted_holdings_count = 0;
                 for (int h = 0; h < num_holdings; h++) {
                     int s = holdings[h].symbol_idx;
                     size_t d_idx = (size_t)d * N + s;
                     float px = cube->close_px[d_idx];
-                    if (isnan(px) || isinf(px)) {
+                    if (cube->valid_price_mask && !cube->valid_price_mask[d_idx]) {
+                        if (px <= 0.0f) {
+                            px = 0.0f;
+                        } else {
+                            float prev = (d > 0) ? cube->close_px[(size_t)(d - 1) * N + s] : 0.0f;
+                            if (!isfinite(prev) || prev <= 0.0f) {
+                                bar_has_nan = true;
+                                nan_bars_count++;
+                                break;
+                            }
+                            px = prev;
+                            halted_holdings_count++;
+                        }
+                    } else if (!isfinite(px) || px <= 0.0f) {
                         bar_has_nan = true;
                         nan_bars_count++;
                         break;
                     }
-                    if (cube->valid_price_mask && !cube->valid_price_mask[d_idx]) {
-                        masked_holdings_count++;
-                        if (d > 0 && cube->close_px[(size_t)(d - 1) * N + s] > 0.0f) {
-                            px = cube->close_px[(size_t)(d - 1) * N + s];
-                        } else {
-                            px = holdings[h].buy_px;
-                        }
-                    } else if (px <= 0.0f) {
-                        if (d + 1 < (int)T && cube->close_px[(size_t)(d + 1) * N + s] > 0.0f) {
-                            bar_has_nan = true;
-                            nan_bars_count++;
-                            break;
-                        }
-                        px = 0.0f;
-                    }
                     daily_nav += ((double)holdings[h].shares * (double)px);
                 }
-                if (!bar_has_nan && masked_holdings_count == num_holdings) {
+                if (!bar_has_nan && halted_holdings_count > 0 && halted_holdings_count == num_holdings) {
                     bar_has_nan = true;
                     nan_bars_count++;
                 }
@@ -621,23 +628,48 @@ static inline void simulate_single_config(
     int start_session = sched_indices[r_start];
 
     double final_equity_calc = cash;
+    int final_halted_count = 0;
     for (int h = 0; h < num_holdings; h++) {
         int s = holdings[h].symbol_idx;
         size_t d_idx = (size_t)end_session * N + s;
         float px = cube->close_px[d_idx];
-        bool invalid_px = (cube->valid_price_mask && !cube->valid_price_mask[d_idx]) ||
-                          isnan(px) || isinf(px) || px < 0.0f;
-        if (invalid_px) {
-            float prev = (end_session > 0)
-                ? cube->close_px[(size_t)(end_session - 1) * N + s]
-                : 0.0f;
-            if (isfinite(prev) && prev > 0.0f) {
-                px = prev;
+        bool is_masked = (cube->valid_price_mask && !cube->valid_price_mask[d_idx]);
+        if (is_masked) {
+            if (px <= 0.0f) {
+                px = 0.0f;
             } else {
-                px = holdings[h].buy_px;
+                float prev = (end_session > 0) ? cube->close_px[(size_t)(end_session - 1) * N + s] : 0.0f;
+                if (!isfinite(prev) || prev <= 0.0f) {
+                    nan_bars_count++;
+                    px = 0.0f;
+                } else {
+                    px = prev;
+                    final_halted_count++;
+                }
             }
+        } else if (!isfinite(px) || px <= 0.0f) {
+            nan_bars_count++;
+            px = 0.0f;
         }
         final_equity_calc += ((double)holdings[h].shares * (double)px);
+    }
+    if (final_halted_count > 0 && final_halted_count == num_holdings) {
+        nan_bars_count++;
+    }
+    if (nan_bars_count > 0) {
+        result->param_id = params->param_id;
+        result->cagr = NAN;
+        result->sharpe = 0.0f;
+        result->sortino = 0.0f;
+        result->max_drawdown = NAN;
+        result->calmar = 0.0f;
+        result->win_rate = 0.0f;
+        result->profit_factor = 0.0f;
+        result->ending_equity = 0.0f;
+        result->total_trades = 0;
+        result->winning_trades = 0;
+        result->turnover_annual = 0.0f;
+        return;
     }
     float final_equity = (float)final_equity_calc;
 

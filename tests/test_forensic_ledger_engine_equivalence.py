@@ -395,13 +395,14 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         # With SYM0 forward-filled to 100.0 on final session, ending equity is exactly 100k
         self.assertEqual(row["ending_equity"], 100_000.0)
 
-    def test_final_session_unmasked_zero_close_preserves_total_loss(self):
-        """1.15 sim_kernel.c preserves legitimate total loss (ending_equity=0) when unmasked close drops to 0."""
+    def test_final_session_delisted_zero_close_preserves_total_loss(self):
+        """1.15 sim_kernel.c preserves legitimate total loss (ending_equity=0) when holding delists (mask=0, px=0)."""
         num_dates, num_syms = 10, 1
         dates = [f"2020-03-{i+1:02d}" for i in range(num_dates)]
         px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)
-        px[-1, 0] = 0.0  # Legitimate zero price, unmasked
+        px[-1, 0] = 0.0  # Delisted price
         mask = np.ones((num_dates, num_syms), dtype=np.uint8)
+        mask[-1, 0] = 0  # Delisted on final session
 
         reb = np.array([0, num_dates - 1], dtype=np.int32)
         sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
@@ -439,6 +440,50 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         self.assertEqual(row["status"], "VALID")
         self.assertEqual(row["ending_equity"], 0.0)
         self.assertEqual(row["max_drawdown"], 100.0)
+
+    def test_final_session_unmasked_zero_close_fails_closed(self):
+        """1.15b Unmasked zero close on final session is corrupt data and fails closed as DATA_INSUFFICIENT."""
+        num_dates, num_syms = 10, 1
+        dates = [f"2020-03-{i+1:02d}" for i in range(num_dates)]
+        px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)
+        px[-1, 0] = 0.0  # Unmasked zero price
+        mask = np.ones((num_dates, num_syms), dtype=np.uint8)
+
+        reb = np.array([0, num_dates - 1], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.ones((1, num_dates, num_syms), dtype=np.float32)
+
+        cube = TensorCubeContainer(
+            dates=dates,
+            symbols=["SYM0"],
+            schedule_indices_map=sched,
+            open_px=px,
+            close_px=px,
+            volar_cubes=volar,
+            valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504],
+            ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "param_id": 1,
+            "schedule_idx": 1,
+            "start_date_idx": 0,
+            "end_date_idx": num_dates - 1,
+            "top_n": 1,
+            "filter_flags": 0,
+            "initial_capital": 100_000.0,
+            "friction_bps": 0.0,
+            "slippage_bps": 0.0,
+            "sizing_mode": "equal_weight",
+            "lookback_idx": 0,
+            "ema_idx": 0,
+            "exit_buffer_rank": 40,
+            "max_per_sector": 99
+        }
+        res = self.engine.run_sweep(cube, [param])
+        row = res.iloc[0]
+        self.assertEqual(row["status"], "DATA_INSUFFICIENT")
+        self.assertTrue(row["data_insufficient"])
 
     def test_masked_final_bar_with_nan_prior_close_fails_closed(self):
         """1.16 sim_kernel.c fails closed (DATA_INSUFFICIENT) when held symbol has NaN daily close."""
@@ -532,149 +577,146 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         self.assertEqual(row["status"], "DATA_INSUFFICIENT")
         self.assertTrue(row["data_insufficient"])
 
-    def test_delisted_holding_zero_price_exit_realizes_total_loss(self):
-        """1.18 Liquidating an unmasked holding with zero observable prices realizes exit_px=0.0 (total loss)."""
-        num_dates, num_syms = 8, 2
-        dates = [f"2020-01-{i+1:02d}" for i in range(num_dates)]
-        px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)
-        # Stock B exits at d5, all observable prices on d4 and d5 are 0.0
-        px[4, 1] = 0.0
-        px[5, 1] = 0.0
-
-        reb = np.array([0, 4], dtype=np.int32)
+    def test_validity_must_not_depend_on_post_window_bar(self):
+        """1.18 Point-in-time invariant: simulation status must never look ahead to post-window bars."""
+        T = 31
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        reb = np.array([0, 29], dtype=np.int32)
         sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
-        volar = np.zeros((1, num_dates, num_syms), dtype=np.float32)
-        volar[0, 0, :] = 1.0  # Buy A and B
-        volar[0, 4, 0] = 1.0  # Retain A
-        volar[0, 4, 1] = 0.0  # Exit B
 
-        cube = TensorCubeContainer(
-            dates=dates,
-            symbols=["A", "B"],
-            schedule_indices_map=sched,
-            open_px=px,
-            close_px=px,
-            volar_cubes=volar,
-            lookback_values=[63, 126, 252, 504],
-            ema_span_values=[20, 50, 100, 150, 200]
+        px_a = np.full((T, 1), 100.0, dtype=np.float32)
+        px_a[29, 0] = 0.0  # unmasked zero at day 29
+        px_a[30, 0] = 100.0  # post-window bar is 100.0
+
+        px_b = np.full((T, 1), 100.0, dtype=np.float32)
+        px_b[29, 0] = 0.0  # unmasked zero at day 29
+        px_b[30, 0] = 0.0  # post-window bar is 0.0
+
+        mask = np.ones((T, 1), dtype=np.uint8)
+        volar = np.ones((1, T, 1), dtype=np.float32)
+
+        cube_a = TensorCubeContainer(
+            dates=dates, symbols=["SYM0"], schedule_indices_map=sched,
+            open_px=px_a, close_px=px_a, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
         )
+        cube_b = TensorCubeContainer(
+            dates=dates, symbols=["SYM0"], schedule_indices_map=sched,
+            open_px=px_b, close_px=px_b, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
+        )
+
         param = {
-            "schedule_idx": 1,
-            "top_n": 2,
-            "filter_flags": 0,
-            "initial_capital": 100_000.0,
-            "friction_bps": 0.0,
-            "slippage_bps": 0.0,
-            "sizing_mode": "equal_weight",
-            "lookback_idx": 0,
-            "ema_idx": 0,
-            "exit_buffer_rank": 40,
-            "max_per_sector": 99
+            "param_id": 1, "schedule_idx": 1, "start_date_idx": 0, "end_date_idx": 29,
+            "top_n": 1, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
         }
-        ledger = generate_window_trade_ledger(cube, param, 0, 7)
-        b_sells = [t for t in ledger["trades"] if t["type"] == "SELL" and t["symbol"] == "B"]
-        self.assertEqual(len(b_sells), 1)
-        self.assertEqual(b_sells[0]["price"], 0.0)
+        row_a = self.engine.run_sweep(cube_a, [param]).iloc[0]
+        row_b = self.engine.run_sweep(cube_b, [param]).iloc[0]
 
-    def test_c_kernel_zero_price_exit_realizes_total_loss_and_conserves_cash(self):
-        """1.19 sim_kernel.c realizes total loss (exit_px=0) and conserves cash when exiting zero-price position."""
-        num_dates, num_syms = 8, 2
-        dates = [f"2020-01-{i+1:02d}" for i in range(num_dates)]
-        px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)
-        # Stock B exits at d5, all observable prices on d4 and d5 are 0.0
-        px[4, 1] = 0.0
-        px[5, 1] = 0.0
+        self.assertEqual(row_a["status"], "DATA_INSUFFICIENT")
+        self.assertEqual(row_b["status"], "DATA_INSUFFICIENT")
+        self.assertEqual(row_a["ending_equity"], row_b["ending_equity"])
+        self.assertEqual(row_a["ending_equity"], 0.0)
 
-        reb = np.array([0, 4], dtype=np.int32)
+    def test_post_delisting_masked_zero_is_written_off_not_valued_at_cost(self):
+        """1.19 Masked zero bars (delisted) must be written off to 0.0, not carried at buy_px cost."""
+        T = 30
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        px = np.full((T, 2), 100.0, dtype=np.float32)
+        # B is delisted on days 20-29: open=close=0.0
+        px[20:, 1] = 0.0
+
+        mask = np.ones((T, 2), dtype=np.uint8)
+        mask[20:, 1] = 0  # B masked on days 20-29
+
+        reb = np.array([0, 29], dtype=np.int32)
         sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
-        volar = np.zeros((1, num_dates, num_syms), dtype=np.float32)
-        volar[0, 0, :] = 1.0  # Buy A and B
-        volar[0, 4, 0] = 1.0  # Retain A
-        volar[0, 4, 1] = 0.0  # Exit B
+        volar = np.ones((1, T, 2), dtype=np.float32)
 
         cube = TensorCubeContainer(
-            dates=dates,
-            symbols=["A", "B"],
-            schedule_indices_map=sched,
-            open_px=px,
-            close_px=px,
-            volar_cubes=volar,
-            lookback_values=[63, 126, 252, 504],
-            ema_span_values=[20, 50, 100, 150, 200]
+            dates=dates, symbols=["A", "B"], schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
         )
         param = {
-            "param_id": 1,
-            "schedule_idx": 1,
-            "start_date_idx": 0,
-            "end_date_idx": 7,
-            "top_n": 2,
-            "filter_flags": 0,
-            "initial_capital": 100_000.0,
-            "friction_bps": 0.0,
-            "slippage_bps": 0.0,
-            "sizing_mode": "equal_weight",
-            "lookback_idx": 0,
-            "ema_idx": 0,
-            "exit_buffer_rank": 40,
-            "max_per_sector": 99
+            "param_id": 1, "schedule_idx": 1, "start_date_idx": 0, "end_date_idx": 29,
+            "top_n": 2, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
         }
         res = self.engine.run_sweep(cube, [param])
         row = res.iloc[0]
         self.assertEqual(row["status"], "VALID")
-        self.assertEqual(row["total_trades"], 1)
         self.assertEqual(row["ending_equity"], 50_000.0)
         self.assertEqual(row["max_drawdown"], 50.0)
 
-    def test_infinite_exec_price_on_exit_does_not_produce_nonfinite_equity(self):
-        """1.20 sim_kernel.c fails closed (DATA_INSUFFICIENT) when execution price is non-finite/infinite."""
-        num_dates, num_syms = 8, 2
-        dates = [f"2020-01-{i+1:02d}" for i in range(num_dates)]
-        px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)
-        # Stock B exits at d5, prices on d5 are infinite
-        px[5, 1] = np.inf
+    def test_no_sell_fill_on_masked_execution_bar(self):
+        """1.20 Orders must never execute fills on masked (halted) execution bars."""
+        T = 10
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        px = np.full((T, 1), 100.0, dtype=np.float32)
+        mask = np.ones((T, 1), dtype=np.uint8)
+        mask[5, 0] = 0  # Halted on execution day 5
 
-        reb = np.array([0, 4], dtype=np.int32)
+        reb = np.array([0, 4, 9], dtype=np.int32)
         sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
-        volar = np.zeros((1, num_dates, num_syms), dtype=np.float32)
-        volar[0, 0, :] = 1.0  # Buy A and B
-        volar[0, 4, 0] = 1.0  # Retain A
-        volar[0, 4, 1] = 0.0  # Exit B
+        volar = np.zeros((1, T, 1), dtype=np.float32)
+        volar[0, 0, 0] = 1.0  # Buy at day 0
+        volar[0, 4, 0] = 0.0  # Trigger exit at signal day 4
 
         cube = TensorCubeContainer(
-            dates=dates,
-            symbols=["A", "B"],
-            schedule_indices_map=sched,
-            open_px=px,
-            close_px=px,
-            volar_cubes=volar,
-            lookback_values=[63, 126, 252, 504],
-            ema_span_values=[20, 50, 100, 150, 200]
+            dates=dates, symbols=["SYM0"], schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar, valid_price_mask=mask,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
         )
         param = {
-            "param_id": 1,
-            "schedule_idx": 1,
-            "start_date_idx": 0,
-            "end_date_idx": 7,
-            "top_n": 2,
-            "filter_flags": 0,
-            "initial_capital": 100_000.0,
-            "friction_bps": 0.0,
-            "slippage_bps": 0.0,
-            "sizing_mode": "equal_weight",
-            "lookback_idx": 0,
-            "ema_idx": 0,
-            "exit_buffer_rank": 40,
-            "max_per_sector": 99
+            "schedule_idx": 1, "top_n": 1, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
         }
-        res = self.engine.run_sweep(cube, [param])
-        row = res.iloc[0]
-        self.assertEqual(row["status"], "DATA_INSUFFICIENT")
-        self.assertTrue(row["data_insufficient"])
-        self.assertTrue(np.isfinite(row["ending_equity"]))
-        self.assertTrue(np.isfinite(row["turnover_annual"]))
+        ledger = generate_window_trade_ledger(cube, param, 0, 9)
+        day5_sells = [t for t in ledger["trades"] if t["type"] == "SELL" and t["date"] == dates[5]]
+        self.assertEqual(len(day5_sells), 0, "Must never execute SELL on masked execution bar")
 
-    def test_midperiod_unmasked_zero_close_is_consistent_or_fails_closed(self):
-        """1.21 Mid-period unmasked zero price is corrupt data and fails closed as DATA_INSUFFICIENT."""
+        # Native engine check
+        param["param_id"] = 1
+        param["start_date_idx"] = 0
+        param["end_date_idx"] = 9
+        row = self.engine.run_sweep(cube, [param]).iloc[0]
+        self.assertEqual(row["total_trades"], 0)
+
+    def test_ledger_nonfinite_exit_prices_fail_closed(self):
+        """1.21 Ledger must fail closed (data_insufficient) on non-finite execution prices."""
+        T = 10
+        dates = [f"2020-01-{i+1:02d}" for i in range(T)]
+        px = np.full((T, 1), 100.0, dtype=np.float32)
+        px[5, 0] = np.inf  # Non-finite price on execution day 5
+
+        reb = np.array([0, 4, 9], dtype=np.int32)
+        sched = {s: reb for s in ["weekly", "monthly", "quarterly", "half_yearly", "yearly"]}
+        volar = np.zeros((1, T, 1), dtype=np.float32)
+        volar[0, 0, 0] = 1.0  # Buy
+        volar[0, 4, 0] = 0.0  # Exit
+
+        cube = TensorCubeContainer(
+            dates=dates, symbols=["SYM0"], schedule_indices_map=sched,
+            open_px=px, close_px=px, volar_cubes=volar,
+            lookback_values=[63, 126, 252, 504], ema_span_values=[20, 50, 100, 150, 200]
+        )
+        param = {
+            "schedule_idx": 1, "top_n": 1, "filter_flags": 0, "initial_capital": 100_000.0,
+            "friction_bps": 0.0, "slippage_bps": 0.0, "sizing_mode": "equal_weight",
+            "lookback_idx": 0, "ema_idx": 0, "exit_buffer_rank": 40, "max_per_sector": 99
+        }
+        ledger = generate_window_trade_ledger(cube, param, 0, 9)
+        self.assertTrue(ledger.get("data_insufficient", False))
+        zero_sells = [t for t in ledger["trades"] if t["type"] == "SELL" and t["price"] == 0.0]
+        self.assertEqual(len(zero_sells), 0)
+
+    def test_midperiod_unmasked_zero_close_fails_closed(self):
+        """1.22 Point-in-time invariant: unmasked zero close fails closed as DATA_INSUFFICIENT."""
         num_dates, num_syms = 30, 1
         dates = [f"2020-01-{i+1:02d}" for i in range(num_dates)]
         px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)

@@ -101,6 +101,7 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
     sched_indices = cube.rebalance_indices[sched_offset : sched_offset + sched_len]
 
     cash = initial_capital
+    data_insufficient = False
     friction_rate = (friction_bps + slippage_bps) / 10000.0
     filter_flags = int(params.get("filter_flags", 0))
     retrace_thresh = float(params.get("retrace_threshold", 0.80))
@@ -186,13 +187,15 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
         for s in to_exit:
             h = holdings[s]
             if not np.isfinite(exec_open[s]) or not np.isfinite(exec_close[s]):
-                exit_px = 0.0
-            else:
-                exit_px = exec_open[s] if _finite_pos(exec_open[s]) else (
-                    exec_close[s] if _finite_pos(exec_close[s]) else (
-                        sig_close[s] if _finite_pos(sig_close[s]) else 0.0
-                    )
+                data_insufficient = True
+                continue
+            if cube.valid_price_mask is not None and not cube.valid_price_mask[exec_date, s]:
+                continue
+            exit_px = exec_open[s] if _finite_pos(exec_open[s]) else (
+                exec_close[s] if _finite_pos(exec_close[s]) else (
+                    sig_close[s] if _finite_pos(sig_close[s]) else 0.0
                 )
+            )
             gross = h["shares"] * exit_px
             fric = gross * friction_rate
             net = max(0.0, gross - fric)
@@ -240,7 +243,7 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
                         investable_cash *= shield
 
                 invested_val = sum(
-                    h["shares"] * (sig_close[s] if _finite_pos(sig_close[s]) else h["buy_px"])
+                    h["shares"] * (sig_close[s] if _finite_pos(sig_close[s]) else 0.0)
                     for s, h in holdings.items()
                 )
                 curr_capital = cash + invested_val
@@ -340,7 +343,8 @@ def generate_window_trade_ledger(cube, params, bs_idx, be_idx):
         "effective_trading_days": invested_days,
         "sell_transactions_in_window": len(sells),
         "has_sell_event": len(sells) > 0,
-        "sells": sells
+        "sells": sells,
+        "data_insufficient": data_insufficient
     }
 
 
