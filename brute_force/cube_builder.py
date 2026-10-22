@@ -513,7 +513,6 @@ def build_tensor_cube(
         corporate_actions_bypassed=corporate_actions_bypassed,
         valid_price_mask=valid_price_mask,
     )
-    container.valid_price_mask = valid_price_mask
 
     print(f"\n[CubeBuilder] Tensor Cube created: {container.memory_footprint_mb:.2f} MB RAM footprint.")
     print(f"[CubeBuilder] Dates: {T} ({all_dates[0]} to {all_dates[-1]}), Symbols: {N} ({universe_name}).")
