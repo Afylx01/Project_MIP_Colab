@@ -71,17 +71,69 @@ def compute_comparability(
 def _resolve_audit_window(dates: List[str], start_date: str = "2016-01-01", end_date: str = "2026-10-15") -> Tuple[int, int]:
     """
     Resolves the start and end indices for an audit window within a sorted list of dates.
-    Fails closed: if no dates qualify, returns (0, len(dates) - 1).
+    Fails closed: if the requested window does not intersect the dates dataset, raises ValueError.
     """
     if not dates:
-        return (0, 0)
+        raise ValueError("Dates list is empty; cannot resolve audit window.")
+
     matching_start = [i for i, d in enumerate(dates) if d >= start_date]
     matching_end = [i for i, d in enumerate(dates) if d <= end_date]
-    s_idx = min(matching_start, default=0)
-    e_idx = max(matching_end, default=len(dates) - 1)
+
+    if not matching_start or not matching_end:
+        raise ValueError(
+            f"Audit window {start_date}..{end_date} does not intersect dataset {dates[0]}..{dates[-1]}"
+        )
+
+    s_idx = min(matching_start)
+    e_idx = max(matching_end)
     if s_idx > e_idx:
-        s_idx, e_idx = 0, len(dates) - 1
+        raise ValueError(
+            f"Audit window {start_date}..{end_date} has inverted range in dataset {dates[0]}..{dates[-1]}"
+        )
+
     return s_idx, e_idx
+
+
+def compute_significance_verdict(
+    reconcile_results: List[Dict[str, Any]],
+    K: int,
+    required_sharpe: float,
+    sharpes: List[float],
+) -> Tuple[str, str]:
+    """
+    Computes multiple-testing significance verdict and formatted statement.
+    Policy A Uniform Rule: A feature passes only if BOTH p_bonf < 0.05 AND DSR >= 0.50
+    (i.e. row['statistically_significant_05'] is True).
+    If no feature passes both criteria, overall significance verdict is 'FAIL'.
+    """
+    passing_features = [r for r in reconcile_results if r.get("statistically_significant_05")]
+    best_sr = round(float(max(sharpes)), 2) if sharpes else 0.0
+    req_sr_str = f"{required_sharpe:.2f}"
+
+    dsr_pass = [r for r in reconcile_results if r.get("deflated_sharpe_ratio", 0.0) >= 0.5]
+    p_pass = [r for r in reconcile_results if r.get("p_value_bonferroni", 1.0) < 0.05]
+
+    if passing_features:
+        verdict = "PASS"
+        statement = f"With {K} trials at α=0.05, required Sharpe is {req_sr_str}. Best observed is {best_sr:.2f}. Statistical significance test PASSES for {len(passing_features)} configuration(s) under Bonferroni FWER control and Deflated Sharpe Ratio."
+    else:
+        verdict = "FAIL"
+        unmet_clauses = []
+        if not p_pass:
+            unmet_clauses.append("Bonferroni FWER control")
+        if not dsr_pass:
+            unmet_clauses.append("Deflated Sharpe Ratio")
+
+        if len(unmet_clauses) == 2:
+            clause_str = "Bonferroni FWER control or Deflated Sharpe Ratio"
+        elif len(unmet_clauses) == 1:
+            clause_str = unmet_clauses[0]
+        else:
+            clause_str = "joint Bonferroni-DSR multiple testing hurdle"
+
+        statement = f"With {K} trials at α=0.05, required Sharpe is {req_sr_str}. Best observed is {best_sr:.2f}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under {clause_str}."
+
+    return verdict, statement
 
 
 def compute_multiple_testing_stats(
@@ -98,9 +150,16 @@ def compute_multiple_testing_stats(
     if K == 0:
         return {
             "n_trials": 0,
+            "n_sessions": n_sessions,
+            "n_years": max(1.0, round(n_sessions / 252.0, 2)),
+            "benchmark_sharpe": 0.0,
+            "var_sr_sampling": 0.0,
             "expected_max_sharpe": 0.0,
             "expected_max_sharpe_null": 0.0,
+            "expected_max_sharpe_hurdle": 0.0,
             "required_sharpe": 0.0,
+            "alpha": alpha,
+            "alpha_bonferroni": alpha,
             "results": [],
         }
 
@@ -142,6 +201,7 @@ def compute_multiple_testing_stats(
         "var_sr_sampling": round(var_sr_sampling, 6),
         "expected_max_sharpe": round(expected_max_sharpe, 4),
         "expected_max_sharpe_null": round(expected_max_sharpe, 4),
+        "expected_max_sharpe_hurdle": round(expected_max_sharpe, 4),
         "required_sharpe": required_sharpe,
         "alpha": alpha,
         "alpha_bonferroni": round(alpha / K, 6) if K > 0 else alpha,
@@ -876,23 +936,8 @@ def render_markdown_report(
     lines.append(f"> **Multiple-Testing Correction (Bailey & López de Prado 2014 & Policy A Uniform Rule)**: {K} model variations evaluated against Canonical Baseline. Family-wise error rate controlled at $\\alpha = 0.05$; Bonferroni threshold $\\alpha_{{adj}} = {bonf_alpha}$. Under **Policy A**, features with $p_{{bonf}} > 0.05$ or $\\text{{DSR}} < 0.50$ are uniformly classified as `NOT_STATISTICALLY_SIGNIFICANT`.\n\n")
     best_sharpe_str = fmt_num(max(sharpes)) if sharpes else "N/A"
     req_sharpe_str = fmt_num(required_sharpe)
-    dsr_pass = [r for r in reconcile_results if r.get("deflated_sharpe_ratio", 0.0) >= 0.5]
-    p_pass = [r for r in reconcile_results if r.get("p_value_bonferroni", 1.0) < 0.05]
-
-    unmet_clauses = []
-    if not p_pass:
-        unmet_clauses.append("Bonferroni FWER control")
-    if not dsr_pass:
-        unmet_clauses.append("Deflated Sharpe Ratio")
-
-    if not unmet_clauses:
-        sig_summary = "Statistical significance test PASSES across qualifying configurations under both Bonferroni FWER control and Deflated Sharpe Ratio."
-    elif len(unmet_clauses) == 2:
-        sig_summary = "Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio."
-    else:
-        sig_summary = f"Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under {unmet_clauses[0]}."
-
-    lines.append(f"> **Required Sharpe Statement**: With {K} trials at α=0.05, required Sharpe is {req_sharpe_str}. Best observed is {best_sharpe_str}. {sig_summary}\n\n")
+    verdict, sig_summary = compute_significance_verdict(reconcile_results, K, required_sharpe, sharpes)
+    lines.append(f"> **Required Sharpe Statement**: {sig_summary}\n\n")
     lines.append("| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs cross-engine baseline (%) | Classification |\n")
     lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
     for r in reconcile_results:
@@ -1549,23 +1594,8 @@ def run_forensic_audit():
     # Save Structured Results to JSON
     json_out_path = output_dir / "forensic_audit_results.json"
     with open(json_out_path, "w") as f:
-        dsr_pass = [r for r in reconcile_results if r.get("deflated_sharpe_ratio", 0.0) >= 0.5]
-        p_pass = [r for r in reconcile_results if r.get("p_value_bonferroni", 1.0) < 0.05]
-        verdict = "PASS" if (dsr_pass and p_pass) else ("PARTIAL" if (dsr_pass or p_pass) else "FAIL")
-
-        unmet_clauses = []
-        if not p_pass:
-            unmet_clauses.append("Bonferroni FWER control")
-        if not dsr_pass:
-            unmet_clauses.append("Deflated Sharpe Ratio")
-
+        verdict, sig_summary = compute_significance_verdict(reconcile_results, K, required_sharpe, sharpes)
         best_sr = round(float(max(sharpes)), 2) if sharpes else 0.0
-        if not unmet_clauses:
-            sig_summary = "Statistical significance test PASSES across qualifying configurations under both Bonferroni FWER control and Deflated Sharpe Ratio."
-        elif len(unmet_clauses) == 2:
-            sig_summary = f"With {K} trials at α=0.05, required Sharpe is {required_sharpe:.2f}. Best observed is {best_sr:.2f}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio."
-        else:
-            sig_summary = f"With {K} trials at α=0.05, required Sharpe is {required_sharpe:.2f}. Best observed is {best_sr:.2f}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under {unmet_clauses[0]}."
 
         payload = {
             "canonical_baseline": canonical_baseline,
@@ -1592,12 +1622,13 @@ def run_forensic_audit():
                 "bonferroni_adjusted_alpha": round(0.05 / K, 5) if K > 0 else 0.05,
                 "benchmark_sharpe": benchmark_sharpe,
                 "expected_max_sharpe_null": round(expected_max_sharpe, 4),
+                "expected_max_sharpe_hurdle": round(expected_max_sharpe, 4),
                 "var_sr_sampling": stats.get("var_sr_sampling"),
                 "required_sharpe_bonferroni": required_sharpe,
                 "best_observed_sharpe": best_sr,
                 "significance_verdict": verdict,
                 "statement": sig_summary,
-                "methodology": "Bailey & Lopez de Prado (2014) Deflated Sharpe Ratio + Bonferroni FWER Control (Policy A: p_bonf > 0.05 OR DSR < 0.5 -> NOT_STATISTICALLY_SIGNIFICANT)",
+                "methodology": "Bailey & Lopez de Prado (2014) Gaussian-Approximation Deflated Sharpe Ratio + Bonferroni FWER Control (Policy A: p_bonf > 0.05 OR DSR < 0.5 -> NOT_STATISTICALLY_SIGNIFICANT)",
             },
             "bear_market_stress_tests": bear_results,
             "investigation_2008_half_cash": {

@@ -7,6 +7,7 @@ and financial accounting invariants.
 
 import sys
 import unittest
+import json
 from pathlib import Path
 import numpy as np
 
@@ -1079,7 +1080,9 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         )
         self.assertEqual(res["total_trades"], 1)
         self.assertEqual(res["winning_trades"], 1)
-        self.assertEqual(res["profit_factor"], float("inf"))
+        self.assertIsNone(res["profit_factor"])
+        json_str = json.dumps(res, allow_nan=False)
+        self.assertIsNone(json.loads(json_str)["profit_factor"])
 
     def test_ledger_entry_nonfinite_exec_price_fails_closed(self):
         """1.27 Entry execution bar with non-finite prices fails closed in both engine and ledger."""

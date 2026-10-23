@@ -877,10 +877,39 @@ class TestForensicIntegrityAudit(unittest.TestCase):
              duplicate_count=0, top20=[])
         self.assertNotIn("or Deflated Sharpe Ratio", md)   # DSR leg passed; prose must not claim it failed
 
-    def test_audit_window_resolution_fails_closed_on_short_dataset(self):
+    def test_significance_verdict_requires_both_legs_and_matches_statement(self):
+        from scripts.forensic_integrity_audit import compute_significance_verdict
+        rows = [{"deflated_sharpe_ratio": 0.88, "p_value_bonferroni": 1.0, "statistically_significant_05": False}]
+        verdict, stmt = compute_significance_verdict(rows, K=8, required_sharpe=1.91, sharpes=[0.88])
+        self.assertEqual(verdict, "FAIL")
+        self.assertIn("FAILS", stmt)
+        self.assertNotIn("PASSES", stmt)
+        self.assertNotIn("PARTIAL", stmt)
+
+    def test_resolve_audit_window_rejects_non_intersecting_range(self):
         from scripts.forensic_integrity_audit import _resolve_audit_window
-        res = _resolve_audit_window(["2007-01-02"], "2016-01-01", "2026-10-15")
-        self.assertEqual(res, (0, 0))
+        dates = ["2007-01-02", "2007-01-03", "2010-12-31"]
+        with self.assertRaises(ValueError):
+            _resolve_audit_window(dates, "2016-01-01", "2026-10-15")
+
+        dates_future = ["2027-01-01", "2027-01-02"]
+        with self.assertRaises(ValueError):
+            _resolve_audit_window(dates_future, "2016-01-01", "2026-10-15")
+
+        pos_res = _resolve_audit_window(["2016-01-04", "2016-01-05"], "2016-01-01", "2026-10-15")
+        self.assertEqual(pos_res, (0, 1))
+
+    def test_compute_multiple_testing_stats_empty_trials_schema(self):
+        from scripts.forensic_integrity_audit import compute_multiple_testing_stats
+        stats = compute_multiple_testing_stats([], 2700)
+        expected_keys = {
+            "n_trials", "n_sessions", "n_years", "benchmark_sharpe",
+            "var_sr_sampling", "expected_max_sharpe", "expected_max_sharpe_null",
+            "expected_max_sharpe_hurdle", "required_sharpe", "alpha",
+            "alpha_bonferroni", "results"
+        }
+        for k in expected_keys:
+            self.assertIn(k, stats, f"Missing key '{k}' in empty-trials schema")
 
     def test_required_sharpe_monotonicity_and_bonferroni_sensitivity(self):
         """required_sharpe must increase monotonically with trial count K, and Bonferroni p-value must detect high SR."""

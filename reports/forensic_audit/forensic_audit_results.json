@@ -541,12 +541,13 @@
     "bonferroni_adjusted_alpha": 0.00625,
     "benchmark_sharpe": 0.98,
     "expected_max_sharpe_null": 0.5456,
+    "expected_max_sharpe_hurdle": 0.5456,
     "var_sr_sampling": 0.139809,
     "required_sharpe_bonferroni": 1.91,
     "best_observed_sharpe": 1.08,
-    "significance_verdict": "PARTIAL",
+    "significance_verdict": "FAIL",
     "statement": "With 8 trials at \u03b1=0.05, required Sharpe is 1.91. Best observed is 1.08. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control.",
-    "methodology": "Bailey & Lopez de Prado (2014) Deflated Sharpe Ratio + Bonferroni FWER Control (Policy A: p_bonf > 0.05 OR DSR < 0.5 -> NOT_STATISTICALLY_SIGNIFICANT)"
+    "methodology": "Bailey & Lopez de Prado (2014) Gaussian-Approximation Deflated Sharpe Ratio + Bonferroni FWER Control (Policy A: p_bonf > 0.05 OR DSR < 0.5 -> NOT_STATISTICALLY_SIGNIFICANT)"
   },
   "bear_market_stress_tests": [
     {

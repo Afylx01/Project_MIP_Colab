@@ -84,6 +84,25 @@ class TestDeflatedSharpeRatio:
         assert dsr_multiple < dsr_single, f"Multi-trial DSR ({dsr_multiple}) must be strictly deflated compared to single ({dsr_single})"
         assert dsr_multiple < 0.50, f"Multi-trial DSR should reflect severe selection bias penalty, got {dsr_multiple}"
 
+    def test_deflated_sharpe_handles_nonpositive_variance(self):
+        """Degenerate constant returns or non-positive variance must return finite float in [0, 1] without unhandled crash."""
+        const_ret = pd.Series([0.01] * 300)
+        dsr_const = compute_deflated_sharpe_ratio(const_ret, n_trials=10)
+        assert isinstance(dsr_const, float) and 0.0 <= dsr_const <= 1.0
+
+        # Heavily skewed series
+        skew_ret = pd.Series([0.02] * 290 + [-0.50] * 10)
+        dsr_skew = compute_deflated_sharpe_ratio(skew_ret, n_trials=10)
+        assert isinstance(dsr_skew, float) and 0.0 <= dsr_skew <= 1.0
+
+    def test_expected_max_sharpe_ratio_raises_on_nonpositive_variance(self):
+        """compute_expected_max_sharpe_ratio must fail closed with ValueError when var_sr <= 0."""
+        import pytest
+        with pytest.raises(ValueError, match="var_sr must be positive"):
+            compute_expected_max_sharpe_ratio(n_trials=10, var_sr=0.0)
+        with pytest.raises(ValueError, match="var_sr must be positive"):
+            compute_expected_max_sharpe_ratio(n_trials=10, var_sr=-0.5)
+
 
 class TestFactorReturnAttribution:
     """Verifies institutional factor decomposition into Market Beta, Sector, and Alpha."""

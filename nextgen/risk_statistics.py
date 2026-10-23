@@ -164,6 +164,8 @@ def compute_deflated_sharpe_ratio(
     kurt = moments["kurtosis"]
     var_sr_unann = (1.0 - skew * sr_daily + ((kurt - 1.0) / 4.0) * (sr_daily ** 2)) / max(n - 1.0, 1.0)
     var_sr_ann = var_sr_unann * annualization_factor
+    if var_sr_ann <= 0.0:
+        return 0.5
 
     # Compute expected maximum annualized SR under K trials
     sr_0_ann = compute_expected_max_sharpe_ratio(n_trials=n_trials, var_sr=var_sr_ann)
