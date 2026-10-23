@@ -845,27 +845,66 @@ class TestForensicIntegrityAudit(unittest.TestCase):
         self.assertFalse(should_publish_ledger({}, ok))
         self.assertFalse(should_publish_ledger(ok, {}))
 
+    def test_multiple_testing_hurdle_uses_sharpe_sampling_variance(self):
+        from scripts.forensic_integrity_audit import compute_multiple_testing_stats
+        stats = compute_multiple_testing_stats(
+            sharpes=[0.98, 0.98, 0.95, 1.04, 0.96, 0.90, 0.99, 1.08],
+            n_sessions=2700, alpha=0.05)
+        # Expected-max-under-null must be ~1.459 * sqrt((1+0.5*0.98^2)/10.71) ≈ 0.54
+        self.assertGreater(stats["expected_max_sharpe"], 0.40)
+        self.assertLess(stats["expected_max_sharpe"], 0.70)
+
+    def test_deflated_sharpe_is_not_saturated(self):
+        from scripts.forensic_integrity_audit import compute_multiple_testing_stats
+        stats = compute_multiple_testing_stats(
+            sharpes=[0.98, 0.98, 0.95, 1.04, 0.96, 0.90, 0.99, 1.08],
+            n_sessions=2700, alpha=0.05)
+        self.assertLess(stats["results"][0]["deflated_sharpe_ratio"], 0.98)   # 0.98 SR, 10.7y, K=8
+        self.assertLess(stats["results"][0]["deflated_sharpe_ratio"],
+                        stats["results"][-1]["deflated_sharpe_ratio"])        # monotone in SR
+        self.assertLess(stats["results"][-1]["deflated_sharpe_ratio"], 1.0)
+
+    def test_report_statement_matches_dsr_values(self):
+        from scripts.forensic_integrity_audit import render_markdown_report
+        rows = [{"feature": "A", "cagr": 1, "max_drawdown": 1, "calmar": 1, "sharpe": 1.0,
+                 "deflated_sharpe_ratio": 0.99, "p_value_bonferroni": 1.0,
+                 "statistically_significant_05": False, "classification": "HARMFUL",
+                 "trades": 1, "ending_equity": 1.0, "delta_calmar_pct": 0.0}]
+        md = render_markdown_report(bear_results=[], reconcile_results=rows, deduped_top=[],
+             reclassified_ablation=[], half_cash_2008_audit=[],
+             canonical_baseline={"cagr": 1, "max_drawdown": 1, "calmar": 1},
+             K=8, required_sharpe=1.91, sharpes=[1.0], distinct_count=0,
+             duplicate_count=0, top20=[])
+        self.assertNotIn("or Deflated Sharpe Ratio", md)   # DSR leg passed; prose must not claim it failed
+
+    def test_audit_window_resolution_fails_closed_on_short_dataset(self):
+        from scripts.forensic_integrity_audit import _resolve_audit_window
+        res = _resolve_audit_window(["2007-01-02"], "2016-01-01", "2026-10-15")
+        self.assertEqual(res, (0, 0))
+
     def test_required_sharpe_monotonicity_and_bonferroni_sensitivity(self):
         """required_sharpe must increase monotonically with trial count K, and Bonferroni p-value must detect high SR."""
-        from nextgen.risk_statistics import _normal_ppf
+        from scripts.forensic_integrity_audit import compute_multiple_testing_stats
         benchmark_sharpe = 1.0
         n_sessions = 2600
-        n_years = n_sessions / 252.0
-        se_bench = math.sqrt((1.0 + 0.5 * (benchmark_sharpe ** 2)) / n_years)
 
         req_sharpes = []
         for k in [2, 5, 10, 20, 50]:
-            z_crit = _normal_ppf(1.0 - 0.05 / k)
-            req = benchmark_sharpe + se_bench * z_crit
-            req_sharpes.append(req)
+            stats = compute_multiple_testing_stats(
+                sharpes=[benchmark_sharpe] * k,
+                n_sessions=n_sessions,
+                alpha=0.05
+            )
+            req_sharpes.append(stats["required_sharpe"])
 
         self.assertTrue(all(x < y for x, y in zip(req_sharpes, req_sharpes[1:])), "required_sharpe must increase monotonically with K")
 
-        sr = 2.0
-        se = math.sqrt((1.0 + 0.5 * (sr ** 2)) / n_years)
-        z = (sr - benchmark_sharpe) / se
-        p_val_raw = 0.5 * math.erfc(z / math.sqrt(2.0))
-        p_val_bonf = min(1.0, round(p_val_raw * 8, 4))
+        stats_high = compute_multiple_testing_stats(
+            sharpes=[benchmark_sharpe, 2.0],
+            n_sessions=n_sessions,
+            alpha=0.05
+        )
+        p_val_bonf = stats_high["results"][1]["p_value_bonferroni"]
         self.assertLess(p_val_bonf, 1.0, "p_value_bonferroni must not be identically 1.0 for SR=2.0, n=2600")
         self.assertLess(p_val_bonf, 0.5, "Strong excess Sharpe over 10 years should have statistically meaningful p-value")
 

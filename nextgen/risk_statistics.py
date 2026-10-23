@@ -110,7 +110,6 @@ def compute_probabilistic_sharpe_ratio(
 
 def compute_expected_max_sharpe_ratio(
     n_trials: int,
-    n_samples: int = 252,
     var_sr: float = 1.0,
 ) -> float:
     """
@@ -118,6 +117,9 @@ def compute_expected_max_sharpe_ratio(
     Bailey & López de Prado (2014):
         SR_0 = sqrt(Var[SR]) * [ (1 - gamma) * Phi^{-1}(1 - 1/K) + gamma * Phi^{-1}(1 - 1/(K * e)) ]
     """
+    if var_sr <= 0.0:
+        raise ValueError(f"var_sr must be positive, got {var_sr}")
+
     if n_trials <= 1:
         return 0.0
 
@@ -129,7 +131,7 @@ def compute_expected_max_sharpe_ratio(
     z2 = _normal_ppf(p2)
 
     sr_0_std = (1.0 - EULER_MASCHERONI) * z1 + EULER_MASCHERONI * z2
-    sigma_sr = math.sqrt(max(var_sr, 1e-8))
+    sigma_sr = math.sqrt(var_sr)
     return float(sr_0_std * sigma_sr)
 
 
@@ -164,7 +166,7 @@ def compute_deflated_sharpe_ratio(
     var_sr_ann = var_sr_unann * annualization_factor
 
     # Compute expected maximum annualized SR under K trials
-    sr_0_ann = compute_expected_max_sharpe_ratio(n_trials=n_trials, n_samples=int(n), var_sr=var_sr_ann)
+    sr_0_ann = compute_expected_max_sharpe_ratio(n_trials=n_trials, var_sr=var_sr_ann)
 
     # Compute PSR testing whether observed SR exceeds SR_0 hurdle
     return compute_probabilistic_sharpe_ratio(returns, benchmark_sr=sr_0_ann, annualization_factor=annualization_factor)

@@ -62,9 +62,9 @@ class TestDeflatedSharpeRatio:
 
     def test_expected_max_sharpe_ratio_increases_with_trial_count(self):
         """As the number of backtest trials K increases, the expected maximum Sharpe under null increases."""
-        sr_0_k10 = compute_expected_max_sharpe_ratio(n_trials=10, n_samples=252, var_sr=1.0)
-        sr_0_k100 = compute_expected_max_sharpe_ratio(n_trials=100, n_samples=252, var_sr=1.0)
-        sr_0_k1000 = compute_expected_max_sharpe_ratio(n_trials=1000, n_samples=252, var_sr=1.0)
+        sr_0_k10 = compute_expected_max_sharpe_ratio(n_trials=10, var_sr=1.0)
+        sr_0_k100 = compute_expected_max_sharpe_ratio(n_trials=100, var_sr=1.0)
+        sr_0_k1000 = compute_expected_max_sharpe_ratio(n_trials=1000, var_sr=1.0)
 
         assert sr_0_k10 < sr_0_k100 < sr_0_k1000, "Expected max SR must be monotonically increasing with K trials"
 

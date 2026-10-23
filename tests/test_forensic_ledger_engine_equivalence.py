@@ -1036,6 +1036,51 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         self.assertEqual(res["winning_trades"], 0)
         self.assertEqual(res["profit_factor"], 0.0)
 
+    def test_nextgen_sim_profit_factor_semantics(self):
+        """nextgen_sim.py must emit inf for zero losses with positive gains, and 0.0 for zero gains."""
+        from brute_force.nextgen_sim import NextGenSimulationEngine
+        from unittest.mock import MagicMock
+
+        engine = object.__new__(NextGenSimulationEngine)
+        cube = MagicMock()
+        cube.lookback_values = [252]
+        cube.ema_span_values = [200]
+        cube.num_dates = 6
+        cube.num_symbols = 1
+        cube.num_rebalances = 3
+        cube.rebalance_indices = np.array([0, 2, 4], dtype=np.int32)
+        px_close = np.array([[100.0], [100.0], [120.0], [120.0], [120.0], [120.0]], dtype=np.float32)
+        px_open = np.array([[100.0], [100.0], [120.0], [120.0], [120.0], [120.0]], dtype=np.float32)
+        cube.close_px = px_close
+        cube.open_px = px_open
+        cube.high_cubes = [np.array([[100.0], [100.0], [200.0], [200.0], [200.0], [200.0]], dtype=np.float32)]
+        cube.volar_cubes = [np.ones((6, 1), dtype=np.float32)]
+        cube.ema_cubes = [np.full((6, 1), 90.0, dtype=np.float32)]
+        cube.rs_pass_cubes = [np.ones((6, 1), dtype=bool)]
+        cube.rebalance_weights = np.ones((6, 1), dtype=np.float32)
+        cube.atr_14 = np.full((6, 1), 2.0, dtype=np.float32)
+        cube.benchmark_regime = np.ones(6, dtype=np.int32)
+        cube.sector_ids = [0]
+
+        engine.cube = cube
+        engine.composite_volar_252 = cube.volar_cubes[0]
+        engine.realized_vol = np.full(6, 0.10, dtype=np.float32)
+        engine.breadth_participation = np.ones(6, dtype=np.float32)
+        engine.clv_mat = np.ones((6, 1), dtype=np.float32)
+        engine.lookback_idx_252 = 0
+        engine.ema_idx_200 = 0
+
+        res = engine.run_single(
+            lookback_idx=0,
+            ema_idx=0,
+            enable_residual_momentum=False,
+            enable_volatility_targeting=False,
+            enable_distribution_veto=False,
+        )
+        self.assertEqual(res["total_trades"], 1)
+        self.assertEqual(res["winning_trades"], 1)
+        self.assertEqual(res["profit_factor"], float("inf"))
+
     def test_ledger_entry_nonfinite_exec_price_fails_closed(self):
         """1.27 Entry execution bar with non-finite prices fails closed in both engine and ledger."""
         T = 10

@@ -1,7 +1,7 @@
 # FORENSIC BACKTEST INTEGRITY AUDIT REPORT
 
 **Status**: AUDITED WITH CAVEATS (3 WINDOWS NON-VALID)
-**Date**: 2026-10-22 23:08:53 UTC
+**Date**: 2026-10-22 23:58:56 UTC
 **Target Dataset**: NIFTY500 (`data/universe.db`, 2007-01-02 to 2026-10-19)
 
 ## 1. TASK 1: VARIABLE WIRING AUDIT & CANONICAL BASELINE RECONCILIATION
@@ -79,18 +79,18 @@ Classification criteria:
 > [!NOTE]
 > **Multiple-Testing Correction (Bailey & López de Prado 2014 & Policy A Uniform Rule)**: 8 model variations evaluated against Canonical Baseline. Family-wise error rate controlled at $\alpha = 0.05$; Bonferroni threshold $\alpha_{adj} = 0.0063$. Under **Policy A**, features with $p_{bonf} > 0.05$ or $\text{DSR} < 0.50$ are uniformly classified as `NOT_STATISTICALLY_SIGNIFICANT`.
 
-> **Required Sharpe Statement**: With 8 trials at α=0.05, required Sharpe is 1.91. Best observed is 1.08. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio.
+> **Required Sharpe Statement**: With 8 trials at α=0.05, required Sharpe is 1.91. Best observed is 1.08. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control.
 
 | Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs cross-engine baseline (%) | Classification |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Legacy MIP Baseline** | 33.91% | 50.66% | 0.67 | 0.98 | 0.99 | 1.000 | `FAIL` | 593 | 21,505,882 | -20.20% | `LEGACY_MIP_SIMULATED` |
-| **+ ATR Risk Parity Sizing ON** | 33.74% | 47.88% | 0.70 | 0.98 | 0.99 | 1.000 | `FAIL` | 594 | 21,225,754 | -16.70% | `HARMFUL` |
-| **+ Regime Gate ON** | 28.65% | 41.35% | 0.69 | 0.95 | 0.99 | 1.000 | `FAIL` | 499 | 14,109,075 | -17.90% | `HARMFUL` |
-| **+ Sector Cap = 2** | 35.30% | 37.60% | 0.94 | 1.04 | 0.99 | 1.000 | `FAIL` | 735 | 23,978,166 | +11.90% | `NOT_STATISTICALLY_SIGNIFICANT` |
-| **+ Buffer = 60** | 33.06% | 45.31% | 0.73 | 0.96 | 0.99 | 1.000 | `FAIL` | 508 | 20,107,862 | -13.10% | `HARMFUL` |
-| **+ Top N = 10** | 33.99% | 51.18% | 0.66 | 0.90 | 0.99 | 1.000 | `FAIL` | 265 | 21,632,416 | -21.40% | `HARMFUL` |
-| **+ Residual Momentum ON** | 30.07% | 42.20% | 0.71 | 0.99 | 0.99 | 1.000 | `FAIL` | 734 | 15,845,284 | -15.50% | `HARMFUL` |
-| **+ Combined Production Stack** | 27.94% | 22.63% | 1.23 | 1.08 | 1.00 | 1.000 | `FAIL` | 716 | 13,322,584 | +46.40% | `NOT_STATISTICALLY_SIGNIFICANT` |
+| **Legacy MIP Baseline** | 33.91% | 50.66% | 0.67 | 0.98 | 0.88 | 1.000 | `FAIL` | 593 | 21,505,882 | -20.20% | `LEGACY_MIP_SIMULATED` |
+| **+ ATR Risk Parity Sizing ON** | 33.74% | 47.88% | 0.70 | 0.98 | 0.88 | 1.000 | `FAIL` | 594 | 21,225,754 | -16.70% | `HARMFUL` |
+| **+ Regime Gate ON** | 28.65% | 41.35% | 0.69 | 0.95 | 0.86 | 1.000 | `FAIL` | 499 | 14,109,075 | -17.90% | `HARMFUL` |
+| **+ Sector Cap = 2** | 35.30% | 37.60% | 0.94 | 1.04 | 0.90 | 1.000 | `FAIL` | 735 | 23,978,166 | +11.90% | `NOT_STATISTICALLY_SIGNIFICANT` |
+| **+ Buffer = 60** | 33.06% | 45.31% | 0.73 | 0.96 | 0.87 | 1.000 | `FAIL` | 508 | 20,107,862 | -13.10% | `HARMFUL` |
+| **+ Top N = 10** | 33.99% | 51.18% | 0.66 | 0.90 | 0.83 | 1.000 | `FAIL` | 265 | 21,632,416 | -21.40% | `HARMFUL` |
+| **+ Residual Momentum ON** | 30.07% | 42.20% | 0.71 | 0.99 | 0.88 | 1.000 | `FAIL` | 734 | 15,845,284 | -15.50% | `HARMFUL` |
+| **+ Combined Production Stack** | 27.94% | 22.63% | 1.23 | 1.08 | 0.92 | 1.000 | `FAIL` | 716 | 13,322,584 | +46.40% | `NOT_STATISTICALLY_SIGNIFICANT` |
 
 ## 5. TASK 5: BEAR-MARKET STRESS TESTS & ARITHMETIC PROOF
 

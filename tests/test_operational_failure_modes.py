@@ -184,12 +184,16 @@ class TestOperationalFailureModes(unittest.TestCase):
     def test_stale_output_detection_by_metadata(self):
         """9. Deliverables must be verified for target scan date match to prevent stale presentation."""
         live_csv = PROJECT_ROOT / "reports" / "screener_output_live.csv"
-        if live_csv.exists():
-            df = pd.read_csv(live_csv)
-            self.assertIn("date", df.columns)
-            dates = df["date"].unique()
-            self.assertEqual(len(dates), 1, "Screener CSV must contain exactly one homogeneous scan date")
-            self.assertIn(dates[0], ("2026-10-09", "2026-10-14", "2026-10-16", "2026-10-19"))
+        if not live_csv.exists():
+            self.skipTest(f"Live screener artifact not present at {live_csv}")
+        df = pd.read_csv(live_csv)
+        self.assertIn("date", df.columns)
+        dates = df["date"].unique()
+        self.assertEqual(len(dates), 1, "Screener CSV must contain exactly one homogeneous scan date")
+        db_path = PROJECT_ROOT / "data" / "universe.db"
+        with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
+            max_date = conn.execute("SELECT MAX(date) FROM prices").fetchone()[0]
+        self.assertEqual(dates[0], max_date)
 
     def test_database_read_only_protection_against_mutations(self):
         """10. Read-only connection to universe.db prevents accidental write mutations."""

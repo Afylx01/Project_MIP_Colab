@@ -42,19 +42,111 @@ from brute_force.grid import (
 from nextgen.risk_statistics import compute_expected_max_sharpe_ratio, _normal_ppf
 
 
-def compute_comparability(legacy_eff: int, top_eff: int, legacy_cash: int, top_cash: int, legacy_dd: float = 0.0, top_dd: float = 0.0):
+def compute_comparability(
+    legacy_eff: int,
+    top_eff: int,
+    legacy_cash: int,
+    top_cash: int,
+    legacy_dd: float = 0.0,
+    top_dd: float = 0.0,
+    strict: bool = True,
+):
     """
     Evaluates comparability between Legacy MIP and Top Config across a stress window.
-    Criteria:
-      - Effective trading days within 5 days of each other
-      - In-window cash <= 30 days for both strategies
+    Strict criteria (A6):
+      - Effective trading days must match exactly (legacy_eff == top_eff)
+      - In-window cash days must match exactly (legacy_cash == top_cash)
     Returns (is_comparable: bool, reduction_pct: Optional[float])
     """
-    is_comparable = (abs(legacy_eff - top_eff) <= 5) and (legacy_cash <= 30) and (top_cash <= 30)
+    if strict:
+        is_comparable = (legacy_eff == top_eff) and (legacy_cash == top_cash)
+    else:
+        is_comparable = (abs(legacy_eff - top_eff) <= 5) and (legacy_cash <= 30) and (top_cash <= 30)
     if is_comparable:
         reduction = float(round(legacy_dd - top_dd, 2)) if (legacy_dd is not None and top_dd is not None) else None
         return True, reduction
     return False, None
+
+
+def _resolve_audit_window(dates: List[str], start_date: str = "2016-01-01", end_date: str = "2026-10-15") -> Tuple[int, int]:
+    """
+    Resolves the start and end indices for an audit window within a sorted list of dates.
+    Fails closed: if no dates qualify, returns (0, len(dates) - 1).
+    """
+    if not dates:
+        return (0, 0)
+    matching_start = [i for i, d in enumerate(dates) if d >= start_date]
+    matching_end = [i for i, d in enumerate(dates) if d <= end_date]
+    s_idx = min(matching_start, default=0)
+    e_idx = max(matching_end, default=len(dates) - 1)
+    if s_idx > e_idx:
+        s_idx, e_idx = 0, len(dates) - 1
+    return s_idx, e_idx
+
+
+def compute_multiple_testing_stats(
+    sharpes: List[float],
+    n_sessions: int,
+    alpha: float = 0.05,
+) -> Dict[str, Any]:
+    """
+    Computes Bailey & López de Prado (2014) multiple testing statistics across K trials.
+    Uses sampling variance of the Sharpe ratio estimator:
+        Var[SR_hat] = (1 + 0.5 * SR^2) / T_years (Lo 2002)
+    """
+    K = len(sharpes)
+    if K == 0:
+        return {
+            "n_trials": 0,
+            "expected_max_sharpe": 0.0,
+            "expected_max_sharpe_null": 0.0,
+            "required_sharpe": 0.0,
+            "results": [],
+        }
+
+    benchmark_sharpe = round(float(sharpes[0]), 2)
+    n_years = max(1.0, n_sessions / 252.0)
+    var_sr_sampling = (1.0 + 0.5 * (benchmark_sharpe ** 2)) / n_years
+    expected_max_sharpe = compute_expected_max_sharpe_ratio(
+        n_trials=K, var_sr=var_sr_sampling
+    )
+    se = lambda sr: math.sqrt((1.0 + 0.5 * (sr ** 2)) / n_years)
+
+    z_crit = _normal_ppf(1.0 - alpha / K) if K > 0 else 1.96
+    se_benchmark = se(benchmark_sharpe)
+    required_sharpe = round(benchmark_sharpe + se_benchmark * z_crit, 2)
+
+    results = []
+    for sr in sharpes:
+        se_sr = se(sr)
+        z = (sr - benchmark_sharpe) / se_sr if se_sr > 0 else 0.0
+        p_val_raw = 0.5 * math.erfc(z / math.sqrt(2.0)) if z > 0 else 1.0
+        p_val_bonf = min(1.0, round(p_val_raw * K, 4))
+
+        z_dsr = (sr - expected_max_sharpe) / se_sr if se_sr > 0 else 0.0
+        dsr_val = round(0.5 * (1.0 + math.erf(z_dsr / math.sqrt(2.0))), 4)
+
+        results.append({
+            "sharpe": sr,
+            "p_value_raw": round(p_val_raw, 4),
+            "p_value_bonferroni": p_val_bonf,
+            "deflated_sharpe_ratio": dsr_val,
+            "statistically_significant_05": bool(p_val_bonf < alpha and dsr_val >= 0.5),
+        })
+
+    return {
+        "n_trials": K,
+        "n_sessions": n_sessions,
+        "n_years": round(n_years, 2),
+        "benchmark_sharpe": benchmark_sharpe,
+        "var_sr_sampling": round(var_sr_sampling, 6),
+        "expected_max_sharpe": round(expected_max_sharpe, 4),
+        "expected_max_sharpe_null": round(expected_max_sharpe, 4),
+        "required_sharpe": required_sharpe,
+        "alpha": alpha,
+        "alpha_bonferroni": round(alpha / K, 6) if K > 0 else alpha,
+        "results": results,
+    }
 
 
 def compute_calmar(row: dict) -> float:
@@ -619,15 +711,10 @@ def classify_stress_window(r_base, r_top, ledger_base, ledger_top, trading_days,
     legacy_eff_days = int(_get_val(ledger_base, "effective_trading_days", 0))
     top_eff_days = int(_get_val(ledger_top, "effective_trading_days", 0))
 
-    is_comparable = bool(
-        legacy_eff_days == top_eff_days and legacy_cash_days == top_cash_days
+    is_comparable, reduction = compute_comparability(
+        legacy_eff_days, top_eff_days, legacy_cash_days, top_cash_days, maxdd_b, maxdd_t, strict=True
     )
-    reduction = float(round(maxdd_b - maxdd_t, 2)) if (
-        is_comparable and maxdd_b is not None and maxdd_t is not None
-    ) else None
-    calendar_delta = float(round(maxdd_b - maxdd_t, 2)) if (
-        is_comparable and maxdd_b is not None and maxdd_t is not None
-    ) else None
+    calendar_delta = reduction
 
     is_data_insufficient = bool(
         _get_val(ledger_base, "data_insufficient", False) or
@@ -789,7 +876,23 @@ def render_markdown_report(
     lines.append(f"> **Multiple-Testing Correction (Bailey & López de Prado 2014 & Policy A Uniform Rule)**: {K} model variations evaluated against Canonical Baseline. Family-wise error rate controlled at $\\alpha = 0.05$; Bonferroni threshold $\\alpha_{{adj}} = {bonf_alpha}$. Under **Policy A**, features with $p_{{bonf}} > 0.05$ or $\\text{{DSR}} < 0.50$ are uniformly classified as `NOT_STATISTICALLY_SIGNIFICANT`.\n\n")
     best_sharpe_str = fmt_num(max(sharpes)) if sharpes else "N/A"
     req_sharpe_str = fmt_num(required_sharpe)
-    lines.append(f"> **Required Sharpe Statement**: With {K} trials at α=0.05, required Sharpe is {req_sharpe_str}. Best observed is {best_sharpe_str}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio.\n\n")
+    dsr_pass = [r for r in reconcile_results if r.get("deflated_sharpe_ratio", 0.0) >= 0.5]
+    p_pass = [r for r in reconcile_results if r.get("p_value_bonferroni", 1.0) < 0.05]
+
+    unmet_clauses = []
+    if not p_pass:
+        unmet_clauses.append("Bonferroni FWER control")
+    if not dsr_pass:
+        unmet_clauses.append("Deflated Sharpe Ratio")
+
+    if not unmet_clauses:
+        sig_summary = "Statistical significance test PASSES across qualifying configurations under both Bonferroni FWER control and Deflated Sharpe Ratio."
+    elif len(unmet_clauses) == 2:
+        sig_summary = "Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio."
+    else:
+        sig_summary = f"Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under {unmet_clauses[0]}."
+
+    lines.append(f"> **Required Sharpe Statement**: With {K} trials at α=0.05, required Sharpe is {req_sharpe_str}. Best observed is {best_sharpe_str}. {sig_summary}\n\n")
     lines.append("| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs cross-engine baseline (%) | Classification |\n")
     lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
     for r in reconcile_results:
@@ -1020,8 +1123,7 @@ def run_forensic_audit():
     print("\n[3/4] TASK 4: Running Controlled Reconciliation on NIFTY 500 (2016-2026)...")
     start_dt = "2016-01-01"
     end_dt = "2026-10-15"
-    s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_dt], default=0)
-    e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= end_dt], default=cube.num_dates - 1)
+    s_idx, e_idx = _resolve_audit_window(cube.dates, start_dt, end_dt)
 
     # Pure Legacy MIP Baseline: Equal Weight, Top 20, Buffer 40, No Regime Gate, No Sector Cap, Volar
     legacy_base_p = CANONICAL_BASELINE.copy()
@@ -1088,33 +1190,23 @@ def run_forensic_audit():
         })
 
     # Pillar 4: Statistical Validity - Multiple-Testing Correction (Bailey & López de Prado, 2014)
-    s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= "2016-01-01"])
-    e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= "2026-10-15"])
     n_sessions = e_idx - s_idx + 1
-    n_years = max(1.0, n_sessions / 252.0)
-
-    K = len(reconcile_results)
-    benchmark_sharpe = reconcile_results[0]["sharpe"]
     sharpes = [r["sharpe"] for r in reconcile_results]
-    var_sharpe = float(np.var(sharpes, ddof=1)) if len(sharpes) > 1 else 0.01
-    expected_max_sharpe = compute_expected_max_sharpe_ratio(n_trials=K, n_samples=n_sessions, var_sr=var_sharpe)
-    z_crit = _normal_ppf(1.0 - 0.05 / K) if K > 0 else 1.96
-    se_benchmark = math.sqrt((1.0 + 0.5 * (benchmark_sharpe ** 2)) / n_years)
-    required_sharpe = round(benchmark_sharpe + se_benchmark * z_crit, 2)
+    stats = compute_multiple_testing_stats(
+        sharpes=sharpes,
+        n_sessions=n_sessions,
+        alpha=0.05,
+    )
+    expected_max_sharpe = stats["expected_max_sharpe"]
+    required_sharpe = stats["required_sharpe"]
+    benchmark_sharpe = stats["benchmark_sharpe"]
+    K = stats["n_trials"]
 
-    for r in reconcile_results:
-        sr = r["sharpe"]
-        se = math.sqrt((1.0 + 0.5 * (sr ** 2)) / n_years)
-        z = (sr - benchmark_sharpe) / se if se > 0 else 0.0
-        p_val_raw = 0.5 * math.erfc(z / math.sqrt(2.0)) if z > 0 else 1.0
-        p_val_bonf = min(1.0, round(p_val_raw * K, 4))
-        z_dsr = (sr - expected_max_sharpe) / se if se > 0 else 0.0
-        dsr_val = round(0.5 * (1.0 + math.erf(z_dsr / math.sqrt(2.0))), 4)
-
-        r["p_value_raw"] = round(p_val_raw, 4)
-        r["p_value_bonferroni"] = p_val_bonf
-        r["deflated_sharpe_ratio"] = dsr_val
-        r["statistically_significant_05"] = bool(p_val_bonf < 0.05 and dsr_val >= 0.5)
+    for r, st in zip(reconcile_results, stats["results"]):
+        r["p_value_raw"] = st["p_value_raw"]
+        r["p_value_bonferroni"] = st["p_value_bonferroni"]
+        r["deflated_sharpe_ratio"] = st["deflated_sharpe_ratio"]
+        r["statistically_significant_05"] = st["statistically_significant_05"]
 
         # Uniform Policy A: p_bonf > 0.05 OR DSR < 0.5 -> NOT_STATISTICALLY_SIGNIFICANT
         if r["feature"] == "Legacy MIP Baseline":
@@ -1247,8 +1339,9 @@ def run_forensic_audit():
                 non_comparable_reason = None
             elif legacy_eff_days != top_eff_days:
                 non_comparable_reason = f"Non-comparable effective windows (Legacy: {legacy_eff_days} days vs Top: {top_eff_days} days)."
-            elif legacy_cash_days > 30 or top_cash_days > 30:
-                non_comparable_reason = f"In-window cash exceeded 30-day threshold (Legacy: {legacy_cash_days} days, Top: {top_cash_days} days)."
+            elif (max(legacy_cash_days, top_cash_days) / float(trading_days) if trading_days > 0 else 0.0) > 0.30:
+                cash_pct = (max(legacy_cash_days, top_cash_days) / float(trading_days) if trading_days > 0 else 0.0) * 100.0
+                non_comparable_reason = f"Excessive in-window cash masked {cash_pct:.1f}% of window (>30% threshold) (Legacy: {legacy_cash_days}/{trading_days} days, Top: {top_cash_days}/{trading_days} days)."
             elif legacy_cash_days != top_cash_days:
                 non_comparable_reason = f"Differing in-window cash days (Legacy: {legacy_cash_days} days vs Top: {top_cash_days} days)."
             else:
@@ -1296,7 +1389,7 @@ def run_forensic_audit():
             "assertion_a1_top_pass": bool(a1_top_pass),
             "assertion_cagr_1yr_legacy_pass": bool(cagr_1yr_legacy_pass),
             "assertion_cagr_1yr_top_pass": bool(cagr_1yr_top_pass),
-            "trade_ledger": [] if _get_val(ledger_top, "data_insufficient", False) else ledger_top["trades"],
+            "trade_ledger": [] if _get_val(ledger_top, "data_insufficient", False) else (ledger_top.get("trades", []) if isinstance(ledger_top, dict) else []),
         }
 
         if "2020" in b_name:
@@ -1304,12 +1397,12 @@ def run_forensic_audit():
                 "claim_tested": "went 100% to cash before the crash",
                 "claim_verdict": "VIOLATED",
                 "factual_mechanism": "Strategy started 2020-01-01 with 0 positions (100% cash); 20-EMA benchmark regime gate was BEARISH (0) on 2020-01-31, 2020-02-28, and 2020-03-31, suppressing all equity entries throughout the crash. No liquidation or sell transactions occurred in the window; first buys executed on 2020-05-04.",
-                "sell_transactions_in_window": int(ledger_top["sell_transactions_in_window"]),
-                "has_sell_event": bool(ledger_top["has_sell_event"]),
-                "total_trades_in_window": len(ledger_top["trades"]),
-                "first_invested_date": str(ledger_top["first_invested_date"]),
-                "cash_days": int(ledger_top["cash_days"]),
-                "effective_trading_days": int(ledger_top["effective_trading_days"]),
+                "sell_transactions_in_window": int(ledger_top.get("sell_transactions_in_window", 0)) if isinstance(ledger_top, dict) else 0,
+                "has_sell_event": bool(ledger_top.get("has_sell_event", False)) if isinstance(ledger_top, dict) else False,
+                "total_trades_in_window": len(ledger_top.get("trades", [])) if isinstance(ledger_top, dict) else 0,
+                "first_invested_date": str(ledger_top.get("first_invested_date", "N/A")) if isinstance(ledger_top, dict) else "N/A",
+                "cash_days": int(ledger_top.get("cash_days", 0)) if isinstance(ledger_top, dict) else 0,
+                "effective_trading_days": int(ledger_top.get("effective_trading_days", 0)) if isinstance(ledger_top, dict) else 0,
                 "trade_ledger_ref": "reports/forensic_audit/stress_trade_ledger.json"
             }
 
@@ -1456,6 +1549,24 @@ def run_forensic_audit():
     # Save Structured Results to JSON
     json_out_path = output_dir / "forensic_audit_results.json"
     with open(json_out_path, "w") as f:
+        dsr_pass = [r for r in reconcile_results if r.get("deflated_sharpe_ratio", 0.0) >= 0.5]
+        p_pass = [r for r in reconcile_results if r.get("p_value_bonferroni", 1.0) < 0.05]
+        verdict = "PASS" if (dsr_pass and p_pass) else ("PARTIAL" if (dsr_pass or p_pass) else "FAIL")
+
+        unmet_clauses = []
+        if not p_pass:
+            unmet_clauses.append("Bonferroni FWER control")
+        if not dsr_pass:
+            unmet_clauses.append("Deflated Sharpe Ratio")
+
+        best_sr = round(float(max(sharpes)), 2) if sharpes else 0.0
+        if not unmet_clauses:
+            sig_summary = "Statistical significance test PASSES across qualifying configurations under both Bonferroni FWER control and Deflated Sharpe Ratio."
+        elif len(unmet_clauses) == 2:
+            sig_summary = f"With {K} trials at α=0.05, required Sharpe is {required_sharpe:.2f}. Best observed is {best_sr:.2f}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio."
+        else:
+            sig_summary = f"With {K} trials at α=0.05, required Sharpe is {required_sharpe:.2f}. Best observed is {best_sr:.2f}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under {unmet_clauses[0]}."
+
         payload = {
             "canonical_baseline": canonical_baseline,
             "deduplication_audit": {
@@ -1478,13 +1589,14 @@ def run_forensic_audit():
             "multiple_testing_audit": {
                 "trials_evaluated": K,
                 "family_wise_error_threshold": 0.05,
-                "bonferroni_adjusted_alpha": round(0.05 / K, 5),
+                "bonferroni_adjusted_alpha": round(0.05 / K, 5) if K > 0 else 0.05,
                 "benchmark_sharpe": benchmark_sharpe,
-                "expected_max_sharpe_null": round(expected_max_sharpe, 3),
+                "expected_max_sharpe_null": round(expected_max_sharpe, 4),
+                "var_sr_sampling": stats.get("var_sr_sampling"),
                 "required_sharpe_bonferroni": required_sharpe,
-                "best_observed_sharpe": round(float(max(sharpes)), 2),
-                "significance_verdict": "FAIL",
-                "statement": f"With {K} trials at α=0.05, required Sharpe is {required_sharpe:.2f}. Best observed is {max(sharpes):.2f}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control or Deflated Sharpe Ratio.",
+                "best_observed_sharpe": best_sr,
+                "significance_verdict": verdict,
+                "statement": sig_summary,
                 "methodology": "Bailey & Lopez de Prado (2014) Deflated Sharpe Ratio + Bonferroni FWER Control (Policy A: p_bonf > 0.05 OR DSR < 0.5 -> NOT_STATISTICALLY_SIGNIFICANT)",
             },
             "bear_market_stress_tests": bear_results,

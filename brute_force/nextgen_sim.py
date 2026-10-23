@@ -321,7 +321,12 @@ class NextGenSimulationEngine:
         sortino = ((mean_ret - rf_monthly) / down_std * np.sqrt(12.0)) if down_std > 1e-5 else 0.0
         calmar = (cagr / (max_dd * 100.0)) if max_dd > 1e-4 else 0.0
         win_rate = (winning_trades / closed_trades * 100.0) if closed_trades > 0 else 0.0
-        profit_factor = (gross_gains / gross_losses) if gross_losses > 0 else (99.9 if gross_gains > 0 else 1.0)
+        if gross_losses > 0:
+            profit_factor = gross_gains / gross_losses
+        elif gross_gains > 0:
+            profit_factor = float("inf")
+        else:
+            profit_factor = 0.0
 
         return {
             "config_type": "NEXT_GEN_UPGRADED",
@@ -337,7 +342,7 @@ class NextGenSimulationEngine:
             "max_drawdown_pct": float(round(max_dd * 100.0, 2)),
             "calmar_ratio": float(round(calmar, 2)),
             "win_rate_pct": float(round(win_rate, 2)),
-            "profit_factor": float(round(profit_factor, 2)),
+            "profit_factor": float(round(profit_factor, 2)) if np.isfinite(profit_factor) else float("inf"),
             "ending_equity": float(round(final_equity, 2)),
             "total_trades": int(closed_trades),
             "winning_trades": int(winning_trades),
