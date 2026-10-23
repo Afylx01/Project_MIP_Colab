@@ -428,7 +428,11 @@ class NativeBruteForceEngine:
             c_params[i].top_n = raw_top_n
             c_params[i].exit_buffer_rank = int(p.get("exit_buffer_rank", 40))
             c_params[i].max_per_sector = int(p.get("max_per_sector", 2))
-            c_params[i].sizing_mode = 0 if p.get("sizing_mode", "atr_risk_parity") == "atr_risk_parity" else 1
+            sizing = p.get("sizing_mode", "atr_risk_parity")
+            if isinstance(sizing, str):
+                c_params[i].sizing_mode = 0 if sizing.strip().lower() == "atr_risk_parity" else 1
+            else:
+                c_params[i].sizing_mode = 1 if int(sizing) == 1 else 0
 
             # Determine filter flags
             flags = p.get("filter_flags")

@@ -108,7 +108,22 @@ class TestDeflatedSharpeRatio:
                 "skew": 100.0,
                 "kurtosis": 3.0,
             }
-            assert compute_deflated_sharpe_ratio(const_ret, n_trials=10) == 0.0
+            assert compute_deflated_sharpe_ratio(const_ret, n_trials=10) is None
+
+    def test_psr_fails_closed_on_nonpositive_denominator(self):
+        """PSR must fail closed with None when denominator variance is non-positive or non-finite."""
+        from unittest.mock import patch
+        const = pd.Series([0.01] * 300)
+        with patch("nextgen.risk_statistics.compute_sample_moments") as m:
+            m.return_value = {
+                "n": 300.0,
+                "mean": 1.0,
+                "std": 0.01,
+                "skew": 100.0,
+                "kurtosis": 3.0,
+            }
+            assert compute_probabilistic_sharpe_ratio(const) is None
+            assert compute_deflated_sharpe_ratio(const, n_trials=1) is None
 
     def test_expected_max_sharpe_ratio_raises_on_nonpositive_variance(self):
         """compute_expected_max_sharpe_ratio must fail closed with ValueError when var_sr <= 0."""
@@ -117,6 +132,14 @@ class TestDeflatedSharpeRatio:
             compute_expected_max_sharpe_ratio(n_trials=10, var_sr=0.0)
         with pytest.raises(ValueError, match="var_sr must be positive"):
             compute_expected_max_sharpe_ratio(n_trials=10, var_sr=-0.5)
+
+    def test_expected_max_sharpe_ratio_rejects_nan_variance(self):
+        """compute_expected_max_sharpe_ratio must fail closed with ValueError when var_sr is NaN or Inf."""
+        import pytest
+        with pytest.raises(ValueError, match="var_sr must be positive"):
+            compute_expected_max_sharpe_ratio(n_trials=10, var_sr=float("nan"))
+        with pytest.raises(ValueError, match="var_sr must be positive"):
+            compute_expected_max_sharpe_ratio(n_trials=10, var_sr=float("inf"))
 
 
 class TestFactorReturnAttribution:

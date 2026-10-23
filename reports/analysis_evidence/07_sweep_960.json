@@ -1,0 +1,43 @@
+{
+  "cube_build_sec": 39.46,
+  "cube_memory_mb": 201.0,
+  "cube_dates": 4890,
+  "cube_symbols": 501,
+  "grid_size": 960,
+  "thread_scaling": {
+    "1": {
+      "configs": 960,
+      "seconds": 8.3235,
+      "configs_per_sec": 115.34
+    },
+    "2": {
+      "configs": 960,
+      "seconds": 4.1565,
+      "configs_per_sec": 230.96
+    },
+    "4": {
+      "configs": 960,
+      "seconds": 3.3521,
+      "configs_per_sec": 286.38
+    },
+    "8": {
+      "configs": 960,
+      "seconds": 3.0071,
+      "configs_per_sec": 319.24
+    }
+  },
+  "distinct_metric_signatures": 948,
+  "nan_cagr_rows": 0,
+  "best": {
+    "param_id": 446,
+    "cagr": 39.403343200683594,
+    "calmar": 0.7981477379798889,
+    "max_drawdown": 49.36848449707031,
+    "sharpe": 0.970909059047699,
+    "top_n": 10,
+    "lookback": 189,
+    "ema": 250,
+    "buffer": 20,
+    "sector_cap": 3
+  }
+}

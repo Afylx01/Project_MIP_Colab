@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import json
+import platform
 import argparse
 import subprocess
 from pathlib import Path
@@ -78,10 +79,18 @@ def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
 
+def _app_version() -> str:
+    try:
+        return (BASE_DIR / "VERSION").read_text(encoding="utf-8").strip() or "unknown"
+    except OSError:
+        return "unknown"
+
+
 def print_banner(latest_date: str):
+    banner_mid = f"Standalone Zero-Compiler Edition • Python {platform.python_version()} • v{_app_version()}"
     print(f"{C_BOLD}{C_CYAN}╔══════════════════════════════════════════════════════════════════════╗{C_RESET}")
     print(f"{C_BOLD}{C_CYAN}║           PROJECT MIP — PYDROID 3 MOBILE TRADING DESK                ║{C_RESET}")
-    print(f"{C_BOLD}{C_CYAN}║    Standalone Zero-Compiler Edition • Python 3.13 ARM64 • v2.0.0     ║{C_RESET}")
+    print(f"{C_BOLD}{C_CYAN}║    {banner_mid:<64}║{C_RESET}")
     print(f"{C_BOLD}{C_CYAN}╚══════════════════════════════════════════════════════════════════════╝{C_RESET}")
     print(f" {C_GRAY}Database: universe.db (Indexed SQLite) | Latest EOD: {C_BOLD}{latest_date}{C_RESET}")
     print(f"{C_GRAY}{'─' * 72}{C_RESET}")
@@ -584,11 +593,11 @@ def run_visuals_generator():
 # ═══════════════════════════════════════════════════════════════════════
 # Option [5]: Lightweight Custom Backtester
 # ═══════════════════════════════════════════════════════════════════════
-def run_custom_backtest_flow(benchmark: str = "NIFTY500"):
+def run_custom_backtest_flow(benchmark: str = "NIFTY500", universe: str = "ALL"):
     clear_screen()
     latest_date = get_latest_date()
     print_banner(latest_date)
-    print(f"\n{C_BOLD}{C_CYAN}💼 LIGHTWEIGHT VECTOR BACKTESTER [Benchmark: {benchmark}]{C_RESET}\n")
+    print(f"\n{C_BOLD}{C_CYAN}💼 LIGHTWEIGHT VECTOR BACKTESTER [Universe: {universe} | Benchmark: {benchmark}]{C_RESET}\n")
 
     print(f"Configure Backtest Parameters (Press Enter to accept defaults):")
     start_in = safe_input("  1. Start Date [Default: 2020-01-01]: ", "2020-01-01")
@@ -611,7 +620,8 @@ def run_custom_backtest_flow(benchmark: str = "NIFTY500"):
         start_date=start_in,
         end_date=end_in,
         top_n=top_n,
-        initial_capital=capital
+        initial_capital=capital,
+        universe_mode=universe,
     )
     elapsed = time.time() - t0
 
@@ -628,6 +638,9 @@ def run_custom_backtest_flow(benchmark: str = "NIFTY500"):
     print(f"  Total Trades:        {results['total_trades']}")
     print(f"  Trade Win Rate:      {results['win_rate_pct']:.1f}%")
     print(f"  Final Equity:        ₹{results['final_equity']:,.2f}")
+    print(f"  Universe:            {results.get('universe_mode', 'ALL')} ({results.get('universe_size', 0)} symbols)")
+    if results.get("survivorship_bias_risk"):
+        print(f"  {C_RED}⚠ Survivorship-bias risk: no point-in-time constituents for this window{C_RESET}")
     print(f"  Computation Time:    {elapsed:.2f}s")
     print(f"{C_BOLD}{'=' * 68}{C_RESET}")
     print(f"✓ Results saved to reports/backtest_results.json")
@@ -960,7 +973,7 @@ def run_standalone_sector_rrg():
             ret_3m = sec.get('return_3m', sec.get('ret_3m', 0))
             alpha_1m = sec.get('alpha_1m', 0)
             alpha_3m = sec.get('alpha_3m', 0)
-            breadth = sec.get('breadth_pct', sec.get('pct_above_200ema', 0))
+            breadth = sec.get('breadth_200_pct', sec.get('breadth_pct', sec.get('pct_above_200ema', 0)))
             rrg_quad = sec.get('rrg_quadrant', sec.get('quadrant', 'N/A'))
             color = C_GREEN if ret_1m > 0 else C_RED
             print(f"{name:<14} {color}{ret_1m:>7.1f}%{C_RESET} {ret_3m:>7.1f}% {alpha_1m:>7.1f}% {alpha_3m:>7.1f}% {breadth:>7.1f}% {rrg_quad:>12}")
@@ -1280,6 +1293,7 @@ def run_brute_force_flow(
                 use_residual_mom=use_residual_momentum,
                 use_vol_targeting=use_vol_targeting,
                 use_delivery_veto=use_delivery_veto,
+                universe_name=universe_mode,
             )
             print(f"\n{C_BOLD}{'=' * 68}{C_RESET}")
             print(f"{C_BOLD} BRUTE FORCE BASELINE SIMULATION REPORT ({schedule.upper()}){C_RESET}")
@@ -1459,7 +1473,7 @@ def run_brute_force_flow(
             end_in = input(f"  End Date (YYYY-MM-DD) [Default: 2026-08-31]: ").strip() or "2026-08-31"
 
             print(f"\n{C_YELLOW}Running native C99 simulation on Snapdragon 8 Gen 2...{C_RESET}")
-            res = runner.run_baseline(start_date=start_in, end_date=end_in, schedule=sched_in, benchmark=benchmark)
+            res = runner.run_baseline(start_date=start_in, end_date=end_in, schedule=sched_in, benchmark=benchmark, universe_name=universe_mode)
 
             print(f"\n{C_BOLD}{'=' * 68}{C_RESET}")
             print(f"{C_BOLD} CANONICAL BASELINE PERFORMANCE SUMMARY ({start_in} to {end_in}){C_RESET}")
@@ -1885,9 +1899,20 @@ def main_menu():
 
 def build_parser() -> argparse.ArgumentParser:
     """Builds and returns the CLI argument parser for main.py."""
-    parser = argparse.ArgumentParser(description="Project MIP Pydroid 3 Mobile Trading Desk — 36 NIFTY Universes Edition")
+    parser = argparse.ArgumentParser(
+        description="Project MIP Pydroid 3 Mobile Trading Desk — 36 NIFTY Universes Edition",
+        epilog=(
+            "Headless --option map: 1 scan, 2 telegram preview, 3 telegram dispatch, "
+            "4 visuals, 5 backtest, 6 TDD suite, 7 portfolio orders, 8 auto-fetch, "
+            "9 sector sync, 10 breadth, 11 RRG, 12 database audit, 13 ETF scan, "
+            "14 delivery analytics, 15 Excel regen, 16 settings, 17 all indices, 18 brute force. "
+            "Use --menu-option for the interactive menu numbering (1-18) instead."
+        ),
+    )
     parser.add_argument("--option", type=int, choices=range(1, 19),
-                        help="Run option directly without menu (1-18)")
+                        help="Run a headless task id (see epilog; differs from the interactive menu)")
+    parser.add_argument("--menu-option", type=int, choices=range(1, 19),
+                        help="Run an option using the interactive menu numbering (1-18)")
     parser.add_argument("--universe", type=str, default="NIFTY500",
                         help="Target universe selection (any of 36 NIFTY indices, e.g. NIFTY500, NIFTY750, NIFTYBank, NIFTYIT, ALL)")
     parser.add_argument("--date", "--as-of-date", type=str, default=None, dest="date",
@@ -1975,7 +2000,7 @@ if __name__ == "__main__":
         2: run_telegram_preview,
         3: run_telegram_dispatch,
         4: run_visuals_generator,
-        5: lambda: run_custom_backtest_flow(benchmark=args.benchmark),
+        5: lambda: run_custom_backtest_flow(benchmark=args.benchmark, universe=args.universe),
         6: run_tdd_suite,
         7: run_portfolio_orders,
         8: run_auto_fetch,
@@ -2005,6 +2030,16 @@ if __name__ == "__main__":
         ),
     }
 
+    if args.menu_option:
+        PAUSE_ON_RETURN = False
+        handlers = build_menu_handlers()
+        try:
+            handlers[str(args.menu_option)]()
+        except (ValueError, RuntimeError, PermissionError, StaleDataError, DataUnavailableError) as e:
+            print(f"{C_RED}Error: {e}{C_RESET}")
+            sys.exit(1)
+        sys.exit(0)
+
     if args.option and args.option in option_map:
         lock_file = BASE_DIR / "reports" / ".scanner.lock"
         if args.option in (1, 17):
@@ -2032,7 +2067,11 @@ if __name__ == "__main__":
                 print(f"{C_RED}Error: Another scanner process acquired lock concurrently (lock: {lock_file}){C_RESET}")
                 sys.exit(1)
         try:
-            option_map[args.option]()
+            try:
+                option_map[args.option]()
+            except (ValueError, RuntimeError, PermissionError, StaleDataError, DataUnavailableError) as e:
+                print(f"\n{C_RED}Error: {e}{C_RESET}")
+                sys.exit(1)
         finally:
             if args.option in (1, 17) and lock_file.exists():
                 try:

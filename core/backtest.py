@@ -33,10 +33,16 @@ from .portfolio import PortfolioManager, normalize_sector
 class LightweightBacktester:
     """Zero-compiler vectorized portfolio backtester for Pydroid 3."""
 
-    def __init__(self, base_dir: Optional[Path] = None, benchmark: str = "NIFTY500"):
+    def __init__(
+        self,
+        base_dir: Optional[Path] = None,
+        benchmark: str = "NIFTY500",
+        output_dir: Optional[Path] = None,
+    ):
         self.base_dir = Path(base_dir) if base_dir else get_base_dir()
         self.benchmark_name = benchmark or "NIFTY500"
         self.benchmark_csv = self.base_dir / "data" / "benchmark_nifty500.csv"
+        self.output_dir = Path(output_dir) if output_dir else (self.base_dir / "reports")
         self.pm = PortfolioManager(self.base_dir)
         self.sector_map = load_symbol_sector_map()
         try:
@@ -101,12 +107,20 @@ class LightweightBacktester:
         sizing_mode: Optional[str] = None,
         risk_per_trade_pct: Optional[float] = None,
         allow_research_overrides: bool = False,
+        universe_mode: Optional[str] = None,
+        strict_point_in_time: bool = False,
     ) -> Dict:
         """
         Runs historical monthly rebalance backtest with t+1 Open execution,
         integer shares, statutory frictions, exit buffer, market regime filter,
         max_per_sector concentration hard cap, and configurable sizing mode.
         Defaults to production-authoritative 'atr_risk_parity'.
+
+        universe_mode: "ALL" (default, full database) or any index name. When an
+        index is selected, point-in-time constituents are used if a snapshot exists
+        on/before start_date; otherwise current constituents are used and the
+        survivorship-bias risk is flagged in the result. strict_point_in_time=True
+        raises instead of falling back.
         """
         if not math.isfinite(initial_capital) or initial_capital <= 0:
             raise ValueError(f"INVALID_CAPITAL: initial_capital must be a positive finite number, got {initial_capital}")
@@ -126,14 +140,56 @@ class LightweightBacktester:
                 f"Resolved value is {risk_per_trade_pct}%. Research overrides require allow_research_overrides=True."
             )
 
+        # Resolve the requested universe. "ALL" keeps the historical behaviour of
+        # screening the full database; an index name filters to its constituents.
+        universe_label = str(universe_mode or "ALL").strip().upper()
+        universe_symbols: Optional[List[str]] = None
+        universe_point_in_time = False
+        survivorship_bias_risk = False
+        if universe_label not in ("", "ALL", "MASTER", "PIT"):
+            pit_symbols = None
+            try:
+                from brute_force.cube_builder import load_point_in_time_constituents
+                pit_symbols = load_point_in_time_constituents(
+                    universe_label, as_of_date=start_date, base_dir=self.base_dir
+                )
+            except Exception:
+                pit_symbols = None
+            if pit_symbols:
+                universe_symbols = sorted(pit_symbols)
+                universe_point_in_time = True
+            else:
+                from .data_engine import load_universe_constituents
+                current_symbols = load_universe_constituents(universe_label)
+                if current_symbols:
+                    if strict_point_in_time:
+                        raise ValueError(
+                            f"NO_POINT_IN_TIME_SNAPSHOT: no constituent snapshot on or before {start_date} "
+                            f"for universe '{universe_label}'. Refusing to fall back to current constituents."
+                        )
+                    universe_symbols = sorted(current_symbols)
+                    survivorship_bias_risk = True
+                    self.log(
+                        f"WARNING: No point-in-time snapshot for {universe_label} on/before {start_date}; "
+                        f"using {len(universe_symbols)} current constituents. Survivorship bias risk flagged."
+                    )
+                else:
+                    self.log(f"WARNING: Universe '{universe_label}' unresolved; falling back to ALL symbols.")
+                    universe_label = "ALL"
+        else:
+            universe_label = "ALL"
+
         mode_str = f"Random Selection (Seed {seed})" if random_selection else "Volar Momentum Ranking"
-        self.log(f"Running backtest {start_date} to {end_date} (Top {top_n}, Mode: {mode_str}, Max/Sector: {max_per_sector}, Sizing: {sizing_mode})...")
+        self.log(f"Running backtest {start_date} to {end_date} (Top {top_n}, Mode: {mode_str}, Max/Sector: {max_per_sector}, Sizing: {sizing_mode}, Universe: {universe_label})...")
 
         # 1. Warmup lookback for 252d indicators
         start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
         warmup_dt = start_dt - datetime.timedelta(days=550)
         warmup_str = warmup_dt.strftime("%Y-%m-%d")
-        cache_key = (warmup_str, end_date, getattr(self, "benchmark_name", "NIFTY500"))
+        cache_key = (
+            warmup_str, end_date, getattr(self, "benchmark_name", "NIFTY500"),
+            universe_label, tuple(universe_symbols) if universe_symbols else None,
+        )
 
         if getattr(self, "_prepared_cache_key", None) == cache_key and hasattr(self, "_prepared_cache"):
             c = self._prepared_cache
@@ -146,9 +202,12 @@ class LightweightBacktester:
             self.delisted_symbols = c["delisted_symbols"]
             bench_bull_map = c["bench_bull_map"]
             b_df = c["b_df"]
+            valid_dates_by_symbol = c.get("valid_dates_by_symbol", {})
+            calendar_filtered_dates = c.get("calendar_filtered_dates", 0)
+            universe_size = c.get("universe_size", 0)
         else:
             self.log(f"Loading bars from SQLite ({warmup_str} to {end_date})...")
-            bars = load_bars(start_date=warmup_str, end_date=end_date)
+            bars = load_bars(start_date=warmup_str, end_date=end_date, symbols=universe_symbols)
             bars["date"] = bars["date"].astype(str)
             bars = bars.sort_values(by=["symbol", "date"]).reset_index(drop=True)
             bars["sector"] = bars["symbol"].map(lambda s: self.sector_map.get(s, "OTHER"))
@@ -167,7 +226,15 @@ class LightweightBacktester:
                                 if col in df_adj.columns:
                                     bars.loc[mask, col] = df_adj[col].values
 
-            self.delisted_symbols = set(bars.loc[bars["is_delisted"] == 1, "symbol"].unique()) if "is_delisted" in bars.columns else set()
+            # Resolve delisting from each symbol's last observed session rather than
+            # trusting the per-row is_delisted flag (which is refreshed in bulk and can
+            # flip for symbols that resume trading).
+            last_bar_by_symbol = bars.groupby("symbol")["date"].max()
+            self.delisted_symbols = set(last_bar_by_symbol[last_bar_by_symbol < end_date].index)
+            if "is_delisted" in bars.columns:
+                self.delisted_symbols |= set(
+                    bars.loc[(bars["is_delisted"] == 1) & (bars["date"] == bars.groupby("symbol")["date"].transform("max")), "symbol"].unique()
+                )
 
             b_df = self.load_benchmark()
             bench_bull_map = {}
@@ -223,7 +290,24 @@ class LightweightBacktester:
 
             bars["pass_all"] = bars["pass_retrace"] & bars["pass_trend"] & bars["pass_rs"] & (bars["volar"] > 0)
 
-            all_dates = sorted(bars["date"].unique())
+            # Execution dates must be real exchange sessions. The raw database
+            # contains forward-filled placeholder rows on some non-session dates
+            # (e.g. 2026-05-01). Dates after the calendar's last entry are kept,
+            # because the calendar can lag the price database.
+            db_dates = sorted(bars["date"].unique())
+            try:
+                from .data_engine import load_trading_calendar
+                calendar_dates = set(load_trading_calendar(cal_path=self.base_dir / "data" / "trading_calendar.txt"))
+            except Exception:
+                calendar_dates = set()
+            if calendar_dates:
+                calendar_max = max(calendar_dates)
+                all_dates = [d for d in db_dates if d in calendar_dates or d > calendar_max]
+            else:
+                all_dates = db_dates
+            calendar_filtered_dates = len(db_dates) - len(all_dates)
+            if calendar_filtered_dates:
+                self.log(f"Calendar filter removed {calendar_filtered_dates} non-session date(s) from execution.")
             date_to_idx = {d: i for i, d in enumerate(all_dates)}
 
             self.log(f"Pre-indexing snapshots across universe bars...")
@@ -232,12 +316,20 @@ class LightweightBacktester:
             open_by_date = {}
             close_by_date = {}
             atr_by_date = {}
+            valid_dates_by_symbol = {}
             for d in all_dates:
                 g = bars_by_date.get(d)
-                if g is not None:
-                    open_by_date[d] = dict(zip(g["symbol"], g["open"]))
-                    close_by_date[d] = dict(zip(g["symbol"], g["close"]))
-                    atr_by_date[d] = dict(zip(g["symbol"], g["atr_14"]))
+                if g is None:
+                    continue
+                # Only bars with traded volume are executable; zero-volume rows are
+                # forward-filled placeholders and must not be used as fill prices.
+                tradable = g[g["volume"] > 0]
+                open_by_date[d] = dict(zip(tradable["symbol"], tradable["open"]))
+                close_by_date[d] = dict(zip(g["symbol"], g["close"]))
+                atr_by_date[d] = dict(zip(g["symbol"], g["atr_14"]))
+            for sym, g in bars[bars["volume"] > 0].groupby("symbol"):
+                valid_dates_by_symbol[str(sym)] = sorted(g["date"].unique())
+            universe_size = int(bars["symbol"].nunique())
 
             self._prepared_cache = {
                 "bars_by_date": bars_by_date,
@@ -249,6 +341,9 @@ class LightweightBacktester:
                 "delisted_symbols": self.delisted_symbols,
                 "bench_bull_map": bench_bull_map,
                 "b_df": b_df,
+                "valid_dates_by_symbol": valid_dates_by_symbol,
+                "calendar_filtered_dates": calendar_filtered_dates,
+                "universe_size": universe_size,
             }
             self._prepared_cache_key = cache_key
 
@@ -276,6 +371,24 @@ class LightweightBacktester:
         total_closed_trades = 0
 
         slippage_rate = slippage_bps / 10000.0
+        deferred_fills = 0
+
+        import bisect
+
+        def resolve_fill(symbol: str, earliest_date: str):
+            """Returns (fill_date, open_price) on/after earliest_date for a symbol
+            that actually traded. Prevents fills on zero-volume placeholder rows."""
+            dates = valid_dates_by_symbol.get(symbol)
+            if not dates:
+                return None, None
+            j = bisect.bisect_left(dates, earliest_date)
+            if j >= len(dates):
+                return None, None
+            fill_date = dates[j]
+            px = open_by_date.get(fill_date, {}).get(symbol)
+            if px is None or not np.isfinite(px) or px <= 0:
+                return None, None
+            return fill_date, float(px)
 
         for i in range(len(rebalance_signal_dates) - 1):
             signal_date = rebalance_signal_dates[i]
@@ -340,13 +453,21 @@ class LightweightBacktester:
                         # Retain position across rebalance (No needless liquidation!)
                         retained_holdings[sym] = h
                     else:
-                        # Liquidate at exec_date Open
-                        exit_px = o_slice.get(sym) or c_exec.get(sym) or last_known_close.get(sym, 0.0)
+                        # Liquidate on the next session where the scrip actually trades.
+                        fill_date, resolved_px = resolve_fill(sym, exec_date)
+                        if resolved_px is not None:
+                            exit_date = fill_date
+                            exit_px = resolved_px
+                            if fill_date != exec_date:
+                                deferred_fills += 1
+                        else:
+                            exit_date = exec_date
+                            exit_px = c_exec.get(sym) or last_known_close.get(sym, 0.0)
                         if exit_px <= 0:
                             exit_px = 0.0
 
                         # Distress liquidation haircut for delisted / suspended companies (DEF-07)
-                        if sym in getattr(self, "delisted_symbols", set()) and (m is None or sym not in o_slice):
+                        if sym in getattr(self, "delisted_symbols", set()) and resolved_px is None:
                             exit_px = exit_px * 0.50
 
                         gross_proceeds = shares * exit_px
@@ -365,7 +486,7 @@ class LightweightBacktester:
                             "trade_id": total_closed_trades,
                             "symbol": sym,
                             "entry_date": entry_dt,
-                            "exit_date": exec_date,
+                            "exit_date": exit_date,
                             "entry_px": buy_px,
                             "exit_px": exit_px,
                             "entry_price": buy_px,
@@ -439,9 +560,13 @@ class LightweightBacktester:
 
                     raw_entries = []
                     for sym in selected_symbols:
-                        buy_px = o_slice.get(sym) or c_exec.get(sym, 0.0)
-                        if buy_px <= 0:
+                        fill_date, buy_px = resolve_fill(sym, exec_date)
+                        if buy_px is None or buy_px <= 0:
                             continue
+                        if fill_date > next_signal_date:
+                            continue
+                        if fill_date != exec_date:
+                            deferred_fills += 1
                         atr = a_slice.get(sym, buy_px * 0.03)
                         if not np.isfinite(atr) or atr <= 0:
                             atr = buy_px * 0.03
@@ -455,6 +580,7 @@ class LightweightBacktester:
                             raw_entries.append({
                                 "symbol": sym,
                                 "buy_px": buy_px,
+                                "fill_date": fill_date,
                                 "q_target": q_target,
                                 "est_cost": trade_val + buy_fric,
                             })
@@ -476,13 +602,15 @@ class LightweightBacktester:
                                     "shares": shares,
                                     "buy_px": buy_px,
                                     "cost_basis": total_cost,
-                                    "entry_date": exec_date,
+                                    "entry_date": e.get("fill_date", exec_date),
                                 }
                 else:
                     target_alloc = investable_cash / len(selected_symbols)
                     for sym in selected_symbols:
-                        buy_px = o_slice.get(sym) or c_exec.get(sym, 0.0)
-                        if buy_px > 0:
+                        fill_date, buy_px = resolve_fill(sym, exec_date)
+                        if buy_px is not None and buy_px > 0 and fill_date <= next_signal_date:
+                            if fill_date != exec_date:
+                                deferred_fills += 1
                             shares = int(target_alloc // buy_px)
                             if shares > 0:
                                 trade_val = shares * buy_px
@@ -494,7 +622,7 @@ class LightweightBacktester:
                                         "shares": shares,
                                         "buy_px": buy_px,
                                         "cost_basis": total_cost,
-                                        "entry_date": exec_date,
+                                        "entry_date": fill_date,
                                     }
 
             # Daily Equity Tracking between exec_date and next_signal_date
@@ -580,6 +708,10 @@ class LightweightBacktester:
         else:
             bm_cagr = 0.0
 
+        # Export trade log and results (isolated output directory)
+        reports_dir = self.output_dir
+        reports_dir.mkdir(parents=True, exist_ok=True)
+
         results = {
             "start_date": start_date,
             "end_date": end_date,
@@ -605,13 +737,18 @@ class LightweightBacktester:
             "is_production_contract": bool(abs(risk_per_trade_pct - 1.0) <= 1e-6 and sizing_mode == "atr_risk_parity" and max_per_sector == 2),
             "allow_research_overrides": bool(allow_research_overrides),
             "return_type": "price_appreciation_adjusted",
+            "universe_mode": universe_label,
+            "universe_size": universe_size,
+            "universe_point_in_time": bool(universe_point_in_time),
+            "survivorship_bias_risk": bool(survivorship_bias_risk),
+            "strict_point_in_time": bool(strict_point_in_time),
+            "calendar_filtered_dates": int(calendar_filtered_dates),
+            "deferred_fills": int(deferred_fills),
             "total_trades": total_closed_trades,
             "win_rate_pct": win_rate,
+            "monthly_returns": [float(v) for v in eq_df["ret"].iloc[1:].tolist()],
+            "trade_log_path": str(reports_dir / "trade_log.csv"),
         }
-
-        # Export trade log and results
-        reports_dir = self.base_dir / "reports"
-        reports_dir.mkdir(parents=True, exist_ok=True)
 
         trade_cols = [
             "trade_id", "symbol", "entry_date", "exit_date", "entry_px", "exit_px",

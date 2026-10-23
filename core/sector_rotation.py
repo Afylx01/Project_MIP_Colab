@@ -134,6 +134,20 @@ class SectorRotationEngine:
             )
             snap = bars[bars["date"] == target_date].copy()
 
+        # The scanner passes a snapshot with RRG columns already computed. The
+        # standalone flow does not, so compute them here instead of silently
+        # defaulting every sector to RS-Ratio=RS-Momentum=100 (which labels all
+        # sectors LEADING).
+        if "rrg_rs_ratio" not in snap.columns or "rrg_rs_momentum" not in snap.columns:
+            b_df = self.load_benchmark()
+            if not b_df.empty and "bars" in locals() and not bars.empty:
+                bm_map = dict(zip(b_df["date"].astype(str), b_df["close"]))
+                bars["benchmark_close"] = bars["date"].map(bm_map)
+                from .rrg import compute_rrg_metrics
+                bars = compute_rrg_metrics(bars)
+                snap = bars[bars["date"] == target_date].copy()
+                self.log("Computed RRG metrics for standalone sector rotation.")
+
         # Attach official AMFI industry taxonomy
         snap["sector"] = snap["symbol"].map(self.sector_map).fillna("SERVICES")
 

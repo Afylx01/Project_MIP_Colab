@@ -57,6 +57,49 @@ from .health import ScannerHealthMonitor, ScannerHealthReport, ScannerHealthStat
 from .scan_quality_report import ScanQualityReporter, CandidateExplanation
 
 
+PICKS_HISTORY_SCHEMA = {
+    "pick_date": "TEXT",
+    "symbol": "TEXT",
+    "rank": "INTEGER",
+    "industry": "TEXT",
+    "regime": "TEXT",
+    "signal_type": "TEXT",
+    "status": "TEXT",
+    "entry_price": "REAL",
+    "ret_1w": "REAL",
+    "ret_1m": "REAL",
+    "ret_since": "REAL",
+    "last_px_date": "TEXT",
+    "volar_score": "REAL",
+}
+
+
+def ensure_picks_history_schema(conn) -> None:
+    """
+    Creates or migrates the operational picks_history table.
+
+    Older deployments created this table with a different column set
+    (ret_3m/ret_6m/ret_1y/exit_date/... but no ret_since), which made every
+    INSERT fail silently behind a broad except. CREATE TABLE IF NOT EXISTS
+    cannot alter an existing table, so missing columns are added explicitly.
+    """
+    cursor = conn.cursor()
+    columns = ", ".join(f"{name} {dtype}" for name, dtype in PICKS_HISTORY_SCHEMA.items())
+    cursor.execute(f"""
+        CREATE TABLE IF NOT EXISTS picks_history (
+            {columns},
+            PRIMARY KEY (pick_date, symbol)
+        )
+    """)
+    existing = {row[1] for row in cursor.execute("PRAGMA table_info(picks_history)").fetchall()}
+    for name, dtype in PICKS_HISTORY_SCHEMA.items():
+        if name not in existing:
+            cursor.execute(f"ALTER TABLE picks_history ADD COLUMN {name} {dtype}")
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_picks_history_pk ON picks_history(pick_date, symbol)"
+    )
+
+
 def _calc_calendar_aligned_return(s: pd.Series, calendar: Optional[List[str]] = None, lookback: int = 252) -> pd.Series:
     """
     Computes lookback return aligned to trading calendar or bounded index.
@@ -152,25 +195,8 @@ class PydroidScanner:
         try:
             from .data_engine import get_operational_connection
             conn = get_operational_connection()
+            ensure_picks_history_schema(conn)
             cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS picks_history (
-                    pick_date TEXT,
-                    symbol TEXT,
-                    rank INTEGER,
-                    industry TEXT,
-                    regime TEXT,
-                    signal_type TEXT,
-                    status TEXT,
-                    entry_price REAL,
-                    ret_1w REAL,
-                    ret_1m REAL,
-                    ret_since REAL,
-                    last_px_date TEXT,
-                    volar_score REAL,
-                    PRIMARY KEY (pick_date, symbol)
-                )
-            """)
             regime_str = "BULL" if market_bullish else "BEAR"
             sig_str = "BUY" if market_bullish else "BEAR_HOLD"
             for _, r in top_df.iterrows():
@@ -185,34 +211,44 @@ class PydroidScanner:
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (target_date, sym, rnk, ind, regime_str, sig_str, "ACTIVE", px, None, None, 0.0, target_date, volar))
 
-            # Update returns for past active picks using current close prices from prices table
+            # Persist this scan's picks before enriching historical returns, so a
+            # failure in the enrichment phase cannot roll back the current picks.
+            conn.commit()
+
+            # Update returns for past active picks using current close prices from
+            # the universe database (the operational DB has no prices table).
             px_map = dict(zip(top_df["symbol"], top_df["close"]))
             cursor.execute("SELECT pick_date, symbol, entry_price FROM picks_history WHERE status='ACTIVE' AND pick_date != ?", (target_date,))
             active_picks = cursor.fetchall()
-            for pdate, sym, entry in active_picks:
-                curr_px = None
-                last_px_date = target_date
-                if sym in px_map:
-                    curr_px = float(px_map[sym])
-                else:
-                    cursor.execute(
-                        "SELECT close, date FROM prices WHERE symbol=? AND date <= ? ORDER BY date DESC LIMIT 1",
-                        (sym, target_date)
-                    )
-                    row = cursor.fetchone()
-                    if row and row[0] is not None:
-                        curr_px = float(row[0])
-                        last_px_date = str(row[1])
+            from .data_engine import get_connection
+            universe_conn = get_connection(read_only=True, reuse=False)
+            try:
+                universe_cur = universe_conn.cursor()
+                for pdate, sym, entry in active_picks:
+                    curr_px = None
+                    last_px_date = target_date
+                    if sym in px_map:
+                        curr_px = float(px_map[sym])
+                    else:
+                        universe_cur.execute(
+                            "SELECT close, date FROM prices WHERE symbol=? AND date <= ? ORDER BY date DESC LIMIT 1",
+                            (sym, target_date)
+                        )
+                        row = universe_cur.fetchone()
+                        if row and row[0] is not None:
+                            curr_px = float(row[0])
+                            last_px_date = str(row[1])
 
-                if curr_px is not None and entry > 0:
-                    ret_s = round((curr_px / entry - 1.0) * 100.0, 2)
-                    cursor.execute("""
-                        UPDATE picks_history
-                        SET ret_since=?, last_px_date=?
-                        WHERE pick_date=? AND symbol=?
-                    """, (ret_s, last_px_date, pdate, sym))
-
-            conn.commit()
+                    if curr_px is not None and entry > 0:
+                        ret_s = round((curr_px / entry - 1.0) * 100.0, 2)
+                        cursor.execute("""
+                            UPDATE picks_history
+                            SET ret_since=?, last_px_date=?
+                            WHERE pick_date=? AND symbol=?
+                        """, (ret_s, last_px_date, pdate, sym))
+                conn.commit()
+            finally:
+                universe_conn.close()
         except Exception as e:
             self.log(f"Warning: Failed to record picks history ({e})")
         finally:

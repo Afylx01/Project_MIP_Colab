@@ -42,6 +42,7 @@ reports/*.log
 reports/charts/
 reports/deliverables/
 reports/.scanner.lock
+reports/analysis_evidence/_python_runs/
 data/bhavcopy_delivery/
 sec_bhavdata_*.csv
 data/benchmark_*.csv

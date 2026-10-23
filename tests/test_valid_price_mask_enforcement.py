@@ -86,10 +86,11 @@ class TestValidPriceMaskEnforcement(unittest.TestCase):
         self.assertEqual(row["ending_equity"], 100_000.0)
         self.assertGreater(row["turnover_annual"], 0.0)
 
-    def test_daily_valuation_respects_valid_price_mask_multi_symbol(self):
+    def test_daily_valuation_forward_fills_masked_bar(self):
         """
         N=3 cube, hold SYM0. At day 15, valid_price_mask[15, 0]=0 but close_px[15, 0]=100.0 (stale non-NaN).
-        Simulation must fail-closed with DATA_INSUFFICIENT.
+        The engine must value the holding from the prior finite close and remain VALID;
+        a single halted session must not invalidate a multi-year simulation.
         """
         num_dates = 30
         N = 3
@@ -133,13 +134,14 @@ class TestValidPriceMaskEnforcement(unittest.TestCase):
 
         res = self.engine.run_sweep(cube, [param])
         row = res.iloc[0]
-        self.assertTrue(row["data_insufficient"])
-        self.assertEqual(row["status"], "DATA_INSUFFICIENT")
+        self.assertFalse(row["data_insufficient"])
+        self.assertEqual(row["status"], "VALID")
+        self.assertGreater(float(row["ending_equity"]), 0.0)
 
-    def test_entry_masked_increments_nan_counter_fails_closed(self):
+    def test_masked_entry_skips_rebalance_without_invalidating(self):
         """
         N=2, top_n=2. Both symbols have valid_price_mask[exec_date, :]=0 at first rebalance.
-        Simulation must increment nan counter and fail closed as DATA_INSUFFICIENT.
+        The rebalance must be skipped (stay in cash) without invalidating the simulation.
         """
         num_dates = 30
         N = 2
@@ -184,8 +186,10 @@ class TestValidPriceMaskEnforcement(unittest.TestCase):
 
         res = self.engine.run_sweep(cube, [param])
         row = res.iloc[0]
-        self.assertTrue(row["data_insufficient"])
-        self.assertEqual(row["status"], "DATA_INSUFFICIENT")
+        self.assertFalse(row["data_insufficient"])
+        self.assertEqual(row["status"], "VALID")
+        self.assertEqual(int(row["total_trades"]), 0)
+        self.assertAlmostEqual(float(row["ending_equity"]), 100_000.0, places=2)
 
     def test_single_symbol_masked_signal_fails_closed(self):
         """For N=1, a masked bar fails closed as DATA_INSUFFICIENT."""

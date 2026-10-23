@@ -1,0 +1,39 @@
+
+[CubeBuilder] Loading constituents for universe 'NIFTY500'...
+[CubeBuilder] Loaded 501 constituents from NIFTY500.
+[CubeBuilder] Final active symbol count: 501.
+[CubeBuilder] Querying raw price bars from SQLite (2007-01-02 to 2026-10-19)...
+[CubeBuilder] Loaded 1,282,436 price bars across 4890 trading dates.
+[CubeBuilder] Resolving benchmark series for 'NIFTY500'...
+[CubeBuilder] Allocating price matrix for 4890 dates x 501 symbols...
+[CubeBuilder] Computing vectorized ATR-14...
+[CubeBuilder] Precomputing 4 lookback cubes for Volar, Highs & Residual Momentum...
+[CubeBuilder] Precomputing 5 EMA cubes and Relative Strength filters...
+[CubeBuilder] Precomputing EWMA Volatility Targeting & Cash Shield...
+[CubeBuilder] Precomputing Microstructure Delivery Flow Veto plane...
+[CubeBuilder] Building 5 Multi-Schedule Rebalance Index Tables...
+  • Weekly:      1,036 rebalances
+  • Monthly:     238 rebalances
+  • Quarterly:   80 rebalances
+  • Half-Yearly: 40 rebalances
+  • Yearly:      20 rebalances
+
+[CubeBuilder] Tensor Cube created: 200.98 MB RAM footprint.
+[CubeBuilder] Dates: 4890 (2007-01-02 to 2026-10-19), Symbols: 501 (NIFTY500).
+[Runner] In-memory Tensor Cube [NIFTY500 | Benchmark: NIFTY500] generated in 8.38s
+total_sec 8.39
+{
+  "universe": "NIFTY500",
+  "cagr_pct": 28.600000381469727,
+  "sharpe_ratio": 0.9599999785423279,
+  "sortino_ratio": 1.5800000429153442,
+  "max_drawdown_pct": 38.31999969482422,
+  "calmar_ratio": 0.75,
+  "win_rate_pct": 44.68000030517578,
+  "profit_factor": 2.2200000286102295,
+  "ending_equity": 13624590.0,
+  "total_trades": 602,
+  "winning_trades": 269,
+  "turnover_annual_pct": 371.8299865722656,
+  "sim_latency_ms": 7.387
+}

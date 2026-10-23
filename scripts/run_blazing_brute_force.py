@@ -67,6 +67,7 @@ def main():
             start_date=args.start_date,
             end_date=args.end_date,
             schedule=args.schedule,
+            universe_name=args.universe,
         )
         json_path = out_dir / "canonical_baseline_results.json"
         with open(json_path, "w") as f:

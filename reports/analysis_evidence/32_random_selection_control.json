@@ -1,0 +1,36 @@
+{
+  "random_runs": [
+    {
+      "seed": 11,
+      "cagr": 30.81,
+      "sharpe": 0.62,
+      "maxdd": -20.26,
+      "trades": 1660
+    },
+    {
+      "seed": 22,
+      "cagr": 31.01,
+      "sharpe": 0.62,
+      "maxdd": -24.02,
+      "trades": 1660
+    },
+    {
+      "seed": 33,
+      "cagr": 19.78,
+      "sharpe": 0.48,
+      "maxdd": -19.85,
+      "trades": 1659
+    }
+  ],
+  "random_median_cagr": 30.81,
+  "random_median_sharpe": 0.62,
+  "random_max_cagr": 31.01,
+  "volar_same_engine": {
+    "cagr": 33.28,
+    "sharpe": 1.22,
+    "maxdd": -21.39,
+    "trades": 723
+  },
+  "ranking_edge_cagr": 2.4700000000000024,
+  "ranking_edge_sharpe": 0.6
+}

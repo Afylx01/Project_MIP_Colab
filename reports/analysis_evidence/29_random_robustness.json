@@ -1,0 +1,199 @@
+{
+  "generated": "2026-10-23T20:18:00Z",
+  "recommended": {
+    "lookback": 315,
+    "ema": 250,
+    "top_n": 20,
+    "buffer": 30,
+    "cap": 2,
+    "sizing": "equal_weight",
+    "regime": true
+  },
+  "tests": {
+    "R1_random_windows": {
+      "windows": 200,
+      "cagr": {
+        "n": 200,
+        "median": 40.49,
+        "p05": 8.15,
+        "p95": 88.4,
+        "min": -1.48,
+        "max": 195.42,
+        "pct_positive": 99.0
+      },
+      "sharpe": {
+        "n": 200,
+        "median": 0.92,
+        "p05": 0.09,
+        "p95": 2.31,
+        "min": -0.43,
+        "max": 2.95,
+        "pct_positive": 95.5
+      },
+      "maxdd": {
+        "n": 200,
+        "median": 25.3,
+        "p05": 12.96,
+        "p95": 80.04,
+        "min": 8.05,
+        "max": 85.36,
+        "pct_positive": 100.0
+      },
+      "excess": {
+        "n": 200,
+        "median": 24.86,
+        "p05": 4.13,
+        "p95": 76.71,
+        "min": -4.33,
+        "max": 180.31,
+        "pct_positive": 97.0
+      },
+      "pct_beat_benchmark": 97.0,
+      "pct_dd_under_20": 20.0,
+      "pct_dd_under_30": 82.0,
+      "worst_window": {
+        "start": "2018-06-22",
+        "end": "2020-07-22",
+        "months": 508,
+        "cagr": -1.4787614345550537,
+        "sharpe": -0.38339242339134216,
+        "maxdd": 20.734004974365234,
+        "calmar": -0.07132058590650558,
+        "trades": 126,
+        "bench_cagr": -1.300098956515483,
+        "excess": -0.1786624780395707
+      },
+      "best_window": {
+        "start": "2013-12-19",
+        "end": "2016-04-18",
+        "months": 568,
+        "cagr": 195.4172821044922,
+        "sharpe": 0.9014632701873779,
+        "maxdd": 12.779014587402344,
+        "calmar": 15.292046546936035,
+        "trades": 113,
+        "bench_cagr": 15.10701892866253,
+        "excess": 180.31026317582965
+      }
+    },
+    "R2_random_perturbations": {
+      "n": 486,
+      "is_cagr": {
+        "n": 486,
+        "median": 28.71,
+        "p05": 18.55,
+        "p95": 37.8,
+        "min": 16.5,
+        "max": 42.18,
+        "pct_positive": 100.0
+      },
+      "is_sharpe": {
+        "n": 486,
+        "median": 0.85,
+        "p05": 0.52,
+        "p95": 1.18,
+        "min": 0.42,
+        "max": 1.29,
+        "pct_positive": 100.0
+      },
+      "oos_cagr": {
+        "n": 486,
+        "median": 23.12,
+        "p05": 13.43,
+        "p95": 33.1,
+        "min": 10.45,
+        "max": 36.88,
+        "pct_positive": 100.0
+      },
+      "oos_sharpe": {
+        "n": 486,
+        "median": 0.82,
+        "p05": 0.48,
+        "p95": 1.18,
+        "min": 0.31,
+        "max": 1.28,
+        "pct_positive": 100.0
+      },
+      "oos_dd": {
+        "n": 486,
+        "median": 24.36,
+        "p05": 18.71,
+        "p95": 30.05,
+        "min": 15.41,
+        "max": 32.22,
+        "pct_positive": 100.0
+      },
+      "pct_oos_positive": 100.0,
+      "pct_oos_beat_bench": 100.0,
+      "corr_is_oos_cagr": 0.502,
+      "corr_is_oos_sharpe": 0.6
+    },
+    "R3_random_costs": {
+      "n": 200,
+      "cagr": {
+        "n": 200,
+        "median": 31.5,
+        "p05": 29.81,
+        "p95": 33.39,
+        "min": 29.02,
+        "max": 34.0,
+        "pct_positive": 100.0
+      },
+      "sharpe": {
+        "n": 200,
+        "median": 1.11,
+        "p05": 1.05,
+        "p95": 1.18,
+        "min": 1.01,
+        "max": 1.2,
+        "pct_positive": 100.0
+      },
+      "maxdd": {
+        "n": 200,
+        "median": 28.27,
+        "p05": 26.7,
+        "p95": 29.78,
+        "min": 26.29,
+        "max": 30.57,
+        "pct_positive": 100.0
+      },
+      "pct_cagr_over_20": 100.0,
+      "pct_sharpe_over_0_9": 100.0,
+      "worst_cost": {
+        "friction_bps": 49.249334591635666,
+        "slippage_bps": 23.763021262600194,
+        "cagr": 29.018665313720703,
+        "sharpe": 1.0146229267120361,
+        "maxdd": 30.574674606323242
+      }
+    },
+    "R6_regimes": {
+      "bench_up_months": 79,
+      "bench_down_months": 47,
+      "strategy_mean_in_up_pct": 3.27,
+      "strategy_mean_in_down_pct": 1.18,
+      "strategy_win_rate_up_pct": 75.9,
+      "strategy_win_rate_down_pct": 68.1,
+      "rolling_12m": {
+        "n": 115,
+        "median": 35.07,
+        "p05": -10.49,
+        "p95": 114.69,
+        "min": -20.24,
+        "max": 133.36,
+        "pct_positive": 86.1
+      },
+      "rolling_12m_pct_positive": 86.1,
+      "corr_monthly_vs_bench": 0.003
+    },
+    "R7_low_dd_search": {
+      "grid": 648,
+      "families": {
+        "dd20_cagr": null,
+        "dd22_cagr": null,
+        "dd25_cagr": null,
+        "dd20_calmar": null
+      }
+    }
+  }
+}

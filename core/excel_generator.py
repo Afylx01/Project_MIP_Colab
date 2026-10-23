@@ -1,5 +1,5 @@
 """
-Project MIP Pydroid 3: Institutional 12-Sheet Excel Workbook Generator
+Project MIP Pydroid 3: Institutional 14-Sheet Excel Workbook Generator
 Directive: DIR-PROD-PYDROID3-PARITY-01 (MIP-1 v5.5.1 Institutional Publication Edition)
 
 Generates the complete 12-sheet institutional Excel workbook:

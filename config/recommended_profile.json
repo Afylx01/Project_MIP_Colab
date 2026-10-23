@@ -1,0 +1,100 @@
+{
+  "schema": "mip.recommended_profile.v1",
+  "generated": "2026-10-23",
+  "name": "Balanced 50% Buffer",
+  "status": "research recommendation — not investment advice",
+  "market": "NSE India",
+  "universe": "NIFTY500",
+  "benchmark": "NIFTY500",
+  "rebalance": "monthly",
+  "lookback_bars": 315,
+  "ema_trend_span": 250,
+  "top_n": 20,
+  "exit_buffer_rank": 30,
+  "max_per_sector": 2,
+  "sizing_mode": "equal_weight",
+  "risk_per_trade_pct": 1.0,
+  "atr_stop_multiplier": 2.0,
+  "regime_filter": true,
+  "regime_ema_span": 20,
+  "friction_bps": 15.0,
+  "slippage_bps": 5.0,
+  "initial_capital": 1000000.0,
+  "expected_performance_2016_2026": {
+    "cagr_pct": 32.4,
+    "sharpe": 1.2,
+    "sortino": 1.74,
+    "max_drawdown_monthly_pct": -21.36,
+    "max_drawdown_daily_pct": -26.83,
+    "calmar": 1.52,
+    "benchmark_cagr_pct": 13.16,
+    "alpha_annual_pct": 19.8,
+    "beta": 0.76
+  },
+  "expected_performance_oos_2022_2026": {
+    "cagr_pct": 28.77,
+    "sharpe": 1.08,
+    "max_drawdown_pct": -18.89,
+    "benchmark_cagr_pct": 10.05,
+    "benchmark_effective_months": 56
+  },
+  "alternatives": {
+    "lower_forward_drawdown": {
+      "name": "L6 — lower OOS drawdown",
+      "lookback_bars": 315,
+      "ema_trend_span": 200,
+      "top_n": 25,
+      "exit_buffer_rank": 30,
+      "max_per_sector": 3,
+      "sizing_mode": "equal_weight",
+      "volatility_targeting": true,
+      "expected_2016_2026": {"cagr_pct": 31.4, "sharpe": 1.25, "max_drawdown_monthly_pct": -24.12, "max_drawdown_daily_pct": -28.68},
+      "expected_oos_2022_2026": {"cagr_pct": 29.29, "sharpe": 1.19, "max_drawdown_pct": -16.28}
+    },
+    "capital_preservation": {
+      "name": "L5 — lowest full-period monthly drawdown",
+      "lookback_bars": 252,
+      "ema_trend_span": 200,
+      "top_n": 25,
+      "exit_buffer_rank": 20,
+      "max_per_sector": 1,
+      "sizing_mode": "equal_weight",
+      "volatility_targeting": false,
+      "expected_2016_2026": {"cagr_pct": 22.76, "sharpe": 0.88, "max_drawdown_monthly_pct": -18.01, "max_drawdown_daily_pct": -33.47},
+      "expected_oos_2022_2026": {"cagr_pct": 14.19, "sharpe": 0.6, "max_drawdown_pct": -10.87}
+    },
+    "higher_cagr": {
+      "name": "L3 — higher CAGR, deeper full-period drawdown",
+      "lookback_bars": 315,
+      "ema_trend_span": 200,
+      "top_n": 25,
+      "exit_buffer_rank": 30,
+      "max_per_sector": 3,
+      "sizing_mode": "equal_weight",
+      "volatility_targeting": false,
+      "expected_2016_2026": {"cagr_pct": 32.89, "sharpe": 1.26, "max_drawdown_monthly_pct": -24.55, "max_drawdown_daily_pct": -29.77},
+      "expected_oos_2022_2026": {"cagr_pct": 29.56, "sharpe": 1.15, "max_drawdown_pct": -17.25}
+    }
+  },
+  "random_test_summary": {
+    "random_windows_200_median_cagr": 40.49,
+    "random_windows_200_pct_beat_benchmark": 97.0,
+    "random_windows_valid_158_median_cagr": 44.16,
+    "random_windows_valid_158_pct_beat_benchmark": 98.7,
+    "random_windows_data_insufficient_42_median_cagr": 20.26,
+    "random_windows_modern_median_cagr": 35.15,
+    "random_perturbations_486_oos_median_cagr": 23.12,
+    "random_cost_regimes_200_median_cagr": 31.5,
+    "retracted": [
+      "random_universe_subsets_5 (no generator under tag)",
+      "random_selection_ranking_edge (no generator under tag)"
+    ]
+  },
+  "caveats": [
+    "No historical point-in-time constituents before Oct 2026; measured survivorship overstatement is 1.51 pp CAGR (all-symbols vs survivors, same engine/config).",
+    "DSR with 8000 trials is 0.42; the edge is not proof against exhaustive data mining.",
+    "Random 2-5 year windows had a median daily max drawdown of 25.3%; only 20% stayed under 20% (9.5% of coverage-valid windows).",
+    "2008 and 2011 stress windows are DATA_INSUFFICIENT (14.8% and 16.2% of current NIFTY500 constituents have the required history) and are excluded from headline claims.",
+    "Run the liquidity and pre-trade compliance engines before deploying real capital."
+  ]
+}

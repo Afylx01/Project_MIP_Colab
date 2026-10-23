@@ -1,0 +1,146 @@
+{
+  "NIFTY50": {
+    "total": 50,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYNEXT50": {
+    "total": 50,
+    "status": "CACHED-VALID"
+  },
+  "NIFTY100": {
+    "total": 100,
+    "status": "CACHED-VALID"
+  },
+  "NIFTY200": {
+    "total": 200,
+    "status": "CACHED-VALID"
+  },
+  "NIFTY500": {
+    "total": 501,
+    "status": "CACHED-VALID"
+  },
+  "NIFTY750": {
+    "total": 755,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYMIDCAP50": {
+    "total": 50,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYMIDCAP100": {
+    "total": 100,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYMIDCAP150": {
+    "total": 150,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYSMALLCAP50": {
+    "total": 50,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYSMALLCAP100": {
+    "total": 100,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYSMALLCAP250": {
+    "total": 251,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYMICROCAP250": {
+    "total": 254,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYMIDSMALLCAP400": {
+    "total": 401,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYLARGEMIDCAP250": {
+    "total": 250,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYAUTO": {
+    "total": 15,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYBANK": {
+    "total": 14,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYFINANCIALSERVICES": {
+    "total": 20,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYFMCG": {
+    "total": 15,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYIT": {
+    "total": 10,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYMEDIA": {
+    "total": 10,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYMETAL": {
+    "total": 15,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYPHARMA": {
+    "total": 20,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYPSUBANK": {
+    "total": 12,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYPRIVATEBANK": {
+    "total": 10,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYREALTY": {
+    "total": 10,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYHEALTHCARE": {
+    "total": 20,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYCONSUMERDURABLES": {
+    "total": 14,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYOILGAS": {
+    "total": 15,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYCOMMODITIES": {
+    "total": 30,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYENERGY": {
+    "total": 40,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYINFRASTRUCTURE": {
+    "total": 30,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYCPSE": {
+    "total": 11,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYPSE": {
+    "total": 20,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYSERVICESSECTOR": {
+    "total": 30,
+    "status": "CACHED-VALID"
+  },
+  "NIFTYMNC": {
+    "total": 30,
+    "status": "CACHED-VALID"
+  }
+}

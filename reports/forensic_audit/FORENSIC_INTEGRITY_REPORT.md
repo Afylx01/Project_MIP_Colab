@@ -1,7 +1,7 @@
 # FORENSIC BACKTEST INTEGRITY AUDIT REPORT
 
 **Status**: AUDITED WITH CAVEATS (3 WINDOWS NON-VALID)
-**Date**: 2026-10-23 00:29:53 UTC
+**Date**: 2026-10-23 06:38:37 UTC
 **Target Dataset**: NIFTY500 (`data/universe.db`, 2007-01-02 to 2026-10-19)
 
 ## 1. TASK 1: VARIABLE WIRING AUDIT & CANONICAL BASELINE RECONCILIATION
@@ -65,14 +65,14 @@ Classification criteria:
 | ID | Feature Name | Old Label | New Calmar Label | CAGR (%) | MaxDD (%) | Calmar | ΔCalmar (%) | Reason / IS vs OOS |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `RUN_0_BASELINE` | Legacy MIP Baseline | `PROVEN_BASELINE` | **`CANONICAL_BASELINE`** | 35.01% | 41.65% | 0.84 | +0.00% | Single-engine reconciled baseline reference (CAGR 35.01%, MaxDD 41.65%, Calmar 0.84) |
-| `RUN_1_REGIME` | + Benchmark 20 EMA Regime Gate | `HARMFUL` | **`REGIME_DEPENDENT`** | 29.13% | 40.83% | 0.71 | -15.50% | Flips between IS (Δ-6.6%) and OOS (Δ+5.2%) |
-| `RUN_2_SECTOR_CAP` | + Sector Hard Cap (Max 2) | `NEUTRAL` | **`REGIME_DEPENDENT`** | 35.09% | 33.71% | 1.04 | +23.80% | Flips between IS (Δ+32.9%) and OOS (Δ-22.7%) |
-| `RUN_3_ATR_SIZING` | + ATR Risk Parity Sizing | `PROVEN_PROFITABLE` | **`NEUTRAL`** | 39.42% | 46.37% | 0.85 | +1.20% | Calmar within ±5% (+1.2%) vs canonical baseline (0.84) |
-| `RUN_4_NO_BUFFER` | - Exit Buffer Removed (Buffer = 20) | `JUST_COMPLEXITY` | **`HARMFUL`** | 37.72% | 52.10% | 0.72 | -14.30% | Calmar degraded by -14.3% vs canonical baseline (0.84) |
-| `RUN_5_BUFFER_60` | + Wide Exit Buffer (Buffer = 60) | `NEUTRAL` | **`HARMFUL`** | 33.58% | 47.61% | 0.71 | -15.50% | Calmar degraded by -15.5% vs canonical baseline (0.84) |
-| `RUN_6_TOP_10` | + High Concentration (Top 10) | `HARMFUL` | **`REGIME_DEPENDENT`** | 34.80% | 56.90% | 0.61 | -27.40% | Flips between IS (Δ-27.6%) and OOS (Δ+6.4%) |
-| `RUN_7_TOP_30` | + Diversified Breadth (Top 30) | `NEUTRAL` | **`REGIME_DEPENDENT`** | 34.31% | 42.19% | 0.81 | -3.60% | Flips between IS (Δ+5.3%) and OOS (Δ-15.7%) |
-| `RUN_8_MODERN_STACK` | + Full Modern Production Stack | `HARMFUL` | **`PROVEN`** | 30.35% | 23.34% | 1.30 | +54.80% | Calmar improved by +54.8% vs canonical baseline (0.84) |
+| `RUN_1_REGIME` | + Benchmark 20 EMA Regime Gate | `NOT_STATISTICALLY_SIGNIFICANT` | **`REGIME_DEPENDENT`** | 29.13% | 40.83% | 0.71 | -15.50% | Flips between IS (Δ-6.6%) and OOS (Δ+5.2%) |
+| `RUN_2_SECTOR_CAP` | + Sector Hard Cap (Max 2) | `NOT_STATISTICALLY_SIGNIFICANT` | **`REGIME_DEPENDENT`** | 35.09% | 33.71% | 1.04 | +23.80% | Flips between IS (Δ+32.9%) and OOS (Δ-22.7%) |
+| `RUN_3_ATR_SIZING` | + ATR Risk Parity Sizing | `NOT_STATISTICALLY_SIGNIFICANT` | **`NEUTRAL`** | 39.42% | 46.37% | 0.85 | +1.20% | Calmar within ±5% (+1.2%) vs canonical baseline (0.84) |
+| `RUN_4_NO_BUFFER` | - Exit Buffer Removed (Buffer = 20) | `NOT_STATISTICALLY_SIGNIFICANT` | **`HARMFUL`** | 37.72% | 52.10% | 0.72 | -14.30% | Calmar degraded by -14.3% vs canonical baseline (0.84) |
+| `RUN_5_BUFFER_60` | + Wide Exit Buffer (Buffer = 60) | `NOT_STATISTICALLY_SIGNIFICANT` | **`HARMFUL`** | 33.58% | 47.61% | 0.71 | -15.50% | Calmar degraded by -15.5% vs canonical baseline (0.84) |
+| `RUN_6_TOP_10` | + High Concentration (Top 10) | `NOT_STATISTICALLY_SIGNIFICANT` | **`REGIME_DEPENDENT`** | 34.80% | 56.90% | 0.61 | -27.40% | Flips between IS (Δ-27.6%) and OOS (Δ+6.4%) |
+| `RUN_7_TOP_30` | + Diversified Breadth (Top 30) | `NOT_STATISTICALLY_SIGNIFICANT` | **`REGIME_DEPENDENT`** | 34.31% | 42.19% | 0.81 | -3.60% | Flips between IS (Δ+5.3%) and OOS (Δ-15.7%) |
+| `RUN_8_MODERN_STACK` | + Full Modern Production Stack | `NOT_STATISTICALLY_SIGNIFICANT` | **`PROVEN`** | 30.35% | 23.34% | 1.30 | +54.80% | Calmar improved by +54.8% vs canonical baseline (0.84) |
 
 ## 4. TASK 4: CANONICAL RECONCILIATION ON NIFTY 500 (SINGLE ENGINE, 2016-2026)
 
@@ -81,7 +81,7 @@ Classification criteria:
 
 > **Required Sharpe Statement**: With 8 trials at α=0.05, required Sharpe is 1.91. Best observed is 1.08. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under Bonferroni FWER control.
 
-| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs cross-engine baseline (%) | Classification |
+| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs Canonical Baseline (%) | Classification |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Legacy MIP Baseline** | 33.91% | 50.66% | 0.67 | 0.98 | 0.88 | 1.000 | `FAIL` | 593 | 21,505,882 | -20.20% | `LEGACY_MIP_SIMULATED` |
 | **+ ATR Risk Parity Sizing ON** | 33.74% | 47.88% | 0.70 | 0.98 | 0.88 | 1.000 | `FAIL` | 594 | 21,225,754 | -16.70% | `HARMFUL` |

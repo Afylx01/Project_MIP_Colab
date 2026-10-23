@@ -42,7 +42,7 @@
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "2c8722cf83a0184d4187f32250eeb6e2712ae2ad032e6457963dfa0228d8c737",
+      "sha256_migrated": "ea9698a38c3c0e68545d1e5b4879450e6be2619a47d387a0c13218e1ebe267bc",
       "status": "refactored",
       "refactor_notes": "Ablation campaign bar-caching acceleration and research overrides"
     },
@@ -91,7 +91,7 @@
     {
       "filename": "excel_generator.py",
       "sha256_source": "bbbb2a7ed89c1b3beae65b5b15b52c5204ba12bd909ae93be2279ffa5973141a",
-      "sha256_migrated": "bc232ea3db0577052c39433ad706003e45acf6ad2e253e24db77abb41c174478",
+      "sha256_migrated": "fc004926ecdad9fd7e9f33abd3ee19ac80e7e4bc18bd91a3e417a1db636d2b4b",
       "status": "refactored",
       "refactor_notes": "Loop 2 institutional defect remediation"
     },
@@ -140,14 +140,14 @@
     {
       "filename": "scanner.py",
       "sha256_source": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
-      "sha256_migrated": "9b958f8ef7ec80c120d3e57d1bda2e74774f8fdb8cb4fb63fb8d514daf716f30",
+      "sha256_migrated": "967256c524ca3a9735fb3a988dc4c4b80f9a31fb9920cfdb9dfb0a4997b2785a",
       "status": "refactored",
       "refactor_notes": "Loop 2 institutional defect remediation"
     },
     {
       "filename": "sector_rotation.py",
       "sha256_source": "be771a5850c691084e4cf9a40472b56934360e0d6b29bf48d111b48c5637f349",
-      "sha256_migrated": "be771a5850c691084e4cf9a40472b56934360e0d6b29bf48d111b48c5637f349",
+      "sha256_migrated": "a3b908263cb0f2d3a0348d778589847c9ae6c4012a68b9e2bb35132b7e67eaa4",
       "status": "identical",
       "refactor_notes": "Identical to Main MIP pydroid_core source"
     },
@@ -168,7 +168,7 @@
     {
       "filename": "telegram_sender.py",
       "sha256_source": "61db93e00c0b171a33826ceb70f18a21010d06eaa982be0034c82dd532cd6160",
-      "sha256_migrated": "c554e46f3f311fc03b06bf08dd68c54880df4f97034f3770ac1f4a6036141c54",
+      "sha256_migrated": "b237497760ba3013de508685ff1fa6b5ba98f436b2d03df0a4312d486ee65d23",
       "status": "refactored",
       "refactor_notes": "Loop 2 institutional defect remediation"
     },

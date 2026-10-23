@@ -173,13 +173,13 @@ def calculate_comprehensive_risk_suite(
         kurtosis = 0.0
 
     # 10. Benchmark Regression & Risk Decomposition
-    tracking_error = 0.0
-    information_ratio = 0.0
-    beta = 1.0
-    alpha_ann = 0.0
-    r_squared = 0.0
-    systematic_risk_pct = 0.0
-    specific_risk_pct = 100.0
+    tracking_error = None
+    information_ratio = None
+    beta = None
+    alpha_ann = None
+    r_squared = None
+    systematic_risk_pct = None
+    specific_risk_pct = None
 
     if benchmark_returns is not None:
         if isinstance(returns, (pd.Series, pd.DataFrame)) and isinstance(benchmark_returns, (pd.Series, pd.DataFrame)):
@@ -237,11 +237,11 @@ def calculate_comprehensive_risk_suite(
         "kurtosis": round(kurtosis, 2),
         "max_drawdown_duration_sessions": int(max_dd_duration),
         "avg_recovery_duration_sessions": round(avg_recovery_duration, 1),
-        "tracking_error": round(tracking_error, 4),
-        "information_ratio": round(information_ratio, 2),
-        "beta": round(beta, 2),
-        "alpha_annualized": round(alpha_ann, 4),
-        "r_squared": round(r_squared, 4),
-        "systematic_risk_pct": round(systematic_risk_pct, 1),
-        "specific_risk_pct": round(specific_risk_pct, 1),
+        "tracking_error": round(tracking_error, 4) if tracking_error is not None else None,
+        "information_ratio": round(information_ratio, 2) if information_ratio is not None else None,
+        "beta": round(beta, 2) if beta is not None else None,
+        "alpha_annualized": round(alpha_ann, 4) if alpha_ann is not None else None,
+        "r_squared": round(r_squared, 4) if r_squared is not None else None,
+        "systematic_risk_pct": round(systematic_risk_pct, 1) if systematic_risk_pct is not None else None,
+        "specific_risk_pct": round(specific_risk_pct, 1) if specific_risk_pct is not None else None,
     }

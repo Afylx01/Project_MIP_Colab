@@ -132,12 +132,26 @@ class TestMultiScheduleBruteForce(unittest.TestCase):
         p_ew["param_id"] = 1
         p_ew["sizing_mode"] = "equal_weight"
 
-        df = self.runner.run_sweep([p_atr, p_ew], num_threads=2)
-        self.assertEqual(len(df), 2)
+        # Integer codes must resolve to the same C enum as the string names:
+        # 0 = atr_risk_parity, 1 = equal_weight. A regression here silently
+        # re-labels ATR results as equal-weight (see 2026-10-23 reconciliation).
+        p_atr_int = get_canonical_baseline_param()
+        p_atr_int["param_id"] = 2
+        p_atr_int["sizing_mode"] = 0
+
+        p_ew_int = get_canonical_baseline_param()
+        p_ew_int["param_id"] = 3
+        p_ew_int["sizing_mode"] = 1
+
+        df = self.runner.run_sweep([p_atr, p_ew, p_atr_int, p_ew_int], num_threads=2)
+        self.assertEqual(len(df), 4)
         cagr_atr = df.loc[df["param_id"] == 0, "cagr"].values[0]
         cagr_ew = df.loc[df["param_id"] == 1, "cagr"].values[0]
         self.assertGreater(cagr_atr, 0.0)
         self.assertGreater(cagr_ew, 0.0)
+        self.assertAlmostEqual(cagr_atr, df.loc[df["param_id"] == 2, "cagr"].values[0], places=6)
+        self.assertAlmostEqual(cagr_ew, df.loc[df["param_id"] == 3, "cagr"].values[0], places=6)
+        self.assertNotAlmostEqual(cagr_atr, cagr_ew, places=2)
 
 
     def test_07_run_custom_backtest_contracts(self):

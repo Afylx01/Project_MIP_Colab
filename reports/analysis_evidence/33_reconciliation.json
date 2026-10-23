@@ -1,0 +1,437 @@
+{
+  "generated": "2026-10-23T20:27:10Z",
+  "period": "2016-01-01..2026-08-31",
+  "costs": "15 bps friction + 5 bps slippage",
+  "canonical_strategy_engine": {
+    "engine": "C99 kernel (run_custom_backtest)",
+    "universe": "NIFTY500 (current constituents, survivorship_bias_risk=True)",
+    "config": "D: lookback 252, EMA 200, top20, buffer40, cap2, ATR risk parity, regime on"
+  },
+  "table": [
+    {
+      "engine": "C99 kernel",
+      "universe": "NIFTY500",
+      "config": "D",
+      "method": "continuous",
+      "cagr_pct": 27.39,
+      "sharpe": 0.91,
+      "maxdd_pct": 38.32,
+      "maxdd_basis": "daily intra-period",
+      "trades": 595,
+      "ending_equity": 12354160.0,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "NIFTY500",
+      "config": "D",
+      "method": "monthly-sampled",
+      "cagr_pct": 26.81,
+      "sharpe": 0.98,
+      "maxdd_pct": -20.69,
+      "maxdd_basis": "monthly rebalance NAV",
+      "trades": 595,
+      "ending_equity": null,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "NIFTY500",
+      "config": "A",
+      "method": "continuous",
+      "cagr_pct": 33.12,
+      "sharpe": 1.17,
+      "maxdd_pct": 26.83,
+      "maxdd_basis": "daily intra-period",
+      "trades": 674,
+      "ending_equity": 19505004.0,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "NIFTY500",
+      "config": "A",
+      "method": "monthly-sampled",
+      "cagr_pct": 32.4,
+      "sharpe": 1.2,
+      "maxdd_pct": -21.36,
+      "maxdd_basis": "monthly rebalance NAV",
+      "trades": 674,
+      "ending_equity": null,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "NIFTY500",
+      "config": "B",
+      "method": "continuous",
+      "cagr_pct": 33.18,
+      "sharpe": 1.22,
+      "maxdd_pct": 30.07,
+      "maxdd_basis": "daily intra-period",
+      "trades": 881,
+      "ending_equity": 19608856.0,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "NIFTY500",
+      "config": "C",
+      "method": "continuous",
+      "cagr_pct": 37.69,
+      "sharpe": 1.05,
+      "maxdd_pct": 32.37,
+      "maxdd_basis": "daily intra-period",
+      "trades": 673,
+      "ending_equity": 27707384.0,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "NIFTY500",
+      "config": "E",
+      "method": "continuous",
+      "cagr_pct": 32.85,
+      "sharpe": 0.95,
+      "maxdd_pct": 30.43,
+      "maxdd_basis": "daily intra-period",
+      "trades": 1340,
+      "ending_equity": 19101182.0,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "NIFTY750",
+      "config": "D",
+      "method": "continuous",
+      "cagr_pct": 28.13,
+      "sharpe": 0.92,
+      "maxdd_pct": 34.63,
+      "maxdd_basis": "daily intra-period",
+      "trades": 639,
+      "ending_equity": 13120473.0,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "ALL",
+      "config": "D",
+      "method": "continuous",
+      "cagr_pct": 27.0,
+      "sharpe": 0.89,
+      "maxdd_pct": 37.95,
+      "maxdd_basis": "daily intra-period",
+      "trades": 689,
+      "ending_equity": 11963279.0,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "C99 kernel",
+      "universe": "SURVIVORS",
+      "config": "D",
+      "method": "continuous",
+      "cagr_pct": 28.51,
+      "sharpe": 0.95,
+      "maxdd_pct": 35.63,
+      "maxdd_basis": "daily intra-period",
+      "trades": 674,
+      "ending_equity": 13528961.0,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "Python LightweightBacktester",
+      "universe": "NIFTY500",
+      "config": "D",
+      "method": "continuous",
+      "cagr_pct": 30.01,
+      "sharpe": 1.13,
+      "maxdd_pct": -20.47,
+      "maxdd_basis": "monthly",
+      "trades": 604,
+      "ending_equity": 16423508.95,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    },
+    {
+      "engine": "Python LightweightBacktester",
+      "universe": "ALL",
+      "config": "D",
+      "method": "continuous",
+      "cagr_pct": 29.59,
+      "sharpe": 1.06,
+      "maxdd_pct": -23.65,
+      "maxdd_basis": "monthly",
+      "trades": 703,
+      "ending_equity": 15867075.04,
+      "period": "2016-01-01..2026-08-31",
+      "status": "REPRODUCED"
+    }
+  ],
+  "stress_windows": {
+    "gfc_2008": {
+      "window": [
+        "2008-01-01",
+        "2008-12-31"
+      ],
+      "universe": "NIFTY500",
+      "universe_size": 501,
+      "symbols_with_any_bar": 76,
+      "symbols_with_252_bar_history": 74,
+      "history_coverage_pct": 14.77,
+      "sessions": 246,
+      "label": "DATA_INSUFFICIENT",
+      "rule": ">=252 bars by window end for >=50% of universe and >=80 sessions",
+      "strategy": {
+        "total_return_pct": -6.67,
+        "cagr_pct": -6.67,
+        "maxdd_pct": -6.82,
+        "months": 12
+      },
+      "benchmark": {
+        "total_return_pct": -57.13,
+        "cagr_pct": -57.13,
+        "maxdd_pct": -60.91,
+        "months": 12
+      },
+      "effective_window_aligned": true,
+      "headline_eligible": false
+    },
+    "euro_2011": {
+      "window": [
+        "2011-01-01",
+        "2011-12-31"
+      ],
+      "universe": "NIFTY500",
+      "universe_size": 501,
+      "symbols_with_any_bar": 82,
+      "symbols_with_252_bar_history": 81,
+      "history_coverage_pct": 16.17,
+      "sessions": 246,
+      "label": "DATA_INSUFFICIENT",
+      "rule": ">=252 bars by window end for >=50% of universe and >=80 sessions",
+      "strategy": {
+        "total_return_pct": -17.67,
+        "cagr_pct": -17.67,
+        "maxdd_pct": -17.67,
+        "months": 12
+      },
+      "benchmark": {
+        "total_return_pct": -27.19,
+        "cagr_pct": -27.19,
+        "maxdd_pct": -27.19,
+        "months": 12
+      },
+      "effective_window_aligned": true,
+      "headline_eligible": false
+    },
+    "midcap_2018": {
+      "window": [
+        "2018-01-01",
+        "2018-12-31"
+      ],
+      "universe": "NIFTY500",
+      "universe_size": 501,
+      "symbols_with_any_bar": 359,
+      "symbols_with_252_bar_history": 344,
+      "history_coverage_pct": 68.66,
+      "sessions": 246,
+      "label": "VALID",
+      "rule": ">=252 bars by window end for >=50% of universe and >=80 sessions",
+      "strategy": {
+        "total_return_pct": -2.88,
+        "cagr_pct": -2.88,
+        "maxdd_pct": -16.87,
+        "months": 12
+      },
+      "benchmark": {
+        "total_return_pct": -3.38,
+        "cagr_pct": -3.38,
+        "maxdd_pct": -12.4,
+        "months": 12
+      },
+      "effective_window_aligned": true,
+      "headline_eligible": true
+    },
+    "covid_2020": {
+      "window": [
+        "2020-01-01",
+        "2020-05-29"
+      ],
+      "universe": "NIFTY500",
+      "universe_size": 501,
+      "symbols_with_any_bar": 372,
+      "symbols_with_252_bar_history": 362,
+      "history_coverage_pct": 72.26,
+      "sessions": 100,
+      "label": "VALID",
+      "rule": ">=252 bars by window end for >=50% of universe and >=80 sessions",
+      "strategy": {
+        "total_return_pct": -3.75,
+        "cagr_pct": -8.78,
+        "maxdd_pct": -13.25,
+        "months": 5
+      },
+      "benchmark": {
+        "total_return_pct": -20.77,
+        "cagr_pct": -42.8,
+        "maxdd_pct": -29.13,
+        "months": 5
+      },
+      "effective_window_aligned": true,
+      "headline_eligible": true
+    },
+    "full_2016_2026": {
+      "window": [
+        "2016-01-01",
+        "2026-08-31"
+      ],
+      "universe": "NIFTY500",
+      "universe_size": 501,
+      "symbols_with_any_bar": 487,
+      "symbols_with_252_bar_history": 471,
+      "history_coverage_pct": 94.01,
+      "sessions": 2637,
+      "label": "VALID",
+      "rule": ">=252 bars by window end for >=50% of universe and >=80 sessions",
+      "strategy": {
+        "total_return_pct": 1850.5,
+        "cagr_pct": 32.4,
+        "maxdd_pct": -21.36,
+        "months": 127
+      },
+      "benchmark": {
+        "total_return_pct": 269.91,
+        "cagr_pct": 13.16,
+        "maxdd_pct": -29.98,
+        "months": 127
+      },
+      "effective_window_aligned": true,
+      "headline_eligible": true
+    }
+  },
+  "reconciliation_5_5_vs_9D": {
+    "same_engine": true,
+    "same_universe": true,
+    "same_config": true,
+    "continuous_5_5": {
+      "cagr_pct": 27.389999389648438,
+      "sharpe": 0.9100000262260437,
+      "maxdd_pct": 38.31999969482422,
+      "maxdd_basis": "daily intra-period",
+      "trades": 595,
+      "ending_equity": 12354160.0,
+      "cagr_basis": "(end_session-start_session)/252"
+    },
+    "monthly_9D_after_fix": {
+      "months": 127,
+      "total_return_pct": 1135.42,
+      "cagr_pct": 26.81,
+      "sharpe": 0.98,
+      "maxdd_monthly_pct": -20.69,
+      "calmar": 1.3,
+      "first": "2016-01-29",
+      "last": "2026-08-31"
+    },
+    "monthly_9D_with_initial_period": {
+      "months": 128,
+      "total_return_pct": 1135.42,
+      "cagr_pct": 26.58,
+      "sharpe": 0.98,
+      "maxdd_monthly_pct": -20.69,
+      "calmar": 1.28,
+      "first": "initial",
+      "last": "2026-08-31"
+    },
+    "monthly_9D_t_plus_1_valuation": {
+      "months": 128,
+      "total_return_pct": 1135.42,
+      "cagr_pct": 26.58,
+      "sharpe": 0.93,
+      "maxdd_monthly_pct": -20.23,
+      "calmar": 1.31,
+      "first": "initial",
+      "last": "2026-08-31"
+    },
+    "sharpe_gap_status": {
+      "status": "INCOMPLETE",
+      "kernel": 0.9100000262260437,
+      "signal_date_sampler": 0.98,
+      "t_plus_1_sampler": 0.93,
+      "residual_after_t_plus_1": -0.02,
+      "reason": "The C kernel does not expose its internal periodic return array. T+1 period valuation explains most of the gap; the residual is period-count/float32 rounding and is reported, not smoothed over."
+    },
+    "old_published_9D_cagr_pct": 28.69,
+    "old_9D_was": "equal_weight (integer sizing code 0 was read as equal-weight by bridge.py:431)",
+    "corrected_monthly_atr_cagr_pct": 26.81,
+    "mechanisms": [
+      "label bug: 28.69 was equal-weight; the row claimed ATR risk parity",
+      "annualization: identical ending equity, but sessions/252 (27.39) vs months/12 (26.81)",
+      "drawdown sampling: daily intra-period (38.32) vs monthly rebalance NAV (20.69)"
+    ],
+    "identical_ending_equity": true,
+    "identical_trades": true
+  },
+  "survivorship": {
+    "method": "same engine, same config D, same dates; ALL symbols vs symbols still quoting after 2026-08-31",
+    "all_symbols": 1083,
+    "survivors": 1033,
+    "delisted": 50,
+    "cagr_all_pct": 27.0,
+    "cagr_survivors_pct": 28.510000228881836,
+    "survivorship_bias_pp": 1.51,
+    "interpretation": "positive = current-survivor universe overstates CAGR vs including dead names",
+    "nifty500_vs_all_pp": 0.39
+  },
+  "python_runs": {
+    "NIFTY500": {
+      "cagr_pct": 30.01,
+      "sharpe_ratio": 1.13,
+      "sortino_ratio": 1.49,
+      "calmar_ratio": 1.47,
+      "max_drawdown_pct": -20.47,
+      "daily_max_drawdown_pct": -27.7,
+      "total_trades": 604,
+      "win_rate_pct": 45.9,
+      "final_equity": 16423508.95,
+      "universe_mode": "NIFTY500",
+      "universe_size": 487,
+      "survivorship_bias_risk": true,
+      "universe_point_in_time": false
+    },
+    "ALL": {
+      "cagr_pct": 29.59,
+      "sharpe_ratio": 1.06,
+      "sortino_ratio": 1.41,
+      "calmar_ratio": 1.25,
+      "max_drawdown_pct": -23.65,
+      "daily_max_drawdown_pct": -34.8,
+      "total_trades": 703,
+      "win_rate_pct": 45.5,
+      "final_equity": 15867075.04,
+      "universe_mode": "ALL",
+      "universe_size": 1039,
+      "survivorship_bias_risk": false,
+      "universe_point_in_time": false
+    }
+  },
+  "canonical_production": {
+    "engine": "Python LightweightBacktester (production contract)",
+    "universe": "NIFTY500 (current constituents, survivorship_bias_risk=True)",
+    "config": "D: lookback 252, EMA 200, top20, buffer40, cap2, ATR risk parity, regime on",
+    "cagr_pct": 30.01,
+    "sharpe": 1.13,
+    "maxdd_pct": -20.47,
+    "trades": 604
+  },
+  "elapsed_sec": 610.6
+}

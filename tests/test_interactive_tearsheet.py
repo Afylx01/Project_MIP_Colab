@@ -63,6 +63,61 @@ class TestInteractiveTearsheet(unittest.TestCase):
         self.assertIn("Ulcer Index", content)
         self.assertIn("data-theme=\"dark\"", content)
 
+    def test_tearsheet_fails_closed_when_risk_metrics_unavailable(self):
+        df = pd.DataFrame([
+            {"rank": 1, "symbol": "STLTECH", "sector": "TELECOM", "close": 865.9, "target_qty": 9, "target_val": 7793.1, "volar_score": 5.55, "residual_alpha": 0.42, "signal_type": "BUY", "reason_code": "PASS", "delivery_action": "APPROVED"},
+        ])
+        out = self.temp_dir / "unavailable.html"
+        InstitutionalTearsheetGenerator.generate_html_tearsheet(
+            candidates_df=df,
+            risk_metrics={"scenario_type": "UNAVAILABLE"},
+            compliance_manifest=None,
+            output_path=out,
+        )
+        content = out.read_text(encoding="utf-8")
+        self.assertIn("RISK METRICS UNAVAILABLE", content)          # explicit disclosure
+        self.assertNotIn("COMPLIANT", content)
+        self.assertNotIn("E1_GOLD_SEAL", content)
+        for fabricated in ["28.50", "1.35", "2.15", "1.48", "19.20", "1.85", "2.65", "4.12", "2.50"]:
+            self.assertNotIn(fabricated, content)                  # no invented KPIs
+
+    def test_seal_never_claims_pass_without_compliance_manifest(self):
+        df = pd.DataFrame([
+            {"rank": 1, "symbol": "STLTECH", "sector": "TELECOM", "close": 865.9, "target_qty": 9, "target_val": 7793.1, "volar_score": 5.55, "residual_alpha": 0.42, "signal_type": "BUY", "reason_code": "PASS", "delivery_action": "APPROVED"},
+        ])
+        valid_risk = {
+            "cagr": 0.25,
+            "annualized_volatility": 0.15,
+            "sharpe_ratio": 1.20,
+            "sortino_ratio": 1.80,
+            "calmar_ratio": 1.10,
+            "max_drawdown": 0.20,
+            "var_95": 0.02,
+            "cvar_95": 0.03,
+            "ulcer_index": 2.5,
+        }
+        out_no_manifest = self.temp_dir / "no_manifest.html"
+        InstitutionalTearsheetGenerator.generate_html_tearsheet(
+            candidates_df=df,
+            risk_metrics=valid_risk,
+            compliance_manifest=None,
+            output_path=out_no_manifest,
+        )
+        content_no = out_no_manifest.read_text(encoding="utf-8")
+        self.assertNotIn("[PASS]", content_no)
+        self.assertNotIn("Survivorship-Free Database [PASS]", content_no)
+        self.assertNotIn("Verified", content_no)
+
+        out_non_compliant = self.temp_dir / "non_compliant.html"
+        InstitutionalTearsheetGenerator.generate_html_tearsheet(
+            candidates_df=df,
+            risk_metrics=valid_risk,
+            compliance_manifest={"overall_status": "NON_COMPLIANT", "sha256_seal": "fedcba9876543210"},
+            output_path=out_non_compliant,
+        )
+        content_non_comp = out_non_compliant.read_text(encoding="utf-8")
+        self.assertIn("NON_COMPLIANT", content_non_comp)
+
 
 if __name__ == "__main__":
     unittest.main()

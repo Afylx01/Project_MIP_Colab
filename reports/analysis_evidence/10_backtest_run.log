@@ -1,0 +1,36 @@
+[09:51:36] [Backtest] Running backtest 2016-01-01 to 2026-08-31 (Top 20, Mode: Volar Momentum Ranking, Max/Sector: 2, Sizing: atr_risk_parity)...
+[09:51:36] [Backtest] Loading bars from SQLite (2014-06-30 to 2026-08-31)...
+[09:52:35] [Backtest] Computing momentum factors across universe...
+[09:52:59] [Backtest] Pre-indexing snapshots across universe bars...
+{
+  "start_date": "2016-01-01",
+  "end_date": "2026-08-31",
+  "years": 10.66,
+  "initial_capital": 1000000.0,
+  "final_equity": 16887170.35,
+  "total_return_pct": 1588.72,
+  "cagr_pct": 30.35,
+  "benchmark_name": "NIFTY500",
+  "benchmark_cagr_pct": 12.38,
+  "excess_cagr_pct": 17.97,
+  "sharpe_ratio": 1.09,
+  "sortino_ratio": 1.43,
+  "calmar_ratio": 1.3,
+  "max_drawdown_pct": -23.34,
+  "monthly_max_drawdown_pct": -23.34,
+  "daily_max_drawdown_pct": -34.4,
+  "daily_max_drawdown_date": "2020-03-23",
+  "drawdown_recovery_days": 245,
+  "max_per_sector": 2,
+  "sizing_mode": "atr_risk_parity",
+  "risk_per_trade_pct": 1.0,
+  "is_production_contract": true,
+  "allow_research_overrides": false,
+  "return_type": "price_appreciation_adjusted",
+  "total_trades": 703,
+  "win_rate_pct": 45.7,
+  "trade_log_path": "/mnt/sdcard/Subtitles/Project/Project_MIP_Colab/reports/trade_log.csv",
+  "_elapsed_sec": 94.57,
+  "_peak_rss_mb": 1645.4
+}
+MONTHLY_RETURNS_COUNT: 127

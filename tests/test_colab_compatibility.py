@@ -71,6 +71,7 @@ class TestColabCompatibilityAndSecurity(unittest.TestCase):
             "kite_basket.json",
             "user_profile.json",
             "user_profile.example.json",
+            "recommended_profile.json",
             "PROVENANCE_MANIFEST.json",
             "PRODUCTION_READINESS_CERTIFICATE.json",
             "RELEASE_DISTRIBUTION_MANIFEST.json",

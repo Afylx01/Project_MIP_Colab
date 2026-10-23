@@ -53,36 +53,56 @@ def load_env_credentials() -> Dict[str, str]:
     return creds
 
 def _chunk_message(text: str, max_length: int = 4000) -> List[str]:
-    """Chunks long text into message parts respecting line boundaries and maintaining HTML tag closure."""
+    """
+    Splits a message into Telegram-safe chunks.
+
+    - Never emits a chunk longer than max_length, including single long lines
+      and <pre> blocks (hard-split at character boundaries).
+    - Preserves the original text exactly when no HTML <pre> tags are present.
+    - Closes and reopens <pre> across chunk boundaries.
+    """
+    if max_length <= 0:
+        raise ValueError("max_length must be positive")
     if len(text) <= max_length:
         return [text]
-    chunks = []
-    lines = text.split("\n")
-    current_chunk = []
-    current_len = 0
-    in_pre = False
 
-    for line in lines:
-        line_len = len(line) + 1
-        extra = 7 if in_pre else 0
-        if current_chunk and (current_len + line_len + extra > max_length):
-            if in_pre:
-                current_chunk.append("</pre>")
-            chunks.append("\n".join(current_chunk))
-            current_chunk = ["<pre>"] if in_pre else []
-            current_len = sum(len(x) + 1 for x in current_chunk)
+    # Reserve room for a possible "</pre>" suffix and "<pre>" prefix.
+    reserve = 14
+    atom_limit = max_length - reserve
 
-        current_chunk.append(line)
-        current_len += line_len
-        if "<pre>" in line and "</pre>" not in line:
-            in_pre = True
-        elif "</pre>" in line and "<pre>" not in line:
-            in_pre = False
+    # 1. Split into atomic pieces that each fit, preserving line endings and
+    #    hard-splitting any single line longer than the atom limit.
+    atoms: List[str] = []
+    for line in text.splitlines(keepends=True):
+        if len(line) <= atom_limit:
+            atoms.append(line)
+        else:
+            for i in range(0, len(line), atom_limit):
+                atoms.append(line[i:i + atom_limit])
 
-    if current_chunk:
-        if in_pre and not current_chunk[-1].endswith("</pre>"):
-            current_chunk.append("</pre>")
-        chunks.append("\n".join(current_chunk))
+    # 2. Greedily pack atoms into chunks of at most atom_limit characters.
+    raw_chunks: List[str] = []
+    buf: List[str] = []
+    buf_len = 0
+    for atom in atoms:
+        if buf and buf_len + len(atom) > atom_limit:
+            raw_chunks.append("".join(buf))
+            buf = []
+            buf_len = 0
+        buf.append(atom)
+        buf_len += len(atom)
+    if buf:
+        raw_chunks.append("".join(buf))
+
+    # 3. Balance <pre> tags across chunks.
+    chunks: List[str] = []
+    open_pre = False
+    for raw in raw_chunks:
+        prefix = "<pre>" if open_pre else ""
+        net = (1 if open_pre else 0) + raw.count("<pre>") - raw.count("</pre>")
+        suffix = "</pre>" if net > 0 else ""
+        chunks.append(prefix + raw + suffix)
+        open_pre = net > 0
     return chunks
 
 

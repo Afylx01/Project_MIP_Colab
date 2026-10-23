@@ -535,8 +535,9 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         self.assertEqual(row["ending_equity"], 0.0)
         self.assertTrue(np.isnan(row["cagr"]))
 
-    def test_all_holdings_masked_on_final_session_fails_closed(self):
-        """1.17 When all holdings are masked on the final session, engine fails closed as DATA_INSUFFICIENT."""
+    def test_all_holdings_masked_on_final_session_values_at_prior_close(self):
+        """1.17 When all holdings are masked on the final session, value them at the prior finite close
+        and keep the result VALID (a market-wide halt is not data corruption)."""
         num_dates, num_syms = 10, 1
         dates = [f"2020-03-{i+1:02d}" for i in range(num_dates)]
         px = np.full((num_dates, num_syms), 100.0, dtype=np.float32)
@@ -576,8 +577,9 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         }
         res = self.engine.run_sweep(cube, [param])
         row = res.iloc[0]
-        self.assertEqual(row["status"], "DATA_INSUFFICIENT")
-        self.assertTrue(row["data_insufficient"])
+        self.assertFalse(row["data_insufficient"])
+        self.assertEqual(row["status"], "VALID")
+        self.assertAlmostEqual(float(row["ending_equity"]), 100_000.0, places=2)
 
     def test_validity_must_not_depend_on_post_window_bar(self):
         """1.18 Point-in-time invariant: simulation status must never look ahead to post-window bars."""
@@ -1038,7 +1040,7 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         self.assertEqual(res["profit_factor"], 0.0)
 
     def test_nextgen_sim_profit_factor_semantics(self):
-        """nextgen_sim.py must emit inf for zero losses with positive gains, and sanitize to None for strict JSON serialization."""
+        """nextgen_sim.py must emit inf for zero losses with positive gains, and 0.0 for zero gains."""
         from brute_force.nextgen_sim import NextGenSimulationEngine
         from unittest.mock import MagicMock
 

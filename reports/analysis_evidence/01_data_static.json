@@ -1,0 +1,123 @@
+{
+  "db": {
+    "path": "/mnt/sdcard/Subtitles/Project/Project_MIP_Colab/data/universe.db",
+    "size_bytes": 352288768,
+    "sha256": "2cea970063a65c0ca129ac459467f6b3de466e05be456b50cc63ff1651e8b6ef",
+    "rows": 2170608,
+    "symbols": 1083,
+    "date_min": "2007-01-02",
+    "date_max": "2026-10-19",
+    "trading_dates": 4890,
+    "delisted_symbols": 67,
+    "delisted_bars": 67597,
+    "corp_actions": 4,
+    "picks_history": 180,
+    "integrity_check": "ok",
+    "dup_sym_date": 0,
+    "null_essential": 0,
+    "nonpositive_close": 0,
+    "active_on_latest": 1032,
+    "active_2026_10_09": 1031,
+    "ohlc_geometry_violations": 414,
+    "symbols_by_universe": {
+      "NIFTY50": {
+        "total": 50,
+        "status": "CACHED-VALID"
+      },
+      "NIFTY100": {
+        "total": 100,
+        "status": "CACHED-VALID"
+      },
+      "NIFTY500": {
+        "total": 501,
+        "status": "CACHED-VALID"
+      },
+      "NIFTY750": {
+        "total": 755,
+        "status": "CACHED-VALID"
+      }
+    }
+  },
+  "config": {
+    "fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
+    "params": {
+      "strategy_version": "MIP-Scanner-1.0",
+      "scanner_version": "2.0.0-institutional",
+      "schema_version": "1.0.0",
+      "momentum_lookback_bars": 252,
+      "volatility_lookback_bars": 252,
+      "volatility_floor": 0.05,
+      "rolling_high_bars": 252,
+      "rolling_low_bars": 252,
+      "ema_trend_span": 200,
+      "ema_rs_span": 200,
+      "ema_regime_span": 20,
+      "ema_intermediate_span": 50,
+      "atr_period": 14,
+      "retrace_threshold": 0.8,
+      "min_history_bars": 252,
+      "min_history_ema": 200,
+      "min_history_volatility": 252,
+      "top_n_candidates": 20,
+      "max_per_sector": 2,
+      "exit_buffer_rank": 40,
+      "atr_stop_multiplier": 2.0,
+      "nominal_portfolio_capital": 100000.0,
+      "risk_budget_pct": 0.01,
+      "lookback_calendar_days": 550,
+      "max_tolerated_staleness_sessions": 2,
+      "healthy_coverage_threshold": 0.9,
+      "degraded_coverage_threshold": 0.75,
+      "anomaly_price_jump_upper": 10.0,
+      "anomaly_price_drop_lower": 0.1,
+      "anomaly_volume_multiple": 50.0,
+      "structural_price_drop_threshold": 0.6,
+      "structural_price_jump_threshold": 1.6,
+      "structural_gap_threshold": 0.4,
+      "statistical_anomaly_sigma": 6.0,
+      "min_reorganization_clean_sessions": 252
+    }
+  },
+  "benchmarks": {
+    "benchmark_nifty50.csv": {
+      "rows": 4858,
+      "start": "2007-01-02",
+      "end": "2026-10-16",
+      "sha256": "29b2af70cbbbed87c326135d9347527e862931f9af92e1aa89c701afa82176bb"
+    },
+    "benchmark_nifty500.csv": {
+      "rows": 4890,
+      "start": "2007-01-02",
+      "end": "2026-10-19",
+      "sha256": "0b853cdbce7a849b7c8d4fc763ac797bcbabc4cd62c398d6581c7fc804e35afc"
+    },
+    "benchmark_niftybank.csv": {
+      "rows": 4873,
+      "start": "2007-01-02",
+      "end": "2026-10-16",
+      "sha256": "69b9af2f8beffbed0540d352314820c9e024d3229927d120a77ecd23327af193"
+    },
+    "benchmark_niftyit.csv": {
+      "rows": 4873,
+      "start": "2007-01-02",
+      "end": "2026-10-16",
+      "sha256": "ce543a114de07608e11ffe2497fa23071b83aae0f1e3c53dc333a95535e25688"
+    }
+  },
+  "calendar": {
+    "sessions": 4889,
+    "sha256": "4b3dce45d011a0a14861c5d949c4b795e277d202a4ee279cd0ede8019e936c57",
+    "last": "2026-10-16"
+  },
+  "corp_actions_registry": {
+    "sha256": "9e492f94e0e108fc968414e903cc730beda528379efee74594c6e521b1f6d2b9",
+    "bytes": 3889
+  },
+  "code": {
+    "python_files": 144,
+    "python_loc": 43198,
+    "core_modules": 25,
+    "test_files": 65,
+    "c_loc": 856
+  }
+}

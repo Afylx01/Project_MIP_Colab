@@ -1,0 +1,40 @@
+[H[J[3J[1m[96m╔══════════════════════════════════════════════════════════════════════╗[0m
+[1m[96m║           PROJECT MIP — PYDROID 3 MOBILE TRADING DESK                ║[0m
+[1m[96m║    Standalone Zero-Compiler Edition • Python 3.13 ARM64 • v2.0.0     ║[0m
+[1m[96m╚══════════════════════════════════════════════════════════════════════╝[0m
+ [90mDatabase: universe.db (Indexed SQLite) | Latest EOD: [1m2026-10-19[0m
+[90m────────────────────────────────────────────────────────────────────────[0m
+
+[1m[93m🔍 FULL DATABASE INTEGRITY AUDIT[0m
+
+[1m=================================================================[0m
+[1m DATABASE STATISTICS[0m
+[1m=================================================================[0m
+  DB Path:            /mnt/sdcard/Subtitles/Project/Project_MIP_Colab/data/universe.db
+  DB Size:            335.97 MB
+  Total Rows:         2,170,608
+  Unique Symbols:     1,083
+  Date Range:         2007-01-02 → 2026-10-19
+  Delisted Rows:      67,597
+  Trading Calendar:   4,889 dates
+  Sector Map:         1,083 symbols mapped
+
+[1m INVARIANT VERIFICATION[0m
+─────────────────────────────────────────────────────────────────
+  Zero NULL open    : [92m✓ PASS[0m
+  Zero NULL high    : [92m✓ PASS[0m
+  Zero NULL low     : [92m✓ PASS[0m
+  Zero NULL close   : [92m✓ PASS[0m
+  Zero NULL volume  : [92m✓ PASS[0m
+  Positive open    :  [92m✓ PASS[0m
+  Positive high    :  [92m✓ PASS[0m
+  Positive low     :  [92m✓ PASS[0m
+  Positive close   :  [92m✓ PASS[0m
+  Zero Duplicates:    [92m✓ PASS[0m
+  Unique Trading Days:[92m 4,890[0m
+  Indices Present:    idx_prices_date, idx_prices_sym, idx_prices_sym_date, idx_prices_sym_date_unique
+
+[1m=================================================================[0m
+[1m[92m  🎉 ALL INVARIANTS VERIFIED — DATABASE IS 100% CERTIFIED[0m
+  Audit completed in 12.81s
+[1m=================================================================[0m

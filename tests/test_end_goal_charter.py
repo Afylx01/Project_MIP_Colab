@@ -16,6 +16,8 @@ import sys
 import json
 import sqlite3
 import hashlib
+import shutil
+import tempfile
 import unittest
 from pathlib import Path
 import pandas as pd
@@ -73,7 +75,9 @@ class TestPillar1LifecycleReproducibility(unittest.TestCase):
 
     def test_backtester_end_to_end_lifecycle(self):
         """Verify Backtester executes monthly simulation with t+1 execution and statutory frictions."""
-        bt = LightweightBacktester(PROJECT_ROOT)
+        output_dir = Path(tempfile.mkdtemp(prefix="mip_charter_bt_"))
+        self.addCleanup(shutil.rmtree, output_dir, True)
+        bt = LightweightBacktester(PROJECT_ROOT, output_dir=output_dir)
         # Run a quick 3-month backtest slice to verify end-to-end execution
         res = bt.run(
             start_date="2026-05-01",

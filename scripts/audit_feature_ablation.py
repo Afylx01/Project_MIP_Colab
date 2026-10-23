@@ -26,6 +26,7 @@ from nextgen.risk_statistics import (
     compute_probabilistic_sharpe_ratio,
     compute_deflated_sharpe_ratio,
     compute_factor_return_attribution,
+    _normal_cdf,
 )
 
 
@@ -215,6 +216,10 @@ class SystematicAblationAuditor:
                 res = self.bt.run(**params)
                 elapsed = time.time() - t0
 
+                if not isinstance(res, dict) or "error" in res or res.get("total_trades") is None:
+                    err_msg = res.get("error", "Unknown execution error") if isinstance(res, dict) else "Non-dict return"
+                    raise RuntimeError(f"Backtest execution failed: {err_msg}")
+
                 # Compute Deflated and Probabilistic Sharpe
                 cagr = float(res.get("cagr_pct", 0.0))
                 sharpe = float(res.get("sharpe_ratio", 0.0))
@@ -227,30 +232,38 @@ class SystematicAblationAuditor:
                 win_rate = float(res.get("win_rate_pct", 0.0))
 
                 # Extract monthly returns to calculate DSR & PSR
-                # Load backtest_results trade log if needed
-                trade_log_path = self.base_dir / "reports" / "trade_log.csv"
-                trade_df = pd.read_csv(trade_log_path) if trade_log_path.exists() else pd.DataFrame()
-
-                # Profit Factor calculation
-                if not trade_df.empty and "net_pnl" in trade_df.columns:
-                    gross_profit = float(trade_df[trade_df["net_pnl"] > 0]["net_pnl"].sum())
-                    gross_loss = abs(float(trade_df[trade_df["net_pnl"] < 0]["net_pnl"].sum()))
-                    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else 99.99
+                # Load trade log strictly from run output if explicitly provided
+                trade_log_str = res.get("trade_log_path")
+                if trade_log_str and Path(trade_log_str).exists():
+                    trade_df = pd.read_csv(Path(trade_log_str))
+                    if not trade_df.empty and "net_pnl" in trade_df.columns:
+                        gross_profit = float(trade_df[trade_df["net_pnl"] > 0]["net_pnl"].sum())
+                        gross_loss = abs(float(trade_df[trade_df["net_pnl"] < 0]["net_pnl"].sum()))
+                        profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else None
+                    else:
+                        profit_factor = 0.0 if total_trades == 0 else None
                 else:
-                    profit_factor = 0.0
+                    trade_df = pd.DataFrame()
+                    profit_factor = None
 
                 # Annualized trade frequency
                 n_years = float(res.get("years", 1.0))
                 annual_trades = round(total_trades / max(1.0, n_years), 1)
 
-                # Compute Deflated and Probabilistic Sharpe from real empirical return series
+                # Compute Deflated and Probabilistic Sharpe from real empirical excess returns
                 monthly_rets = res.get("monthly_returns")
                 if monthly_rets and len(monthly_rets) >= 3:
-                    ret_arr = np.array(monthly_rets, dtype=float)
-                    dsr = round(compute_deflated_sharpe_ratio(ret_arr, n_trials=20, annualization_factor=12), 4)
-                    psr = round(compute_probabilistic_sharpe_ratio(ret_arr, benchmark_sr=0.0, annualization_factor=12), 4)
-                    statistics_unavailable = False
+                    ret_arr = np.asarray(monthly_rets, dtype=float)
+                    # Excess monthly returns over risk-free rate (6.5% annual -> 0.065 / 12 monthly)
+                    excess = ret_arr - (0.065 / 12.0)
+                    dsr_val = compute_deflated_sharpe_ratio(excess, n_trials=len(experiments), annualization_factor=12)
+                    psr_val = compute_probabilistic_sharpe_ratio(excess, benchmark_sr=0.0, annualization_factor=12)
+                    dsr = round(dsr_val, 4) if dsr_val is not None else None
+                    psr = round(psr_val, 4) if psr_val is not None else None
+                    statistics_unavailable = bool(dsr is None or psr is None)
                 else:
+                    excess = None
+                    dsr_val = None
                     dsr = None
                     psr = None
                     statistics_unavailable = True
@@ -269,6 +282,28 @@ class SystematicAblationAuditor:
                         "profit_factor": profit_factor,
                     }
 
+                # Compute Bonferroni p-value for incremental Sharpe over baseline
+                p_bonf = None
+                p_raw = None
+                if baseline_metrics is not None and not statistics_unavailable and excess is not None:
+                    # Annualized excess Sharpe from monthly excess returns
+                    mean_excess = float(np.mean(excess))
+                    std_excess = float(np.std(excess, ddof=1))
+                    if std_excess > 0:
+                        ann_excess_sr = (mean_excess / std_excess) * math.sqrt(12.0)
+                    else:
+                        ann_excess_sr = sharpe
+
+                    n_years_eff = max(1.0, len(excess) / 12.0)
+                    se_sr = math.sqrt((1.0 + 0.5 * (ann_excess_sr ** 2)) / n_years_eff)
+                    base_sr = baseline_metrics.get("sharpe", 0.0)
+                    z = (ann_excess_sr - base_sr) / se_sr if se_sr > 0 else 0.0
+                    p_raw = 0.5 * math.erfc(z / math.sqrt(2.0)) if z > 0 else 1.0
+                    p_bonf = float(np.clip(round(p_raw * len(experiments), 4), 0.0, 1.0))
+                elif exp_id == "RUN_0_BASELINE":
+                    p_raw = 1.0
+                    p_bonf = 1.0
+
                 # Compute incremental deltas
                 delta_cagr = round(cagr - baseline_metrics["cagr"], 2) if baseline_metrics else 0.0
                 delta_sharpe = round(sharpe - baseline_metrics["sharpe"], 2) if baseline_metrics else 0.0
@@ -276,8 +311,14 @@ class SystematicAblationAuditor:
                 delta_max_dd = round(max_dd - baseline_metrics["max_dd"], 2) if baseline_metrics else 0.0 # Negative delta is improvement (less negative)
                 delta_daily_dd = round(daily_max_dd - baseline_metrics["daily_max_dd"], 2) if baseline_metrics else 0.0
 
-                # Scientific Classification
-                classification = self._classify_feature(exp_id, delta_cagr, delta_sharpe, delta_max_dd)
+                # Scientific Classification enforcing Policy A
+                classification = self._classify_feature(
+                    exp_id, delta_cagr, delta_sharpe, delta_max_dd,
+                    dsr=dsr_val if dsr_val is not None else dsr,
+                    p_value_bonferroni=p_bonf,
+                    p_bonf=p_bonf,
+                    statistics_unavailable=statistics_unavailable,
+                )
 
                 summary = {
                     "id": exp_id,
@@ -300,6 +341,9 @@ class SystematicAblationAuditor:
                     "profit_factor": profit_factor,
                     "psr": psr,
                     "dsr": dsr,
+                    "p_raw": p_raw,
+                    "p_bonf": p_bonf,
+                    "p_value_bonferroni": p_bonf,
                     "statistics_unavailable": statistics_unavailable,
                     "delta_cagr": delta_cagr,
                     "delta_sharpe": delta_sharpe,
@@ -321,14 +365,33 @@ class SystematicAblationAuditor:
                     "name": name,
                     "error": str(e),
                     "classification": "INCONCLUSIVE",
+                    "psr": None,
+                    "dsr": None,
+                    "statistics_unavailable": True,
                 })
 
         return results_list
 
-    def _classify_feature(self, exp_id: str, delta_cagr: float, delta_sharpe: float, delta_max_dd: float) -> str:
-        """Assigns strict empirical verdict based on delta against baseline."""
+    def _classify_feature(
+        self,
+        exp_id: str,
+        delta_cagr: float,
+        delta_sharpe: float,
+        delta_max_dd: float,
+        dsr: Optional[float] = None,
+        p_value_bonferroni: Optional[float] = None,
+        p_bonf: Optional[float] = None,
+        statistics_unavailable: bool = False,
+    ) -> str:
+        """Assigns strict empirical verdict based on delta against baseline enforcing Uniform Policy A."""
         if exp_id == "RUN_0_BASELINE":
             return "PROVEN_BASELINE"
+
+        eff_p_bonf = p_value_bonferroni if p_value_bonferroni is not None else p_bonf
+
+        # Policy A parity: must have available statistics, DSR >= 0.50, and p_bonf < 0.05
+        if statistics_unavailable or dsr is None or dsr < 0.50 or (eff_p_bonf is not None and eff_p_bonf >= 0.05):
+            return "NOT_STATISTICALLY_SIGNIFICANT"
 
         # Definition: Proven profitable if Sharpe improves significantly (>= +0.10) or CAGR improves without hurting Sharpe
         if delta_sharpe >= 0.10 or (delta_cagr >= 2.0 and delta_sharpe >= -0.05):
@@ -358,18 +421,24 @@ class SystematicAblationAuditor:
         lines.append(f"**Data Source:** Real Historical SQLite Database (`data/universe.db`), 1,083 Indian Equities, 2.17M OHLCV bars")
         lines.append(f"**Reference Benchmark:** NIFTY 500 Index (Real Daily Close)")
         lines.append(f"**Evaluation Engine:** LightweightBacktester (t+1 Open, whole shares, Indian statutory friction model)")
+        any_stat_unavail = any(r.get("statistics_unavailable") for r in full_sample_results)
+        if any_stat_unavail:
+            lines.append("**Statistics:** UNAVAILABLE (insufficient sample)")
+        else:
+            lines.append("**Statistics:** EMPIRICAL_DSR_PSR_ACTIVE")
+        lines.append(f"**Multiple Testing Trial Family (K):** {len(full_sample_results)} ablation feature experiments (upstream grid search excluded from ablation family; evaluated independently)")
         lines.append("\n---\n")
 
         lines.append("## 1. Full Sample Ablation Matrix (2016–2026)")
-        lines.append("| Rank | Feature / Experiment | Status | CAGR | Sharpe | Max DD | Daily Max DD | Win Rate | Profit Factor | Annual Trades | Δ Sharpe | Δ CAGR | Δ Max DD | Final Equity |")
-        lines.append("| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
+        lines.append("| Rank | Feature / Experiment | Status | CAGR | Sharpe | PSR | DSR | Max DD | Daily Max DD | Win Rate | Profit Factor | Annual Trades | Δ Sharpe | Δ CAGR | Δ Max DD | Final Equity |")
+        lines.append("| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
 
         # Sort by Sharpe Ratio descending
         sorted_results = sorted(full_sample_results, key=lambda x: x.get("sharpe_ratio", -999), reverse=True)
 
         for rank, r in enumerate(sorted_results, 1):
             if "error" in r:
-                lines.append(f"| {rank} | **{r.get('name')}** | `{r.get('classification')}` | ERROR | ERROR | ERROR | ERROR | ERROR | ERROR | ERROR | - | - | - | - |")
+                lines.append(f"| {rank} | **{r.get('name')}** | `{r.get('classification')}` | ERROR | ERROR | N/A | N/A | ERROR | ERROR | ERROR | ERROR | ERROR | - | - | - | - |")
                 continue
 
             tag = r.get("classification", "NEUTRAL")
@@ -379,11 +448,19 @@ class SystematicAblationAuditor:
             d_cagr = format_delta(r.get("delta_cagr", 0.0), is_percentage=True)
             d_dd = format_delta(r.get("delta_max_dd", 0.0), is_percentage=True)
 
+            psr_val = r.get("psr")
+            dsr_val = r.get("dsr")
+            psr_str = f"{psr_val:.4f}" if (psr_val is not None and not r.get("statistics_unavailable")) else "N/A (statistics unavailable)"
+            dsr_str = f"{dsr_val:.4f}" if (dsr_val is not None and not r.get("statistics_unavailable")) else "N/A (statistics unavailable)"
+            pf_val = r.get("profit_factor")
+            pf_str = f"{pf_val:.2f}" if pf_val is not None else "N/A"
+
             lines.append(
                 f"| {rank} | **{r.get('name')}** | {tag_str} | "
                 f"{r.get('cagr_pct', 0):.2f}% | {r.get('sharpe_ratio', 0):.2f} | "
+                f"{psr_str} | {dsr_str} | "
                 f"{r.get('max_drawdown_pct', 0):.2f}% | {r.get('daily_max_drawdown_pct', 0):.2f}% | "
-                f"{r.get('win_rate_pct', 0):.1f}% | {r.get('profit_factor', 0):.2f} | "
+                f"{r.get('win_rate_pct', 0):.1f}% | {pf_str} | "
                 f"{r.get('annual_trades', 0):.0f} | "
                 f"{d_sh} | {d_cagr} | {d_dd} | "
                 f"₹{r.get('final_equity', 0):,.0f} |"
@@ -404,11 +481,16 @@ class SystematicAblationAuditor:
                 if exp_id in oos_map:
                     is_r = is_map[exp_id]
                     oos_r = oos_map[exp_id]
-                    ratio = round(oos_r["sharpe_ratio"] / max(0.01, is_r["sharpe_ratio"]), 2)
+                    is_sr = is_r.get("sharpe_ratio", 0.0)
+                    if is_sr <= 0:
+                        ratio_str = "N/A"
+                    else:
+                        ratio = round(oos_r["sharpe_ratio"] / is_sr, 2)
+                        ratio_str = f"**{ratio}x**"
                     lines.append(
                         f"| **{is_r['name']}** | {is_r['cagr_pct']:.2f}% | {is_r['sharpe_ratio']:.2f} | "
                         f"{oos_r['cagr_pct']:.2f}% | {oos_r['sharpe_ratio']:.2f} | {oos_r['max_drawdown_pct']:.2f}% | "
-                        f"**{ratio}x** |"
+                        f"{ratio_str} |"
                     )
             lines.append("\n---\n")
 
@@ -419,10 +501,16 @@ class SystematicAblationAuditor:
         just_complexity = [r for r in full_sample_results if r.get("classification") == "JUST_COMPLEXITY"]
         harmful = [r for r in full_sample_results if r.get("classification") == "HARMFUL"]
         neutral = [r for r in full_sample_results if r.get("classification") == "NEUTRAL"]
+        not_significant = [r for r in full_sample_results if r.get("classification") == "NOT_STATISTICALLY_SIGNIFICANT"]
 
         lines.append("### 🟢 KEEP (Proven Profitable & Core Additive)")
         for r in proven_keep:
             lines.append(f"- **{r.get('name')}**: {r.get('description')} (Sharpe: {r.get('sharpe_ratio', 0):.2f}, CAGR: {r.get('cagr_pct', 0):.2f}%, ΔSharpe: {format_delta(r.get('delta_sharpe', 0))})")
+
+        if not_significant:
+            lines.append("\n### ⚪ NOT STATISTICALLY SIGNIFICANT (Policy A: p_bonf ≥ 0.05 or DSR < 0.50)")
+            for r in not_significant:
+                lines.append(f"- **{r.get('name')}**: {r.get('description')} (Sharpe: {r.get('sharpe_ratio', 0):.2f}, CAGR: {r.get('cagr_pct', 0):.2f}%, ΔSharpe: {format_delta(r.get('delta_sharpe', 0))}, DSR: {r.get('dsr')}, p_bonf: {r.get('p_value_bonferroni', r.get('p_bonf'))})")
 
         lines.append("\n### 🟡 INVESTIGATE / NEUTRAL (Marginal Alpha / Context-Dependent)")
         for r in neutral:

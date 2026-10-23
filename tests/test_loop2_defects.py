@@ -237,8 +237,11 @@ class TestLoop2DefectRemediation(unittest.TestCase):
         self.assertGreater(len(chunks), 1)
         for c in chunks:
             self.assertLessEqual(len(c), 4000)
-        reconstructed_lines = sum(len(c.split("\n")) for c in chunks)
-        self.assertEqual(reconstructed_lines, 300)
+        self.assertEqual("".join(chunks), large_msg, "Chunking must be lossless")
+        long_line = "X" * 9500
+        long_chunks = _chunk_message(long_line, max_length=4000)
+        self.assertTrue(all(len(c) <= 4000 for c in long_chunks))
+        self.assertEqual("".join(long_chunks), long_line)
 
     def test_l2_def_14_liquidity_analytics_deliv_qty_alias_support(self):
         """DEF-14: compute_liquidity_profile supports deliv_qty column alias."""

@@ -2186,7 +2186,7 @@
     {
       "experiment_id": "RUN_1_REGIME",
       "name": "+ Benchmark 20 EMA Regime Gate",
-      "old_label": "HARMFUL",
+      "old_label": "NOT_STATISTICALLY_SIGNIFICANT",
       "new_calmar_label": "REGIME_DEPENDENT",
       "cagr": 29.13,
       "max_drawdown": 40.83,
@@ -2199,7 +2199,7 @@
     {
       "experiment_id": "RUN_2_SECTOR_CAP",
       "name": "+ Sector Hard Cap (Max 2)",
-      "old_label": "NEUTRAL",
+      "old_label": "NOT_STATISTICALLY_SIGNIFICANT",
       "new_calmar_label": "REGIME_DEPENDENT",
       "cagr": 35.09,
       "max_drawdown": 33.71,
@@ -2212,7 +2212,7 @@
     {
       "experiment_id": "RUN_3_ATR_SIZING",
       "name": "+ ATR Risk Parity Sizing",
-      "old_label": "PROVEN_PROFITABLE",
+      "old_label": "NOT_STATISTICALLY_SIGNIFICANT",
       "new_calmar_label": "NEUTRAL",
       "cagr": 39.42,
       "max_drawdown": 46.37,
@@ -2225,7 +2225,7 @@
     {
       "experiment_id": "RUN_4_NO_BUFFER",
       "name": "- Exit Buffer Removed (Buffer = 20)",
-      "old_label": "JUST_COMPLEXITY",
+      "old_label": "NOT_STATISTICALLY_SIGNIFICANT",
       "new_calmar_label": "HARMFUL",
       "cagr": 37.72,
       "max_drawdown": 52.1,
@@ -2238,7 +2238,7 @@
     {
       "experiment_id": "RUN_5_BUFFER_60",
       "name": "+ Wide Exit Buffer (Buffer = 60)",
-      "old_label": "NEUTRAL",
+      "old_label": "NOT_STATISTICALLY_SIGNIFICANT",
       "new_calmar_label": "HARMFUL",
       "cagr": 33.58,
       "max_drawdown": 47.61,
@@ -2251,7 +2251,7 @@
     {
       "experiment_id": "RUN_6_TOP_10",
       "name": "+ High Concentration (Top 10)",
-      "old_label": "HARMFUL",
+      "old_label": "NOT_STATISTICALLY_SIGNIFICANT",
       "new_calmar_label": "REGIME_DEPENDENT",
       "cagr": 34.8,
       "max_drawdown": 56.9,
@@ -2264,7 +2264,7 @@
     {
       "experiment_id": "RUN_7_TOP_30",
       "name": "+ Diversified Breadth (Top 30)",
-      "old_label": "NEUTRAL",
+      "old_label": "NOT_STATISTICALLY_SIGNIFICANT",
       "new_calmar_label": "REGIME_DEPENDENT",
       "cagr": 34.31,
       "max_drawdown": 42.19,
@@ -2277,7 +2277,7 @@
     {
       "experiment_id": "RUN_8_MODERN_STACK",
       "name": "+ Full Modern Production Stack",
-      "old_label": "HARMFUL",
+      "old_label": "NOT_STATISTICALLY_SIGNIFICANT",
       "new_calmar_label": "PROVEN",
       "cagr": 30.35,
       "max_drawdown": 23.34,

@@ -84,11 +84,17 @@ def compute_probabilistic_sharpe_ratio(
     returns: Union[pd.Series, np.ndarray],
     benchmark_sr: float = 0.0,
     annualization_factor: int = 252,
-) -> float:
+) -> Optional[float]:
     """
     Computes the Probabilistic Sharpe Ratio (PSR) of Bailey & López de Prado (2012/2014).
     Accounts for non-normality: return skewness (gamma_3) and fat tails (gamma_4).
-    Returns 0.0 (fail-closed, not statistically significant) for n < 3 or std <= 0.0.
+    Dual contract: returns 0.0 for degenerate zero-variance series (std <= 0.0 or n < 3);
+    returns None if the variance or denominator is undefined or non-finite.
+
+    Note on Excess Returns:
+        When testing against benchmark_sr = 0.0, the input returns series must represent
+        excess returns over the risk-free rate (i.e. R_t - R_{f,t}). Passing raw returns
+        evaluates total return significance rather than risk-free hurdle alpha.
     
     Formula:
         PSR(SR*) = Phi( (SR - SR*) * sqrt(N - 1) / sqrt(1 - gamma_3 * SR + (gamma_4 - 1)/4 * SR^2) )
@@ -106,7 +112,9 @@ def compute_probabilistic_sharpe_ratio(
     kurt = moments["kurtosis"]
 
     denom_sq = 1.0 - skew * sr + ((kurt - 1.0) / 4.0) * (sr ** 2)
-    denom = math.sqrt(max(denom_sq, 1e-8))
+    if not np.isfinite(denom_sq) or denom_sq <= 0.0:
+        return None
+    denom = math.sqrt(denom_sq)
 
     z_stat = (sr - sr_star) * math.sqrt(n - 1.0) / denom
     psr = _normal_cdf(z_stat)
@@ -122,7 +130,7 @@ def compute_expected_max_sharpe_ratio(
     Bailey & López de Prado (2014):
         SR_0 = sqrt(Var[SR]) * [ (1 - gamma) * Phi^{-1}(1 - 1/K) + gamma * Phi^{-1}(1 - 1/(K * e)) ]
     """
-    if var_sr <= 0.0:
+    if not np.isfinite(var_sr) or var_sr <= 0.0:
         raise ValueError(f"var_sr must be positive, got {var_sr}")
 
     if n_trials <= 1:
@@ -144,11 +152,17 @@ def compute_deflated_sharpe_ratio(
     returns: Union[pd.Series, np.ndarray],
     n_trials: int = 1,
     annualization_factor: int = 252,
-) -> float:
+) -> Optional[float]:
     """
     Computes Deflated Sharpe Ratio (DSR) by testing observed Sharpe against the expected
     maximum Sharpe ratio across K multiple parameter testing trials.
-    Returns 0.0 (fail-closed, not statistically significant) for n < 3, std <= 0, or non-positive variance.
+    Dual contract: returns 0.0 for degenerate zero-variance series (std <= 0.0 or n < 3);
+    returns None if the variance or denominator is undefined or non-finite.
+
+    Note on Excess Returns:
+        When testing against the null hypothesis (SR=0), the input returns series must represent
+        excess returns over the risk-free rate (i.e. R_t - R_{f,t}). Passing raw returns
+        evaluates whether gross returns exceed zero, inflating DSR/PSR.
     
     Formula:
         DSR = PSR(SR_0)
@@ -171,7 +185,7 @@ def compute_deflated_sharpe_ratio(
     var_sr_unann = (1.0 - skew * sr_daily + ((kurt - 1.0) / 4.0) * (sr_daily ** 2)) / max(n - 1.0, 1.0)
     var_sr_ann = var_sr_unann * annualization_factor
     if not np.isfinite(var_sr_ann) or var_sr_ann <= 0.0:
-        return 0.0
+        return None
 
     # Compute expected maximum annualized SR under K trials
     sr_0_ann = compute_expected_max_sharpe_ratio(n_trials=n_trials, var_sr=var_sr_ann)

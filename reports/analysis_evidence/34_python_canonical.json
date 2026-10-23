@@ -1,0 +1,32 @@
+{
+  "NIFTY500": {
+    "cagr_pct": 30.01,
+    "sharpe_ratio": 1.13,
+    "sortino_ratio": 1.49,
+    "calmar_ratio": 1.47,
+    "max_drawdown_pct": -20.47,
+    "daily_max_drawdown_pct": -27.7,
+    "total_trades": 604,
+    "win_rate_pct": 45.9,
+    "final_equity": 16423508.95,
+    "universe_mode": "NIFTY500",
+    "universe_size": 487,
+    "survivorship_bias_risk": true,
+    "universe_point_in_time": false
+  },
+  "ALL": {
+    "cagr_pct": 29.59,
+    "sharpe_ratio": 1.06,
+    "sortino_ratio": 1.41,
+    "calmar_ratio": 1.25,
+    "max_drawdown_pct": -23.65,
+    "daily_max_drawdown_pct": -34.8,
+    "total_trades": 703,
+    "win_rate_pct": 45.5,
+    "final_equity": 15867075.04,
+    "universe_mode": "ALL",
+    "universe_size": 1039,
+    "survivorship_bias_risk": false,
+    "universe_point_in_time": false
+  }
+}

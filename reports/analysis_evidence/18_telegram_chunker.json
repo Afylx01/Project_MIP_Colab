@@ -1,0 +1,30 @@
+{
+  "single_line_9500": {
+    "input_len": 9500,
+    "chunks": 3,
+    "max_chunk": 3986,
+    "over_limit": false,
+    "lossless": true
+  },
+  "many_short_lines": {
+    "input_len": 26000,
+    "chunks": 7,
+    "max_chunk": 3978,
+    "over_limit": false,
+    "lossless": true
+  },
+  "trailing_newline": {
+    "input_len": 9500,
+    "chunks": 3,
+    "max_chunk": 3986,
+    "over_limit": false,
+    "lossless": true
+  },
+  "pre_block": {
+    "input_len": 9011,
+    "chunks": 3,
+    "max_chunk": 3997,
+    "over_limit": false,
+    "lossless": false
+  }
+}

@@ -209,6 +209,20 @@ class FastDataCache:
                 tmp_path.replace(filepath)
 
             file_size = filepath.stat().st_size
+
+            # A single entry larger than the configured budget cannot be cached
+            # without violating the limit; reject it instead of silently overshooting.
+            if self.max_cache_size_bytes > 0 and file_size > self.max_cache_size_bytes:
+                try:
+                    filepath.unlink()
+                except OSError:
+                    pass
+                logger.warning(
+                    "Cache entry %.2f MB exceeds max_cache_size %.2f MB; not stored.",
+                    file_size / (1024 * 1024), self.max_cache_size_bytes / (1024 * 1024),
+                )
+                return False
+
             disk_manifest = self._load_manifest()
             disk_manifest.update(self._manifest)
             self._manifest = disk_manifest
@@ -223,6 +237,7 @@ class FastDataCache:
                 "last_accessed": time.time(),
             }
             self._save_manifest()
+            self._enforce_size_limit()
             return True
         except Exception as e:
             logger.warning(f"Failed to store cache entry {cache_key}: {e}")

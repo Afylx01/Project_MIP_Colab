@@ -42,6 +42,14 @@ from brute_force.grid import (
 from nextgen.risk_statistics import compute_expected_max_sharpe_ratio, _normal_ppf
 
 
+class DataUnavailable(RuntimeError):
+    """Raised when required data or configurations are unavailable for forensic calculation."""
+    pass
+
+
+DataUnavailableError = DataUnavailable
+
+
 def compute_comparability(
     legacy_eff: int,
     top_eff: int,
@@ -151,6 +159,7 @@ def compute_multiple_testing_stats(
     sharpes: List[float],
     n_sessions: int,
     alpha: float = 0.05,
+    benchmark_sharpe: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Computes Bailey & López de Prado (2014) multiple testing statistics across K trials.
@@ -173,7 +182,12 @@ def compute_multiple_testing_stats(
             "results": [],
         }
 
-    benchmark_sharpe = round(float(sharpes[0]), 2)
+    valid_sharpes = [float(s) for s in sharpes if s is not None and np.isfinite(s)]
+    if benchmark_sharpe is None or not np.isfinite(float(benchmark_sharpe)):
+        benchmark_sharpe = round(float(valid_sharpes[0]), 2) if valid_sharpes else 0.0
+    else:
+        benchmark_sharpe = round(float(benchmark_sharpe), 2)
+
     n_years = max(1.0, n_sessions / 252.0)
     var_sr_sampling = (1.0 + 0.5 * (benchmark_sharpe ** 2)) / n_years
     expected_max_sharpe = compute_expected_max_sharpe_ratio(
@@ -186,7 +200,18 @@ def compute_multiple_testing_stats(
     required_sharpe = round(benchmark_sharpe + se_benchmark * z_crit, 2)
 
     results = []
-    for sr in sharpes:
+    for i, sr in enumerate(sharpes):
+        if sr is None or not np.isfinite(sr):
+            results.append({
+                "row_index": i,
+                "sharpe": None,
+                "p_value_raw": 1.0,
+                "p_value_bonferroni": 1.0,
+                "deflated_sharpe_ratio": 0.0,
+                "statistically_significant_05": False,
+            })
+            continue
+
         se_sr = se(sr)
         z = (sr - benchmark_sharpe) / se_sr if se_sr > 0 else 0.0
         p_val_raw = 0.5 * math.erfc(z / math.sqrt(2.0)) if z > 0 else 1.0
@@ -196,6 +221,7 @@ def compute_multiple_testing_stats(
         dsr_val = round(0.5 * (1.0 + math.erf(z_dsr / math.sqrt(2.0))), 4)
 
         results.append({
+            "row_index": i,
             "sharpe": sr,
             "p_value_raw": round(p_val_raw, 4),
             "p_value_bonferroni": p_val_bonf,
@@ -703,7 +729,9 @@ def analyze_2008_half_cash(cube, legacy_base_p, bs_idx, be_idx):
 
 
 def sanitize_json_obj(obj):
-    """Recursively converts non-finite floats to None for strict JSON serialization."""
+    """Recursively converts non-finite floats and NumPy scalars for strict JSON serialization."""
+    if isinstance(obj, (np.floating, np.integer, np.bool_)):
+        obj = obj.item()
     if isinstance(obj, float):
         if not np.isfinite(obj):
             return None
@@ -945,7 +973,7 @@ def render_markdown_report(
     lines.append(f"> **Multiple-Testing Correction (Bailey & López de Prado 2014 & Policy A Uniform Rule)**: {K} model variations evaluated against Canonical Baseline. Family-wise error rate controlled at $\\alpha = 0.05$; Bonferroni threshold $\\alpha_{{adj}} = {bonf_alpha}$. Under **Policy A**, features with $p_{{bonf}} > 0.05$ or $\\text{{DSR}} < 0.50$ are uniformly classified as `NOT_STATISTICALLY_SIGNIFICANT`.\n\n")
     _, sig_summary = compute_significance_verdict(reconcile_results, K, required_sharpe, sharpes)
     lines.append(f"> **Required Sharpe Statement**: {sig_summary}\n\n")
-    lines.append("| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs cross-engine baseline (%) | Classification |\n")
+    lines.append("| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs Canonical Baseline (%) | Classification |\n")
     lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
     for r in reconcile_results:
         sig_mark = "PASS" if r.get('statistically_significant_05') else "FAIL"
@@ -1116,12 +1144,14 @@ def render_markdown_report(
     return "".join(lines)
 
 
-def run_forensic_audit():
+def run_forensic_audit(output_dir=None):
     print("=" * 80)
     print("🔍 EXECUTING FORENSIC INTEGRITY AUDIT")
     print("=" * 80)
 
-    output_dir = PROJECT_ROOT / "reports" / "forensic_audit"
+    if output_dir is None:
+        output_dir = PROJECT_ROOT / "reports" / "forensic_audit"
+    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     runner = BruteForceCampaignRunner()
@@ -1217,7 +1247,10 @@ def run_forensic_audit():
     for name, overrides in reconcile_specs:
         p = legacy_base_p.copy()
         p.update(overrides)
-        r = runner.engine.execute_sweep([p], cube, num_threads=1)[0]
+        sweep_out = runner.engine.execute_sweep([p], cube, num_threads=1)
+        if not sweep_out:
+            continue
+        r = sweep_out[0]
         cagr = round(float(r["cagr"]), 2)
         max_dd = round(float(r["max_drawdown"]), 2)
         calmar = round(cagr / max_dd, 2) if max_dd >= 0.01 else 0.0
@@ -1244,17 +1277,23 @@ def run_forensic_audit():
     # Pillar 4: Statistical Validity - Multiple-Testing Correction (Bailey & López de Prado, 2014)
     n_sessions = e_idx - s_idx + 1
     sharpes = [r["sharpe"] for r in reconcile_results]
+    if not reconcile_results:
+        raise DataUnavailable("No reconcilable configurations; cannot compute multiple-testing statistics.")
+    legacy_row = next((r for r in reconcile_results if r.get("feature") == "Legacy MIP Baseline"), reconcile_results[0])
+    base_sharpe = legacy_row.get("sharpe")
     stats = compute_multiple_testing_stats(
         sharpes=sharpes,
         n_sessions=n_sessions,
         alpha=0.05,
+        benchmark_sharpe=base_sharpe,
     )
     expected_max_sharpe = stats["expected_max_sharpe"]
     required_sharpe = stats["required_sharpe"]
     benchmark_sharpe = stats["benchmark_sharpe"]
     K = stats["n_trials"]
 
-    for r, st in zip(reconcile_results, stats["results"]):
+    for i, r in enumerate(reconcile_results):
+        st = stats["results"][i] if i < len(stats["results"]) else next((s for s in stats["results"] if s.get("row_index") == i), {})
         r["p_value_raw"] = st["p_value_raw"]
         r["p_value_bonferroni"] = st["p_value_bonferroni"]
         r["deflated_sharpe_ratio"] = st["deflated_sharpe_ratio"]
@@ -1602,7 +1641,8 @@ def run_forensic_audit():
     json_out_path = output_dir / "forensic_audit_results.json"
     with open(json_out_path, "w") as f:
         verdict, sig_summary = compute_significance_verdict(reconcile_results, K, required_sharpe, sharpes)
-        best_sr = round(float(max(sharpes)), 2) if sharpes else 0.0
+        valid_sharpes = [float(s) for s in sharpes if s is not None and np.isfinite(s)]
+        best_sr = round(float(max(valid_sharpes)), 2) if valid_sharpes else 0.0
 
         payload = {
             "canonical_baseline": canonical_baseline,

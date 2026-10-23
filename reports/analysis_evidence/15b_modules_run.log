@@ -1,0 +1,209 @@
+{
+  "risk_suite": {
+    "inputs": {
+      "returns": 127,
+      "benchmark_returns": 127,
+      "annualization": 12
+    },
+    "checks": {
+      "cagr": true,
+      "vol": true,
+      "var95": true,
+      "var99": true,
+      "cvar95": true,
+      "cvar99": true,
+      "maxdd": true,
+      "calmar": true,
+      "ulcer": true,
+      "omega": true,
+      "gain_to_pain": true,
+      "tail_ratio": true,
+      "beta": true,
+      "alpha_ann": true,
+      "r_squared": true
+    },
+    "reported": {
+      "cagr": 0.3061,
+      "annualized_volatility": 0.2054,
+      "var_95": 0.0841,
+      "cvar_95": 0.1205,
+      "ulcer_index": 9.52,
+      "omega_ratio": 2.3,
+      "beta": 0.74,
+      "alpha_annualized": 0.1881,
+      "r_squared": 0.3762,
+      "tracking_error": 0.1681,
+      "information_ratio": 1.04
+    },
+    "independent": {
+      "cagr": 0.30614,
+      "vol": 0.205424,
+      "v95": 0.084109,
+      "v99": 0.12701,
+      "cv95": 0.120517,
+      "cv99": 0.155272,
+      "maxdd": 0.23342,
+      "calmar": 1.311539,
+      "ulcer": 9.524932,
+      "omega": 2.296899,
+      "gpr": 2.874999,
+      "tail": 1.271363,
+      "beta": 0.740722,
+      "alpha": 0.188052,
+      "r2": 0.376249
+    }
+  },
+  "brinson": {
+    "single_period": {
+      "portfolio_return": 0.068,
+      "benchmark_return": 0.06,
+      "active": 0.008,
+      "attribution_sum": 0.008,
+      "allocation": 0.004,
+      "selection": 0.0,
+      "interaction": 0.004,
+      "identity_ok": true,
+      "expected_allocation": 0.004,
+      "expected_selection": 0.0,
+      "expected_interaction": 0.004
+    },
+    "multi_period": {
+      "linked_active": -0.00276,
+      "compounded_active_bench": -0.00276,
+      "identity_ok": true,
+      "rows": 2
+    }
+  },
+  "liquidity": {
+    "portfolio_days_to_liquidate": 0.0,
+    "weighted_adv_participation_pct": 0.006,
+    "strategy_capacity_crores": 235.16,
+    "tiers": {
+      "TIER-1 (Highly Liquid: <= 1d)": 10
+    },
+    "first_symbol": "STLTECH",
+    "checks": {
+      "adv_match": true,
+      "adtv_match": true,
+      "days_to_liq_match": true,
+      "participation_match": true
+    },
+    "observed": {
+      "adv_30": 2034689.3666666667,
+      "adtv_30_cr": 183.0,
+      "days_to_liquidate": 0.0,
+      "participation_pct": 0.006
+    }
+  },
+  "residual_momentum": {
+    "shape": [
+      1200,
+      2
+    ],
+    "last_A": -0.3335,
+    "last_B": -0.7368,
+    "non_zero_rows_A": 1101,
+    "sampled_rows": [
+      600,
+      800,
+      1100
+    ],
+    "max_abs_diff_vs_manual_rows": 0.0,
+    "skip_21_dampens_spike": {
+      "without_spike": -0.333475,
+      "with_5pct_last3": -0.236206,
+      "delta": 0.097269
+    },
+    "short_history_fail_closed_zero": true,
+    "finite": true,
+    "within_clip": true,
+    "checks": {
+      "matches_manual_recalculation": true,
+      "spike_bounded": true,
+      "short_zero": true,
+      "bounded": true
+    }
+  },
+  "vol_targeting": {
+    "ewma_ann_vol_const_1pct": 0.1587,
+    "expected_ann_vol": 0.1587,
+    "scalar": 0.7559,
+    "expected_scalar": 0.7559,
+    "shield_bull_full_breadth": 0.5,
+    "shield_bull_quarter_breadth": 0.25,
+    "shield_bear": 0.0,
+    "scaled_quantities": {
+      "A": 50,
+      "B": 16
+    },
+    "checks": {
+      "vol_match": true,
+      "scalar_match": true,
+      "bear_zero": true,
+      "breadth_sqrt": true,
+      "integer_scaling": true
+    }
+  },
+  "delivery_flow": {
+    "clv": {
+      "at_high": 1.0,
+      "at_low": -1.0,
+      "mid": 0.0,
+      "flat": 0.0
+    },
+    "daf": 1.0,
+    "smfi": 5.24,
+    "expected_smfi": 5.24,
+    "gates": {
+      "distribution": {
+        "allow_buy": false,
+        "action": "INSTITUTIONAL_DISTRIBUTION_VETO"
+      },
+      "accumulation": {
+        "allow_buy": true,
+        "action": "INSTITUTIONAL_ACCUMULATION_CONFIRMED"
+      },
+      "neutral": {
+        "allow_buy": true,
+        "action": "NEUTRAL"
+      },
+      "nan": {
+        "allow_buy": false,
+        "action": "MISSING_DATA_VETO"
+      }
+    },
+    "checks": {
+      "clv_high": true,
+      "clv_low": true,
+      "clv_mid": true,
+      "clv_flat": true,
+      "daf": true,
+      "smfi": true,
+      "veto": true,
+      "accum": true,
+      "nan_veto": true
+    }
+  },
+  "cache": {
+    "store_ok": true,
+    "roundtrip_equal": true,
+    "format": "npz (pyarrow absent)",
+    "key_stable_for_same_query": true,
+    "files_after_first_store": 1,
+    "after_eviction": {
+      "manifest_entries": 1,
+      "disk_mb": 1.73,
+      "limit_mb": 1.0
+    },
+    "clear_deleted": 1,
+    "manifest_empty_after_clear": true,
+    "limit_exceeded_by_single_entry": true
+  },
+  "cloud_sync": {
+    "original_bytes": 2097152,
+    "compressed_bytes": 2097846,
+    "decompressed_bytes": 2097152,
+    "ratio_pct_saved": -0.03,
+    "hash_match": true
+  }
+}

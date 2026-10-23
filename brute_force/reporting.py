@@ -146,19 +146,65 @@ def generate_comparison_deliverables(
         print(f"  ✓ Saved: {chart3_path}")
 
     # 4. Generate Institutional Comparison Sheet (Markdown & CSV)
+    d_equity = ng_res['ending_equity'] - base_res['ending_equity']
+    d_equity_pct = (d_equity / base_res['ending_equity'] * 100) if base_res['ending_equity'] > 0 else 0.0
+
+    d_sharpe = ng_res['sharpe_ratio'] - base_res['sharpe_ratio']
+    d_sharpe_pct = (d_sharpe / base_res['sharpe_ratio'] * 100) if base_res['sharpe_ratio'] > 0 else 0.0
+
+    d_sortino = ng_res['sortino_ratio'] - base_res['sortino_ratio']
+    d_sortino_pct = (d_sortino / base_res['sortino_ratio'] * 100) if base_res['sortino_ratio'] > 0 else 0.0
+
+    d_calmar = ng_res['calmar_ratio'] - base_res['calmar_ratio']
+    d_calmar_pct = (d_calmar / base_res['calmar_ratio'] * 100) if base_res['calmar_ratio'] > 0 else 0.0
+
+    # Compute execution and architecture metrics dynamically without hardcoding
+    base_latency = base_res.get("sim_latency_ms")
+    ng_latency = ng_res.get("sim_latency_ms")
+    if base_latency and ng_latency and ng_latency > 0:
+        speedup_lat = f"{base_latency / ng_latency:.1f}x Speedup"
+        base_lat_str = f"{base_latency:.1f} ms"
+        ng_lat_str = f"{ng_latency:.1f} ms"
+    else:
+        speedup_lat = "N/A"
+        base_lat_str = f"{base_latency:.1f} ms" if base_latency else "N/A"
+        ng_lat_str = f"{ng_latency:.1f} ms" if ng_latency else "N/A"
+
+    base_tp = base_res.get("throughput_runs_per_sec")
+    ng_tp = ng_res.get("throughput_runs_per_sec")
+    if base_tp and ng_tp and base_tp > 0:
+        speedup_tp = f"{ng_tp / base_tp:.1f}x Speedup"
+        base_tp_str = f"{base_tp:.3f} runs/sec"
+        ng_tp_str = f"{ng_tp:.1f} runs/sec"
+    else:
+        speedup_tp = "N/A"
+        base_tp_str = f"{base_tp:.3f} runs/sec" if base_tp else "N/A"
+        ng_tp_str = f"{ng_tp:.1f} runs/sec" if ng_tp else "N/A"
+
+    base_ram = base_res.get("ram_mb")
+    ng_ram = ng_res.get("ram_mb")
+    if base_ram and ng_ram and base_ram > 0:
+        ram_reduction = f"{(ng_ram - base_ram) / base_ram * 100:.1f}% RAM Reduction"
+        base_ram_str = f"{base_ram:.1f} MB"
+        ng_ram_str = f"{ng_ram:.1f} MB"
+    else:
+        ram_reduction = "N/A"
+        base_ram_str = f"{base_ram:.1f} MB" if base_ram else "N/A"
+        ng_ram_str = f"{ng_ram:.1f} MB" if ng_ram else "N/A"
+
     comparison_metrics = [
         {"Category": "Returns & Compounding", "Metric": "Compound Annual Growth Rate (CAGR)", "Baseline System": f"{base_res['cagr_pct']:.2f}%", "Next-Gen System": f"{ng_res['cagr_pct']:.2f}%", "Delta / Improvement": f"+{ng_res['cagr_pct'] - base_res['cagr_pct']:.2f}%"},
-        {"Category": "Returns & Compounding", "Metric": "Total Portfolio NAV (₹10L Starting)", "Baseline System": f"₹{base_res['ending_equity']:,.2f}", "Next-Gen System": f"₹{ng_res['ending_equity']:,.2f}", "Delta / Improvement": f"+₹{ng_res['ending_equity'] - base_res['ending_equity']:,.2f} (+34.4%)"},
-        {"Category": "Risk-Adjusted Performance", "Metric": "Annualized Sharpe Ratio (Rf=6.5%)", "Baseline System": f"{base_res['sharpe_ratio']:.2f}", "Next-Gen System": f"{ng_res['sharpe_ratio']:.2f}", "Delta / Improvement": f"+{ng_res['sharpe_ratio'] - base_res['sharpe_ratio']:.2f} (+14.3%)"},
-        {"Category": "Risk-Adjusted Performance", "Metric": "Downside Sortino Ratio", "Baseline System": f"{base_res['sortino_ratio']:.2f}", "Next-Gen System": f"{ng_res['sortino_ratio']:.2f}", "Delta / Improvement": f"+{ng_res['sortino_ratio'] - base_res['sortino_ratio']:.2f} (+16.0%)"},
+        {"Category": "Returns & Compounding", "Metric": "Total Portfolio NAV (₹10L Starting)", "Baseline System": f"₹{base_res['ending_equity']:,.2f}", "Next-Gen System": f"₹{ng_res['ending_equity']:,.2f}", "Delta / Improvement": f"{d_equity:+,.2f} ({d_equity_pct:+.1f}%)"},
+        {"Category": "Risk-Adjusted Performance", "Metric": "Annualized Sharpe Ratio (Rf=6.5%)", "Baseline System": f"{base_res['sharpe_ratio']:.2f}", "Next-Gen System": f"{ng_res['sharpe_ratio']:.2f}", "Delta / Improvement": f"{d_sharpe:+.2f} ({d_sharpe_pct:+.1f}%)"},
+        {"Category": "Risk-Adjusted Performance", "Metric": "Downside Sortino Ratio", "Baseline System": f"{base_res['sortino_ratio']:.2f}", "Next-Gen System": f"{ng_res['sortino_ratio']:.2f}", "Delta / Improvement": f"{d_sortino:+.2f} ({d_sortino_pct:+.1f}%)"},
         {"Category": "Capital Preservation", "Metric": "Maximum Historical Drawdown", "Baseline System": f"{base_res['max_drawdown_pct']:.2f}%", "Next-Gen System": f"{ng_res['max_drawdown_pct']:.2f}%", "Delta / Improvement": f"-{base_res['max_drawdown_pct'] - ng_res['max_drawdown_pct']:.2f}% (Reduced Risk)"},
-        {"Category": "Capital Preservation", "Metric": "Calmar Ratio (CAGR / MaxDD)", "Baseline System": f"{base_res['calmar_ratio']:.2f}", "Next-Gen System": f"{ng_res['calmar_ratio']:.2f}", "Delta / Improvement": f"+{ng_res['calmar_ratio'] - base_res['calmar_ratio']:.2f} (+30.2%)"},
+        {"Category": "Capital Preservation", "Metric": "Calmar Ratio (CAGR / MaxDD)", "Baseline System": f"{base_res['calmar_ratio']:.2f}", "Next-Gen System": f"{ng_res['calmar_ratio']:.2f}", "Delta / Improvement": f"{d_calmar:+.2f} ({d_calmar_pct:+.1f}%)"},
         {"Category": "Trading & Microstructure", "Metric": "Win Rate (%)", "Baseline System": f"{base_res['win_rate_pct']:.2f}%", "Next-Gen System": f"{ng_res['win_rate_pct']:.2f}%", "Delta / Improvement": f"+{ng_res['win_rate_pct'] - base_res['win_rate_pct']:.2f}%"},
         {"Category": "Trading & Microstructure", "Metric": "Profit Factor (Gains / Losses)", "Baseline System": f"{base_res['profit_factor']:.2f}", "Next-Gen System": f"{ng_res['profit_factor']:.2f}", "Delta / Improvement": f"+{ng_res['profit_factor'] - base_res['profit_factor']:.2f}"},
         {"Category": "Trading & Microstructure", "Metric": "Total Round-Trip Trades", "Baseline System": f"{base_res['total_trades']}", "Next-Gen System": f"{ng_res['total_trades']}", "Delta / Improvement": f"+{ng_res['total_trades'] - base_res['total_trades']}"},
-        {"Category": "Execution & Architecture", "Metric": "Single Simulation Latency", "Baseline System": "30,050.0 ms (Pandas)", "Next-Gen System": f"{base_res.get('sim_latency_ms', 18.9):.1f} ms (C99 NEON)", "Delta / Improvement": "1,590x Speedup"},
-        {"Category": "Execution & Architecture", "Metric": "Brute Force Throughput", "Baseline System": "0.033 runs/sec", "Next-Gen System": "767.6 runs/sec", "Delta / Improvement": "23,260x Speedup"},
-        {"Category": "Operational Safety", "Metric": "Memory Footprint", "Baseline System": "825.8 MB", "Next-Gen System": "278.5 MB", "Delta / Improvement": "-66.3% RAM Reduction"},
+        {"Category": "Execution & Architecture", "Metric": "Single Simulation Latency", "Baseline System": base_lat_str, "Next-Gen System": ng_lat_str, "Delta / Improvement": speedup_lat},
+        {"Category": "Execution & Architecture", "Metric": "Brute Force Throughput", "Baseline System": base_tp_str, "Next-Gen System": ng_tp_str, "Delta / Improvement": speedup_tp},
+        {"Category": "Operational Safety", "Metric": "Memory Footprint", "Baseline System": base_ram_str, "Next-Gen System": ng_ram_str, "Delta / Improvement": ram_reduction},
     ]
 
     df_comp = pd.DataFrame(comparison_metrics)
@@ -180,16 +226,16 @@ def generate_comparison_deliverables(
 | Performance Domain | Institutional Metric | Canonical Baseline System | Next-Gen Upgraded System | Relative Delta / Improvement |
 | :--- | :--- | :---: | :---: | :---: |
 | **Returns & Compounding** | **CAGR (%)** | **{base_res['cagr_pct']:.2f}%** | **{ng_res['cagr_pct']:.2f}%** | **+{ng_res['cagr_pct'] - base_res['cagr_pct']:.2f}% (Annual Alpha)** |
-| **Returns & Compounding** | **Final Portfolio NAV (₹10L Base)** | **₹{base_res['ending_equity']:,.2f}** | **₹{ng_res['ending_equity']:,.2f}** | **+₹{ng_res['ending_equity'] - base_res['ending_equity']:,.2f} (+34.4% Wealth)** |
-| **Risk-Adjusted Ratios** | **Annualized Sharpe (Rf=6.5%)** | **{base_res['sharpe_ratio']:.2f}** | **{ng_res['sharpe_ratio']:.2f}** | **+{ng_res['sharpe_ratio'] - base_res['sharpe_ratio']:.2f} (+14.3%)** |
-| **Risk-Adjusted Ratios** | **Downside Sortino Ratio** | **{base_res['sortino_ratio']:.2f}** | **{ng_res['sortino_ratio']:.2f}** | **+{ng_res['sortino_ratio'] - base_res['sortino_ratio']:.2f} (+16.0%)** |
+| **Returns & Compounding** | **Final Portfolio NAV (₹10L Base)** | **₹{base_res['ending_equity']:,.2f}** | **₹{ng_res['ending_equity']:,.2f}** | **{d_equity:+,.2f} ({d_equity_pct:+.1f}% Wealth)** |
+| **Risk-Adjusted Ratios** | **Annualized Sharpe (Rf=6.5%)** | **{base_res['sharpe_ratio']:.2f}** | **{ng_res['sharpe_ratio']:.2f}** | **{d_sharpe:+.2f} ({d_sharpe_pct:+.1f}%)** |
+| **Risk-Adjusted Ratios** | **Downside Sortino Ratio** | **{base_res['sortino_ratio']:.2f}** | **{ng_res['sortino_ratio']:.2f}** | **{d_sortino:+.2f} ({d_sortino_pct:+.1f}%)** |
 | **Capital Preservation** | **Maximum Peak Drawdown** | **{base_res['max_drawdown_pct']:.2f}%** | **{ng_res['max_drawdown_pct']:.2f}%** | **-{base_res['max_drawdown_pct'] - ng_res['max_drawdown_pct']:.2f}% (Loss Squeezed)** |
-| **Capital Preservation** | **Calmar Ratio (CAGR/MaxDD)** | **{base_res['calmar_ratio']:.2f}** | **{ng_res['calmar_ratio']:.2f}** | **+{ng_res['calmar_ratio'] - base_res['calmar_ratio']:.2f} (+30.2%)** |
+| **Capital Preservation** | **Calmar Ratio (CAGR/MaxDD)** | **{base_res['calmar_ratio']:.2f}** | **{ng_res['calmar_ratio']:.2f}** | **{d_calmar:+.2f} ({d_calmar_pct:+.1f}%)** |
 | **Trading Quality** | **Win Rate (%)** | **{base_res['win_rate_pct']:.2f}%** | **{ng_res['win_rate_pct']:.2f}%** | **+{ng_res['win_rate_pct'] - base_res['win_rate_pct']:.2f}%** |
 | **Trading Quality** | **Profit Factor** | **{base_res['profit_factor']:.2f}** | **{ng_res['profit_factor']:.2f}** | **+{ng_res['profit_factor'] - base_res['profit_factor']:.2f}** |
-| **Execution Mechanics** | **Single Backtest Latency** | **30,050.0 ms (Pandas)** | **{base_res.get('sim_latency_ms', 18.9):.1f} ms (C99 NEON)** | **1,590x Speedup** |
-| **Optimization Scale** | **Brute Force Throughput** | **0.033 runs/sec** | **767.6 runs/sec** | **23,260x Speedup** |
-| **Platform Resiliency** | **RAM Footprint (10.7 yrs)** | **825.8 MB** | **278.5 MB** | **-66.3% RAM Reduction** |
+| **Execution Mechanics** | **Single Backtest Latency** | **{base_lat_str}** | **{ng_lat_str}** | **{speedup_lat}** |
+| **Optimization Scale** | **Brute Force Throughput** | **{base_tp_str}** | **{ng_tp_str}** | **{speedup_tp}** |
+| **Platform Resiliency** | **RAM Footprint (10.7 yrs)** | **{base_ram_str}** | **{ng_ram_str}** | **{ram_reduction}** |
 
 ---
 

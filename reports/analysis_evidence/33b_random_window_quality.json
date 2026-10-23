@@ -1,0 +1,58 @@
+{
+  "rule": ">=252 bars by window end for >=50% of NIFTY500 and >=80 sessions",
+  "all_200": {
+    "n": 200,
+    "cagr_median": 40.49,
+    "cagr_p05": 8.15,
+    "cagr_p95": 88.4,
+    "pct_positive": 99.0,
+    "pct_beat_benchmark": 97.0,
+    "median_daily_maxdd_pct": 25.3,
+    "median_excess_pp": 24.86
+  },
+  "valid_only": {
+    "n": 158,
+    "cagr_median": 44.16,
+    "cagr_p05": 10.2,
+    "cagr_p95": 90.94,
+    "pct_positive": 98.7,
+    "pct_beat_benchmark": 98.7,
+    "median_daily_maxdd_pct": 26.26,
+    "median_excess_pp": 29.37
+  },
+  "data_insufficient_only": {
+    "n": 42,
+    "cagr_median": 20.26,
+    "cagr_p05": 5.94,
+    "cagr_p95": 51.49,
+    "pct_positive": 100.0,
+    "pct_beat_benchmark": 90.5,
+    "median_daily_maxdd_pct": 16.85,
+    "median_excess_pp": 13.11
+  },
+  "modern_2016_plus_all": {
+    "n": 115,
+    "cagr_median": 35.15,
+    "cagr_p05": 4.36,
+    "cagr_p95": 68.64,
+    "pct_positive": 98.3,
+    "pct_beat_benchmark": 98.3,
+    "median_daily_maxdd_pct": 25.65,
+    "median_excess_pp": 21.48
+  },
+  "modern_2016_plus_valid": {
+    "n": 115,
+    "cagr_median": 35.15,
+    "cagr_p05": 4.36,
+    "cagr_p95": 68.64,
+    "pct_positive": 98.3,
+    "pct_beat_benchmark": 98.3,
+    "median_daily_maxdd_pct": 25.65,
+    "median_excess_pp": 21.48
+  },
+  "counts": {
+    "VALID": 158,
+    "DATA_INSUFFICIENT": 42
+  },
+  "note": "maxdd column is the C-kernel DAILY intra-period drawdown; cagr uses sessions/252."
+}

@@ -46,7 +46,7 @@
    - 5 bps Execution Slippage & T+1 Open Fills
    - Whole-Share Integer Rounding & Cash Conservation
 7. [Point-in-Time Data Integrity & Historical Database](#-point-in-time-data-integrity--historical-database)
-   - SQLite `universe.db` Specification (2.16M Bars, 1,082 NSE Symbols)
+   - SQLite `universe.db` Specification (2.17M Bars, 1,083 NSE Symbols)
    - Cryptographic Immutability & SHA-256 Sealing
    - Survivorship Bias Elimination (Delisted & Merged Scrips)
    - Look-Ahead Bias Prevention & Corporate Actions Timeline
@@ -71,7 +71,7 @@
 11. [Universal NSE Index Catalog (36 Universes)](#-universal-nse-index-catalog-36-universes)
     - Broad Market, Sectoral, and Thematic Universes
     - Constituent Reconciliation Engine & 30-Day Cache TTL Policy
-12. [System Architecture & 25 Decoupled Core Modules](#-system-architecture--25-decoupled-core-modules)
+12. [System Architecture & 24 Decoupled Core Modules](#-system-architecture--24-decoupled-core-modules)
     - Directory Topology
     - 25 Core Modules Provenance Manifest
     - 14-Sheet Institutional Excel Tearsheet Structure
@@ -99,7 +99,7 @@ The platform executes a rigorous, rules-based momentum anomaly capture strategy 
 | :--- | :--- | :--- |
 | **Strategy Class** | Cross-Sectional Volatility-Adjusted Momentum (Volar) | Exploits persistent drift in leading equities while mitigating volatility drag |
 | **Core Universe** | NIFTY 750 / NIFTY 500 / All NSE Active Traded Equity | Broad liquidity pool across Large, Mid, and Small-cap equities |
-| **Historical Data** | 2,164,420 point-in-time bars across 1,082 symbols (2007–2026) | Full point-in-time price history with corporate action adjustments |
+| **Historical Data** | 2,170,608 point-in-time bars across 1,083 symbols (2007–2026) | Full point-in-time price history with corporate action adjustments |
 | **Execution Cadence** | Monthly Rebalance (with Weekly, Quarterly, Semi-Annual support) | Optimizes alpha capture against Indian statutory friction and turnover drag |
 | **Execution Latency** | 41.3 ms (Single 10-year simulation) / 767 runs/sec (SIMD sweep) | Sub-second parameter space exploration and neighborhood sensitivity verification |
 | **Data Immutability** | SQLite database sealed via SHA-256 (`0077ea77...`) | Cryptographic protection against unintended data mutations and look-ahead leaks |
@@ -161,7 +161,7 @@ Project MIP resolves every one of these failure modes through **strict, immutabl
 Project MIP implements a deterministic, multi-stage filtration and portfolio construction pipeline:
 
 ```
-[ All NSE Listed Equities (1,082 Active Scrips) ]
+[ All NSE Listed Equities (1,083 Active Scrips) ]
                          │
                          ▼
              [ Security Ingestion Gate ]
@@ -397,21 +397,21 @@ If the total cost of calculated buy tickets exceeds available cash, an automated
 ## 💾 Point-in-Time Data Integrity & Historical Database
 
 ### SQLite `universe.db` Specification
-* **Total Records:** **2,164,420 OHLCV daily bars**
-* **Symbol Coverage:** **1,082 distinct NSE equity symbols**
+* **Total Records:** **2,170,608 OHLCV daily bars**
+* **Symbol Coverage:** **1,083 distinct NSE equity symbols**
 * **Time Span:** January 2007 through October 2026 (19+ years)
 * **Uncompressed Size:** 351,744,000 bytes (~351.7 MB)
 * **Primary Key:** `PRIMARY KEY (symbol, date)`
 * **Cryptographic SHA-256 Fingerprint:**
   ```
-  0077ea77bfabf6cc5e0d12e3096e632878d1a28d02eed097c45f491ea0633f64
+  2cea970063a65c0ca129ac459467f6b3de466e05be456b50cc63ff1651e8b6ef
   ```
 
 ### Survivorship Bias Elimination
-Traditional backtests that query only currently active NIFTY 500 stocks suffer from severe **survivorship bias**, overstating returns by 4–8% annually.
+Traditional backtests that query only currently active NIFTY 500 stocks suffer from **survivorship bias**. In this dataset the effect is measured, not assumed: two runs of the same engine, config and dates — all **1,083** DB symbols vs the **1,033** still quoting after 2026-08-31 — give **27.00% vs 28.51% CAGR**, i.e. **1.51 pp of survivorship overstatement**. The earlier "4–8% annually" range is not reproducible under this tag and is retracted. NIFTY500-vs-ALL (index membership plus breadth, not survivorship alone) is **+0.39 pp**. Full run: `reports/ENGINE_RECONCILIATION.md`.
 
 Project MIP maintains complete historical records of **delisted, merged, and suspended scrips**:
-* Tickers such as `DHFL`, `ABAN`, `CORPBANK`, `JETAIWAYS`, `RCOM`, `SUZLON` (historical distressed era), `UNITECH`, and `YESBANK` are fully preserved in the database during their active trading years.
+* Tickers such as `DHFL`, `ABAN`, `CORPBANK`, `RCOM`, `SUZLON` (historical distressed era), `UNITECH`, and `YESBANK` are fully preserved in the database during their active trading years. `JETAIRWAYS` has no price history in the current database.
 * When a stock delists or suspends trading, the backtester detects the dropout and exits the position at the last available trading price, reflecting real-world capital loss.
 
 ### Look-Ahead Bias Prevention
@@ -510,6 +510,8 @@ The simulation sweep divides parameter combinations across CPU hardware threads 
 ---
 
 ## 📊 Comprehensive Empirical Backtest Results & Comparative Benchmarks
+
+> **Measurement note (2026-10-23):** Backtest figures in this section were captured on an earlier build and configuration. The execution engine now skips non-session placeholder bars and defers fills on halted scrips; regenerate results with the current engine before quoting them. The post-fix canonical run is documented in `reports/CODEBASE_DEEP_ANALYSIS.md` §5.2.
 
 ### 1. 10-Year Canonical Modern Baseline (2016–2026 Monthly Rebalance)
 * **Testing Window:** January 1, 2016 to August 31, 2026 (Modern Post-Demonetization / GST Regime)
@@ -618,7 +620,7 @@ Constituent memberships are managed by `scripts/scanner_hardening.py:Constituent
 
 ---
 
-## 🏗 System Architecture & 25 Decoupled Core Modules
+## 🏗 System Architecture & 24 Decoupled Core Modules
 
 ### Directory Topology
 ```
@@ -632,7 +634,7 @@ Project_MIP_Colab/
 │   └── sim_kernel.c           # C99 NEON / AVX2 / pthread parallel kernel
 ├── certificates/              # Sealed cryptographic provenance & manifests
 │   └── PROVENANCE_MANIFEST.json
-├── core/                      # Strictly decoupled 25 core engine modules
+├── core/                      # 24 decoupled engine modules (+ __init__.py = 25 files)
 │   ├── analytical_price.py    # Corporate actions adjustment & partitioning
 │   ├── anomaly.py             # Structural price jump & anomaly detector
 │   ├── auto_fetch.py          # Real-time Bhavcopy auto-sync & validation
@@ -646,7 +648,6 @@ Project_MIP_Colab/
 │   ├── excel_generator.py     # 14-Sheet institutional Excel workbook generator
 │   ├── health.py              # Scanner health monitor & state machine
 │   ├── identity.py            # Security identity & symbol deduplication
-│   ├── market_breadth.py      # Core breadth metrics & regime evaluation
 │   ├── portfolio.py           # Portfolio state, ATR risk parity, friction ledger
 │   ├── reason_codes.py        # Institutional diagnostic reason code enumerations
 │   ├── rrg.py                 # Relative Rotation Graphs (JDK RS-Ratio / RS-Momentum)
@@ -654,12 +655,14 @@ Project_MIP_Colab/
 │   ├── scanner.py             # 5-tier institutional momentum screener
 │   ├── sector_rotation.py     # Sector momentum, breadth, and rotation engine
 │   ├── settings.py            # User investing settings serialization
-│   ├── ui.py                  # TUI terminal styling, banners, and formatters
+│   ├── sync_sectors.py        # NSE sector/industry taxonomy synchronization
+│   ├── telegram_sender.py     # Telegram alert dispatch & message chunking
+│   ├── visuals.py             # TUI styling, charts, and tearsheet rendering
 │   └── validation.py          # Geometric bar validation & anti-IPO checks
 ├── data/                      # Essential static files (SQLite DB excluded from VCS)
 │   ├── benchmark_nifty500.csv # Authoritative NIFTY 500 daily benchmark series
 │   ├── corporate_actions_registry.json # Corporate action adjustment history
-│   └── trading_calendar.txt   # Authoritative 4,888-session trading calendar
+│   └── trading_calendar.txt   # Authoritative 4,889-session trading calendar
 ├── docs/                      # Institutional playbooks and cloud setup guides
 │   └── COLAB_SETUP_GUIDE.md   # Google Colab Secrets & Drive setup instructions
 ├── nextgen/                   # Next-Gen Research & Algorithmic Modules
@@ -677,7 +680,7 @@ Project_MIP_Colab/
 │   ├── scanner_hardening.py   # Constituent reconciliation & 30-day cache TTL
 │   └── schedule_production_cron.py # Cron daemon & holiday-aware scheduler
 └── tests/                     # Comprehensive institutional contract test suite
-    ├── run_all_tests.py       # Master test runner (290+ tests passed)
+    ├── run_all_tests.py       # Master test runner (570+ tests)
     ├── test_colab_compatibility.py # Colab cloud environment contract tests
     ├── test_compression_sync.py # Gzip compression roundtrip & sync tests
     ├── test_integrity.py      # Provenance and architecture integrity tests
@@ -756,7 +759,13 @@ python main.py
 
 ### 3. Headless Production CLI Guide
 
-Execute specific operational pipelines directly via command-line flags:
+Execute specific operational pipelines directly via command-line flags.
+`--option` uses the **headless task map** (1 scan, 5 backtest, 7 portfolio, 12 database audit, 18 brute force, ...),
+which differs from the interactive menu numbering. Use `--menu-option` to address the interactive menu directly.
+
+```bash
+python main.py --help   # prints both maps
+```
 
 ```bash
 # 1. Weekly Momentum Scan on NIFTY 750 (with Excel tearsheet and Telegram alert)

@@ -227,6 +227,7 @@ def build_tensor_cube(
     point_in_time = kwargs.get("point_in_time", False)
     allow_fallback = kwargs.get("allow_constituent_fallback", not point_in_time)
 
+    used_pit_constituents = False
     if symbols is not None:
         all_symbols = sorted(list(set(symbols)))
         N = len(all_symbols)
@@ -237,17 +238,29 @@ def build_tensor_cube(
         if point_in_time:
             sym_set = load_point_in_time_constituents(universe_name, as_of_date=as_of_date, base_dir=base_path)
             if sym_set:
+                used_pit_constituents = True
                 print(f"[CubeBuilder] Loaded {len(sym_set)} point-in-time constituents from snapshots (as of {as_of_date}).")
         if not sym_set:
             if allow_fallback or not point_in_time:
                 sym_set = load_universe_constituents(universe_name)
                 print(f"[CubeBuilder] Loaded {len(sym_set)} constituents from {universe_name}.")
+                if universe_name.upper() not in ("ALL", "MASTER", "PIT"):
+                    print(
+                        f"[CubeBuilder] WARNING: no point-in-time snapshot for {universe_name} as of {as_of_date}; "
+                        "current constituents used. Survivorship bias risk flagged on the cube."
+                    )
             else:
                 raise ValueError(
                     f"No point-in-time snapshot for {universe_name} as of {as_of_date}. "
                     f"Set allow_constituent_fallback=True to override."
                 )
         all_symbols = sorted(list(sym_set))
+        if not all_symbols and universe_name.upper() in ("ALL", "MASTER", "PIT"):
+            # "ALL" means no symbol filter: enumerate every symbol in the DB.
+            _conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            all_symbols = sorted({r[0] for r in _conn.execute("SELECT DISTINCT symbol FROM prices")})
+            _conn.close()
+            print(f"[CubeBuilder] Universe ALL resolved to every DB symbol: {len(all_symbols)}.")
         N = len(all_symbols)
         print(f"[CubeBuilder] Final active symbol count: {N}.")
 
@@ -260,13 +273,23 @@ def build_tensor_cube(
     # Load raw price bars from SQLite
     print(f"[CubeBuilder] Querying raw price bars from SQLite ({start_date} to {end_date})...")
     conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-    placeholders = ",".join(["?"] * N)
-    query = (
-        f"SELECT date, symbol, open, high, low, close, volume FROM prices "
-        f"WHERE symbol IN ({placeholders}) AND date >= ? AND date <= ? "
-        f"ORDER BY symbol, date"
-    )
-    raw_bars = pd.read_sql_query(query, conn, params=all_symbols + [start_date, end_date])
+    if N > 900:
+        # SQLite hosts can cap bound variables (often 999). For broad universes
+        # read the date range once and filter in memory.
+        query = (
+            "SELECT date, symbol, open, high, low, close, volume FROM prices "
+            "WHERE date >= ? AND date <= ? ORDER BY symbol, date"
+        )
+        raw_bars = pd.read_sql_query(query, conn, params=[start_date, end_date])
+        raw_bars = raw_bars[raw_bars["symbol"].isin(set(all_symbols))].reset_index(drop=True)
+    else:
+        placeholders = ",".join(["?"] * N)
+        query = (
+            f"SELECT date, symbol, open, high, low, close, volume FROM prices "
+            f"WHERE symbol IN ({placeholders}) AND date >= ? AND date <= ? "
+            f"ORDER BY symbol, date"
+        )
+        raw_bars = pd.read_sql_query(query, conn, params=all_symbols + [start_date, end_date])
     conn.close()
 
     # Corporate action adjustment for constituent bars
@@ -328,7 +351,10 @@ def build_tensor_cube(
     high_px[d_indices, s_indices] = raw_bars["high"].to_numpy(dtype=np.float32)
     low_px[d_indices, s_indices] = raw_bars["low"].to_numpy(dtype=np.float32)
     vol_mat[d_indices, s_indices] = raw_bars["volume"].to_numpy(dtype=np.float32)
-    valid_price_mask[d_indices, s_indices] = True
+    # Zero-volume rows are forward-filled placeholders (e.g. non-session dates).
+    # They must never be used for execution, so they are masked out just like
+    # genuinely missing bars.
+    valid_price_mask[d_indices, s_indices] = raw_bars["volume"].to_numpy(dtype=np.float32) > 0
 
     # Forward-fill prices across internal trading halts for actively listed symbols
     for s in range(N):
@@ -513,6 +539,15 @@ def build_tensor_cube(
         corporate_actions_bypassed=corporate_actions_bypassed,
         valid_price_mask=valid_price_mask,
     )
+
+    container.universe_name = universe_name
+    container.universe_point_in_time = used_pit_constituents
+    container.survivorship_bias_risk = (
+        not used_pit_constituents
+        and symbols is None
+        and universe_name.upper() not in ("ALL", "MASTER", "PIT")
+    )
+    container.constituent_as_of = as_of_date
 
     print(f"\n[CubeBuilder] Tensor Cube created: {container.memory_footprint_mb:.2f} MB RAM footprint.")
     print(f"[CubeBuilder] Dates: {T} ({all_dates[0]} to {all_dates[-1]}), Symbols: {N} ({universe_name}).")

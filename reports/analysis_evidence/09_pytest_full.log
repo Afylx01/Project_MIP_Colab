@@ -1,0 +1,16 @@
+..............................s.ss...................................... [ 12%]
+........................................................................ [ 25%]
+....sss................................................................. [ 37%]
+........................................................................ [ 50%]
+........................................................................ [ 63%]
+........................................................................ [ 75%]
+........................................................................ [ 88%]
+...................................................................      [100%]
+=============================== warnings summary ===============================
+tests/test_latest_date_and_auto_fetch.py::TestLatestDateAndAutoFetch::test_09_bhavcopy_standardize_strips_series_whitespace
+  /mnt/sdcard/Subtitles/Project/Project_MIP_Colab/core/auto_fetch.py:160: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+    raw['date'] = pd.to_datetime(raw[dt_col]).dt.strftime("%Y-%m-%d")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+565 passed, 6 skipped, 1 warning in 850.28s (0:14:10)
+EXIT=0

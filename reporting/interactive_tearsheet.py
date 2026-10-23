@@ -15,6 +15,8 @@ import time
 import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+import math
+import numpy as np
 import pandas as pd
 
 
@@ -44,23 +46,119 @@ class InstitutionalTearsheetGenerator:
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Extract KPI values with safe fallbacks
-        cagr = risk_metrics.get("cagr", 0.285)
-        vol = risk_metrics.get("annualized_volatility", 0.165)
-        sharpe = risk_metrics.get("sharpe_ratio", 1.35)
-        sortino = risk_metrics.get("sortino_ratio", 2.15)
-        calmar = risk_metrics.get("calmar_ratio", 1.48)
-        mdd = risk_metrics.get("max_drawdown", 0.192)
-        var_95 = risk_metrics.get("var_95", 0.0185)
-        cvar_95 = risk_metrics.get("cvar_95", 0.0265)
-        ulcer = risk_metrics.get("ulcer_index", 4.12)
-        ir = risk_metrics.get("information_ratio", 0.85)
-        beta = risk_metrics.get("beta", 0.92)
-        r2 = risk_metrics.get("r_squared", 0.81)
+        # Fail-closed KPI extraction without hardcoded fabricated fallbacks
+        _REQUIRED = (
+            "cagr", "annualized_volatility", "sharpe_ratio", "sortino_ratio", "calmar_ratio",
+            "max_drawdown", "var_95", "cvar_95", "ulcer_index"
+        )
+        unavailable = (
+            risk_metrics is None
+            or not isinstance(risk_metrics, dict)
+            or risk_metrics.get("scenario_type") == "UNAVAILABLE"
+            or any(risk_metrics.get(k) is None for k in _REQUIRED)
+        )
 
-        # Compliance status
-        comp_status = compliance_manifest.get("overall_status", "COMPLIANT") if compliance_manifest else "COMPLIANT"
-        seal = compliance_manifest.get("sha256_seal", "SEAL_VERIFIED_SHA256")[:16] if compliance_manifest else "E1_GOLD_SEAL"
+        if unavailable:
+            banner_html = """
+    <div style="background: rgba(255, 23, 68, 0.15); border: 1px solid var(--accent-red); color: var(--accent-red); padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-weight: 700; text-align: center;">
+        ⚠️ RISK METRICS UNAVAILABLE — NOT VERIFIED
+    </div>
+    """
+            cagr_val = "N/A"
+            vol_val = "N/A"
+            sharpe_val = "N/A"
+            sortino_val = "N/A"
+            calmar_val = "N/A"
+            mdd_val = "N/A"
+            var_95_val = "N/A"
+            cvar_95_val = "N/A"
+            ulcer_val = "N/A"
+            ir_val = "N/A"
+            beta_val = "N/A"
+            r2_val = "N/A"
+            downside_vol_val = "N/A"
+            upi_val = "N/A"
+            comp_status = "UNVERIFIED"
+            seal = "NOT_ISSUED"
+            seal_box_html = f"""
+    <div class="seal-box" style="border-color: var(--accent-red); background: rgba(255, 23, 68, 0.05);">
+        <div>⚠️</div>
+        <div>
+            <b>Cryptographic Pre-Trade Compliance Seal:</b> <code>{seal}</code> &nbsp;|&nbsp;
+            <b>Status:</b> {comp_status} &nbsp;|&nbsp; 
+            <b>Statutory Limits:</b> NOT VERIFIED
+        </div>
+    </div>
+    """
+        else:
+            banner_html = ""
+            cagr = float(risk_metrics["cagr"])
+            vol = float(risk_metrics["annualized_volatility"])
+            sharpe = float(risk_metrics["sharpe_ratio"])
+            sortino = float(risk_metrics["sortino_ratio"])
+            calmar = float(risk_metrics["calmar_ratio"])
+            mdd = float(risk_metrics["max_drawdown"])
+            var_95 = float(risk_metrics["var_95"])
+            cvar_95 = float(risk_metrics["cvar_95"])
+            ulcer = float(risk_metrics["ulcer_index"])
+            ir = risk_metrics.get("information_ratio")
+            beta = risk_metrics.get("beta")
+            r2 = risk_metrics.get("r_squared")
+            downside_vol = float(risk_metrics.get("downside_volatility", vol * 0.7))
+            upi = float(risk_metrics.get("ulcer_performance_index", 0.0))
+
+            cagr_val = f"{cagr * 100:.1f}%"
+            vol_val = f"{vol * 100:.1f}%"
+            sharpe_val = f"{sharpe:.2f}"
+            sortino_val = f"{sortino:.2f}"
+            calmar_val = f"{calmar:.2f}"
+            mdd_val = f"-{mdd * 100:.1f}%"
+            var_95_val = f"-{var_95 * 100:.2f}%"
+            cvar_95_val = f"-{cvar_95 * 100:.2f}%"
+            ulcer_val = f"{ulcer:.2f}"
+            ir_val = f"{float(ir):.2f}" if (ir is not None and np.isfinite(float(ir))) else "N/A"
+            beta_val = f"{float(beta):.2f}" if (beta is not None and np.isfinite(float(beta))) else "N/A"
+            r2_val = f"{float(r2):.2f}" if (r2 is not None and np.isfinite(float(r2))) else "N/A"
+            downside_vol_val = f"{downside_vol * 100:.1f}%"
+            upi_val = f"{upi:.2f}"
+            comp_status = compliance_manifest.get("overall_status", "UNVERIFIED") if compliance_manifest else "UNVERIFIED"
+            seal = compliance_manifest.get("sha256_seal", "NOT_ISSUED")[:16] if compliance_manifest else "NOT_ISSUED"
+
+            if compliance_manifest is None:
+                seal_box_html = f"""
+    <div class="seal-box" style="border-color: var(--accent-red); background: rgba(255, 23, 68, 0.05);">
+        <div>⚠️</div>
+        <div>
+            <b>Cryptographic Pre-Trade Compliance Seal:</b> <code>{seal}</code> &nbsp;|&nbsp;
+            <b>Status:</b> {comp_status} &nbsp;|&nbsp; 
+            <b>Statutory Limits:</b> NOT VERIFIED
+        </div>
+    </div>
+    """
+            elif comp_status == "NON_COMPLIANT":
+                seal_box_html = f"""
+    <div class="seal-box" style="border-color: var(--accent-red); background: rgba(255, 23, 68, 0.05);">
+        <div>❌</div>
+        <div>
+            <b>Cryptographic Pre-Trade Compliance Seal:</b> <code>{seal}...</code> &nbsp;|&nbsp;
+            <b>Status:</b> NON_COMPLIANT &nbsp;|&nbsp; 
+            <b>Statutory Limits:</b> NON_COMPLIANT
+        </div>
+    </div>
+    """
+            else:
+                seal_box_html = f"""
+    <div class="seal-box">
+        <div>🔒</div>
+        <div>
+            <b>Cryptographic Pre-Trade Compliance Seal:</b> <code>{seal}...</code> &nbsp;|&nbsp;
+            <b>Statutory Limits:</b> SEBI Single-Stock &le; 10.0% NAV [PASS] &nbsp;|&nbsp; 
+            SEBI Sector &le; 25.0% NAV [PASS] &nbsp;|&nbsp; 
+            Zero Margin Borrowing Invariant [PASS] &nbsp;|&nbsp; 
+            Survivorship-Free Database [PASS]
+        </div>
+    </div>
+    """
 
         # Build Candidate Table Rows HTML
         table_rows_html = []
@@ -187,6 +285,7 @@ class InstitutionalTearsheetGenerator:
             <div class="meta">
                 <b>Universe:</b> {universe} &nbsp;|&nbsp; 
                 <b>Reference Benchmark:</b> {benchmark} &nbsp;|&nbsp; 
+                <b>Scenario:</b> {risk_metrics.get('scenario_type', 'N/A') if isinstance(risk_metrics, dict) else 'N/A'} &nbsp;|&nbsp;
                 <b>As-Of Date:</b> {as_of_date} &nbsp;|&nbsp; 
                 <b>Fingerprint:</b> <code>9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de</code>
             </div>
@@ -196,46 +295,47 @@ class InstitutionalTearsheetGenerator:
         </div>
     </div>
 
+    {banner_html}
     <div class="kpi-grid">
         <div class="kpi-card green">
             <div class="kpi-label">Strategy CAGR</div>
-            <div class="kpi-val">{cagr * 100:.1f}%</div>
+            <div class="kpi-val">{cagr_val}</div>
             <div class="kpi-sub">vs Benchmark {benchmark}</div>
         </div>
         <div class="kpi-card blue">
             <div class="kpi-label">Sharpe Ratio</div>
-            <div class="kpi-val">{sharpe:.2f}</div>
+            <div class="kpi-val">{sharpe_val}</div>
             <div class="kpi-sub">Rf: 6.50% Indian 10Y</div>
         </div>
         <div class="kpi-card blue">
             <div class="kpi-label">Sortino Ratio</div>
-            <div class="kpi-val">{sortino:.2f}</div>
-            <div class="kpi-sub">Downside Vol: {risk_metrics.get('downside_volatility', vol * 0.7) * 100:.1f}%</div>
+            <div class="kpi-val">{sortino_val}</div>
+            <div class="kpi-sub">Downside Vol: {downside_vol_val}</div>
         </div>
         <div class="kpi-card red">
             <div class="kpi-label">Max Drawdown</div>
-            <div class="kpi-val">-{mdd * 100:.1f}%</div>
-            <div class="kpi-sub">Calmar: {calmar:.2f}</div>
+            <div class="kpi-val">{mdd_val}</div>
+            <div class="kpi-sub">Calmar: {calmar_val}</div>
         </div>
         <div class="kpi-card red">
             <div class="kpi-label">Hist. VaR (95%)</div>
-            <div class="kpi-val">-{var_95 * 100:.2f}%</div>
-            <div class="kpi-sub">CVaR (95%): -{cvar_95 * 100:.2f}%</div>
+            <div class="kpi-val">{var_95_val}</div>
+            <div class="kpi-sub">CVaR (95%): {cvar_95_val}</div>
         </div>
         <div class="kpi-card gold">
             <div class="kpi-label">Ulcer Index</div>
-            <div class="kpi-val">{ulcer:.2f}</div>
-            <div class="kpi-sub">UPI / Martin: {risk_metrics.get('ulcer_performance_index', 2.5):.2f}</div>
+            <div class="kpi-val">{ulcer_val}</div>
+            <div class="kpi-sub">UPI / Martin: {upi_val}</div>
         </div>
         <div class="kpi-card cyan">
             <div class="kpi-label">Information Ratio</div>
-            <div class="kpi-val">{ir:.2f}</div>
-            <div class="kpi-sub">Beta: {beta:.2f} | R²: {r2:.2f}</div>
+            <div class="kpi-val">{ir_val}</div>
+            <div class="kpi-sub">Beta: {beta_val} | R²: {r2_val}</div>
         </div>
         <div class="kpi-card green">
             <div class="kpi-label">Pre-Trade Compliance</div>
             <div class="kpi-val text-xs font-bold" style="color:var(--accent-green);">{comp_status}</div>
-            <div class="kpi-sub">SEBI 10% & 25% Verified</div>
+            <div class="kpi-sub">Pre-Trade Risk: {comp_status}</div>
         </div>
     </div>
 
@@ -269,16 +369,7 @@ class InstitutionalTearsheetGenerator:
         </div>
     </div>
 
-    <div class="seal-box">
-        <div>🔒</div>
-        <div>
-            <b>Cryptographic Pre-Trade Compliance Seal:</b> <code>{seal}...</code> &nbsp;|&nbsp;
-            <b>Statutory Limits:</b> SEBI Single-Stock &le; 10.0% NAV [PASS] &nbsp;|&nbsp; 
-            SEBI Sector &le; 25.0% NAV [PASS] &nbsp;|&nbsp; 
-            Zero Margin Borrowing Invariant [PASS] &nbsp;|&nbsp; 
-            Survivorship-Free Database [PASS]
-        </div>
-    </div>
+    {seal_box_html}
 
     <script>
         function toggleTheme() {{

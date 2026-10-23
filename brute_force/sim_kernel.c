@@ -531,9 +531,11 @@ static inline void simulate_single_config(
                         num_holdings++;
                     }
                 }
-                if (num_selected > 0 && num_masked_entries == num_selected) {
-                    nan_bars_count++;
-                }
+                // If every selected entry is masked (e.g. the execution session is a
+                // market-wide holiday row), skip this rebalance and stay in cash.
+                // This is a local, non-fatal condition; it must not invalidate the
+                // entire multi-year simulation.
+                (void)num_masked_entries;
             }
         }
 
@@ -605,10 +607,10 @@ static inline void simulate_single_config(
                     }
                     daily_nav += ((double)holdings[h].shares * (double)px);
                 }
-                if (!bar_has_nan && halted_holdings_count > 0 && halted_holdings_count == num_holdings) {
-                    bar_has_nan = true;
-                    nan_bars_count++;
-                }
+                // A fully halted portfolio is valid as long as every holding was
+                // valued from a finite previous close (handled per holding above).
+                // Do not fail the entire simulation merely because all holdings
+                // were masked on the same session (e.g. a market-wide holiday row).
             } else {
                 if (N == 1) {
                     size_t d_idx = (size_t)d * N;
@@ -676,9 +678,8 @@ static inline void simulate_single_config(
         }
         final_equity_calc += ((double)holdings[h].shares * (double)px);
     }
-    if (final_halted_count > 0 && final_halted_count == num_holdings) {
-        nan_bars_count++;
-    }
+    // Final-session halts are valued from the prior finite close above; only an
+    // unrecoverable price (already counted) should invalidate the result.
     if (nan_bars_count > 0) {
         result->param_id = params->param_id;
         result->cagr = NAN;

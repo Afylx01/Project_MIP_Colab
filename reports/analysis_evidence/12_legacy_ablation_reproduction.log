@@ -1,0 +1,18 @@
+[09:43:20] [Backtest] Running backtest 2016-01-01 to 2026-08-31 (Top 20, Mode: Volar Momentum Ranking, Max/Sector: None, Sizing: equal_weight)...
+[09:43:20] [Backtest] Loading bars from SQLite (2014-06-30 to 2026-08-31)...
+[09:43:38] [Backtest] Computing momentum factors across universe...
+[09:43:46] [Backtest] Pre-indexing snapshots across universe bars...
+elapsed 35.7
+{
+  "cagr_pct": 36.8,
+  "sharpe_ratio": 1.03,
+  "sortino_ratio": 1.39,
+  "max_drawdown_pct": -49.74,
+  "daily_max_drawdown_pct": -57.04,
+  "calmar_ratio": 0.74,
+  "win_rate_pct": 46.3,
+  "total_trades": 698,
+  "final_equity": 28264374.69,
+  "sizing_mode": "equal_weight",
+  "is_production_contract": false
+}

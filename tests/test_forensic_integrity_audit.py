@@ -506,11 +506,11 @@ class TestForensicIntegrityAudit(unittest.TestCase):
         self.assertAlmostEqual(row["total_return"], 0.00, places=3, msg="Ending return must be 0.00%")
         self.assertEqual(row["ending_equity"], 100_000.0)
 
-    def test_stress_vector_v3_nan_bar_handling(self):
+    def test_stress_vector_v3_nan_bar_forward_filled(self):
         """
-        V3: A synthetic window with a single NaN bar in the price series:
-            the harness must not silently treat NaN as a peak or a trough,
-            and must flag DATA_INSUFFICIENT.
+        V3: A synthetic window with a single NaN bar that has a finite prior close:
+            the harness must forward-fill valuation from the prior close and keep
+            the result VALID (a one-session data gap is recoverable).
         """
         num_dates = 30
         px = np.ones((num_dates, 1), dtype=np.float32) * 100.0
@@ -536,9 +536,39 @@ class TestForensicIntegrityAudit(unittest.TestCase):
         res = self.engine.run_sweep(cube, [param])
         row = res.iloc[0]
 
-        self.assertTrue(math.isnan(row["cagr"]), "NaN bar must flag CAGR as NaN")
-        self.assertTrue(math.isnan(row["total_return"]), "NaN bar must flag total_return as NaN")
-        self.assertTrue(math.isnan(row["max_drawdown"]), "NaN bar must flag max_drawdown as NaN")
+        self.assertFalse(row["data_insufficient"])
+        self.assertEqual(row["status"], "VALID")
+        self.assertTrue(math.isfinite(row["cagr"]))
+        self.assertTrue(math.isfinite(row["total_return"]))
+        self.assertAlmostEqual(float(row["ending_equity"]), 100_000.0, places=2)
+
+    def test_stress_vector_v3_unrecoverable_nan_fails_closed(self):
+        """V3b: masked bars with no finite prior close must still fail closed."""
+        num_dates = 30
+        px = np.ones((num_dates, 1), dtype=np.float32) * 100.0
+        px[14, 0] = np.nan
+        px[15, 0] = np.nan
+
+        cube = self._create_synthetic_cube(num_dates, px)
+        param = {
+            "param_id": 104,
+            "schedule_idx": 1,
+            "start_date_idx": 0,
+            "end_date_idx": num_dates - 1,
+            "lookback_idx": 0,
+            "ema_idx": 0,
+            "top_n": 1,
+            "exit_buffer_rank": 40,
+            "max_per_sector": 2,
+            "sizing_mode": "equal_weight",
+            "filter_flags": 0,
+            "initial_capital": 100_000.0,
+            "friction_bps": 0.0,
+            "slippage_bps": 0.0
+        }
+        res = self.engine.run_sweep(cube, [param])
+        row = res.iloc[0]
+        self.assertTrue(math.isnan(row["cagr"]), "Unrecoverable NaN must flag CAGR as NaN")
         self.assertTrue(row["data_insufficient"], "Must set data_insufficient flag")
         self.assertEqual(row["status"], "DATA_INSUFFICIENT")
 
@@ -995,6 +1025,157 @@ class TestForensicIntegrityAudit(unittest.TestCase):
         recs = analyze_2008_half_cash(cube, param, 0, 30)
         self.assertGreaterEqual(len(recs), 2)
         self.assertEqual(recs[1]["actual_filled"], 0)
+
+    def test_compute_multiple_testing_stats_filters_non_finite_sharpes(self):
+        from scripts.forensic_integrity_audit import compute_multiple_testing_stats
+        stats = compute_multiple_testing_stats([float("nan"), 1.0], 2700)
+        self.assertTrue(all(np.isfinite(r["sharpe"]) for r in stats["results"] if r["sharpe"] is not None))
+        self.assertTrue(np.isfinite(stats["required_sharpe"]))
+
+    def test_multiple_testing_stats_preserve_row_alignment_with_nan_sharpe(self):
+        """F-08/F-09: Non-finite sharpes must not shrink trial family K and must preserve row alignment."""
+        from scripts.forensic_integrity_audit import compute_multiple_testing_stats
+        sharpes_with_nan = [1.10, float("nan"), 0.90]
+        stats = compute_multiple_testing_stats(sharpes_with_nan, 2600)
+        self.assertEqual(stats["n_trials"], 3, "Family size must not shrink on NaN trials")
+        self.assertEqual(len(stats["results"]), 3, "Results length must match input sharpes length")
+
+        # Check row 0 (1.10)
+        self.assertEqual(stats["results"][0]["sharpe"], 1.10)
+        self.assertGreater(stats["results"][0]["deflated_sharpe_ratio"], 0.5)
+
+        # Check row 1 (NaN) - fail closed without shifting subsequent rows
+        self.assertIsNone(stats["results"][1]["sharpe"])
+        self.assertEqual(stats["results"][1]["p_value_bonferroni"], 1.0)
+        self.assertEqual(stats["results"][1]["deflated_sharpe_ratio"], 0.0)
+        self.assertFalse(stats["results"][1]["statistically_significant_05"])
+
+        # Check row 2 (0.90) - preserved at index 2, not dropped or shifted onto row 1
+        self.assertEqual(stats["results"][2]["sharpe"], 0.90)
+        self.assertGreater(stats["results"][2]["deflated_sharpe_ratio"], 0.0)
+
+    def test_sanitize_json_obj_numpy_scalars_and_infinities(self):
+        from scripts.forensic_integrity_audit import sanitize_json_obj
+        obj = {"x": np.float32("inf"), "y": np.int64(5), "z": np.bool_(True)}
+        sanitized = sanitize_json_obj(obj)
+        self.assertIsNone(sanitized["x"])
+        self.assertEqual(sanitized["y"], 5)
+        self.assertEqual(type(sanitized["y"]), int)
+        self.assertEqual(sanitized["z"], True)
+        self.assertEqual(type(sanitized["z"]), bool)
+        dumped = json.dumps(sanitized, allow_nan=False)
+        self.assertIn('"x": null', dumped)
+        self.assertIn('"y": 5', dumped)
+        self.assertIn('"z": true', dumped)
+
+    def test_run_forensic_audit_end_to_end_contract(self):
+        """End-to-end verification that run_forensic_audit writes matching JSON and MD statements,
+        verdict aligns with statistically_significant_05, and best_observed_sharpe matches the statement."""
+        from unittest.mock import patch, MagicMock
+        from scripts.forensic_integrity_audit import run_forensic_audit
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            mock_runner = MagicMock()
+            mock_cube = MagicMock()
+            mock_cube.dates = [
+                "2008-01-01", "2008-12-31",
+                "2011-01-01", "2011-12-31",
+                "2016-01-01", "2018-01-01",
+                "2018-12-31", "2020-01-01",
+                "2020-05-29", "2026-10-15"
+            ]
+            mock_cube.date_to_idx = {d: i for i, d in enumerate(mock_cube.dates)}
+            mock_cube.schedule_offsets = np.zeros(10, dtype=np.int32)
+            mock_cube.schedule_lengths = np.ones(10, dtype=np.int32)
+            mock_cube.rebalance_indices = np.array(list(range(len(mock_cube.dates))), dtype=np.int32)
+            mock_cube.num_dates = len(mock_cube.dates)
+            mock_cube.num_symbols = 1
+
+            mock_sweep_res = [{
+                "cagr": 25.0,
+                "max_drawdown": 15.0,
+                "calmar": 1.67,
+                "sharpe": 1.10,
+                "sortino": 1.40,
+                "total_trades": 50,
+                "ending_equity": 2000000.0,
+                "winning_trades": 30,
+                "loss_trades": 20,
+                "win_rate": 60.0,
+                "gross_profit": 50000.0,
+                "gross_loss": 20000.0,
+                "profit_factor": 2.5,
+            }]
+            mock_runner.ensure_cube.return_value = mock_cube
+            mock_runner.engine.execute_sweep.return_value = mock_sweep_res
+
+            with patch("scripts.forensic_integrity_audit.BruteForceCampaignRunner", return_value=mock_runner), \
+                 patch("scripts.forensic_integrity_audit.generate_window_trade_ledger", return_value={"trades": [], "cash_days": 0, "active_days": 0}), \
+                 patch("scripts.forensic_integrity_audit.analyze_2008_half_cash", return_value=[]):
+                run_forensic_audit(output_dir=tmp_path)
+
+            json_path = tmp_path / "forensic_audit_results.json"
+            md_path = tmp_path / "FORENSIC_INTEGRITY_REPORT.md"
+            self.assertTrue(json_path.exists())
+            self.assertTrue(md_path.exists())
+
+            with open(json_path, "r", encoding="utf-8") as f:
+                js = json.load(f)
+            with open(md_path, "r", encoding="utf-8") as f:
+                md_text = f.read()
+
+            mult_audit = js["multiple_testing_audit"]
+            stmt = mult_audit["statement"]
+            verdict = mult_audit["significance_verdict"]
+            best_sr = mult_audit["best_observed_sharpe"]
+
+            # Statement agreement between JSON and Markdown
+            req_line = next(l for l in md_text.splitlines() if l.startswith("> **Required Sharpe Statement**"))
+            self.assertIn(stmt, req_line)
+
+            # Significance verdict agreement with canonical reconciliation rows
+            rows = js["canonical_reconciliation"]
+            self.assertEqual(verdict == "PASS", any(r["statistically_significant_05"] for r in rows))
+
+            # Best observed Sharpe agreement
+            calc_best = round(float(max(r["sharpe"] for r in rows)), 2)
+            self.assertEqual(best_sr, calc_best)
+            self.assertIn(f"Best observed is {best_sr:.2f}", stmt)
+
+    def test_multiple_testing_stats_rejects_nonfinite_benchmark_sharpe(self):
+        from scripts.forensic_integrity_audit import compute_multiple_testing_stats
+        for bad in (float("nan"), float("inf"), -float("inf")):
+            stats = compute_multiple_testing_stats([1.0, 0.9], 2600, benchmark_sharpe=bad)
+            self.assertTrue(np.isfinite(stats["required_sharpe"]))
+            self.assertTrue(np.isfinite(stats["var_sr_sampling"]))
+
+    def test_run_forensic_audit_handles_empty_reconciliation(self):
+        from unittest.mock import patch, MagicMock
+        from scripts.forensic_integrity_audit import run_forensic_audit, DataUnavailable
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            mock_runner = MagicMock()
+            mock_cube = MagicMock()
+            mock_cube.dates = ["2016-01-01", "2026-10-15"]
+            mock_cube.date_to_idx = {d: i for i, d in enumerate(mock_cube.dates)}
+            mock_cube.schedule_offsets = np.zeros(2, dtype=np.int32)
+            mock_cube.schedule_lengths = np.ones(2, dtype=np.int32)
+            mock_cube.rebalance_indices = np.array([0, 1], dtype=np.int32)
+            mock_cube.num_dates = 2
+            mock_cube.num_symbols = 1
+
+            mock_runner.ensure_cube.return_value = mock_cube
+            mock_runner.engine.execute_sweep.return_value = []
+
+            with patch("scripts.forensic_integrity_audit.BruteForceCampaignRunner", return_value=mock_runner), \
+                 patch("scripts.forensic_integrity_audit.generate_window_trade_ledger", return_value={"trades": [], "cash_days": 0, "active_days": 0}), \
+                 patch("scripts.forensic_integrity_audit.analyze_2008_half_cash", return_value=[]):
+                with self.assertRaises(DataUnavailable):
+                    run_forensic_audit(output_dir=tmp_path)
 
 
 if __name__ == "__main__":

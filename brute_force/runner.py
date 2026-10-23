@@ -80,9 +80,10 @@ class BruteForceCampaignRunner:
         use_residual_mom: bool = False,
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
+        universe_name: str = "NIFTY750",
     ) -> Dict[str, Any]:
         """Runs the single canonical baseline configuration with optional alpha overlays."""
-        cube = self.ensure_cube(benchmark=benchmark)
+        cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
         param = get_canonical_baseline_param()
 
         # Date indexing
@@ -177,6 +178,8 @@ class BruteForceCampaignRunner:
         result = {
             "config_type": "CANONICAL_BASELINE",
             "universe": getattr(self, "_cube_universe", getattr(cube, "universe_name", "NIFTY750")),
+            "universe_point_in_time": bool(getattr(cube, "universe_point_in_time", False)),
+            "survivorship_bias_risk": bool(getattr(cube, "survivorship_bias_risk", False)),
             "benchmark": getattr(cube, "benchmark_name", benchmark),
             "schedule": schedule,
             "start_date": start_date,
@@ -350,6 +353,8 @@ class BruteForceCampaignRunner:
         return {
             "config_type": "CUSTOM_BACKTEST",
             "universe": universe_name,
+            "universe_point_in_time": bool(getattr(cube, "universe_point_in_time", False)),
+            "survivorship_bias_risk": bool(getattr(cube, "survivorship_bias_risk", False)),
             "benchmark": getattr(cube, "benchmark_name", benchmark),
             "schedule": schedule,
             "start_date": start_date,

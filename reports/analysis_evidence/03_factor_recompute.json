@@ -1,0 +1,312 @@
+[
+  {
+    "symbol": "STLTECH",
+    "scanner": {
+      "close": 887.25,
+      "volar": 10.511225859810002,
+      "ret_252": 6.487341772151899,
+      "ema_200": 539.9119453568746,
+      "high_252": 1051.1,
+      "stop_loss": 777.96
+    },
+    "recomputed": {
+      "close": 887.25,
+      "ret_252": 6.487342,
+      "vol_252": 0.617182,
+      "volar": 10.511226,
+      "high_252": 1051.1,
+      "ema_200": 530.0402,
+      "atr14": 54.6429,
+      "stop_loss": 777.96
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 9.8717,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "CUPID",
+    "scanner": {
+      "close": 336.3,
+      "volar": 9.799943356092557,
+      "ret_252": 5.719817575062738,
+      "ema_200": 196.99485771996743,
+      "high_252": 368.95,
+      "stop_loss": 300.61
+    },
+    "recomputed": {
+      "close": 336.3,
+      "ret_252": 5.719818,
+      "vol_252": 0.583658,
+      "volar": 9.799943,
+      "high_252": 368.95,
+      "ema_200": 192.8142,
+      "atr14": 17.8464,
+      "stop_loss": 300.61
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 4.1807,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "WELCORP",
+    "scanner": {
+      "close": 2592.9,
+      "volar": 4.799709681156251,
+      "ret_252": 2.152962939130524,
+      "ema_200": 1715.6011977316655,
+      "high_252": 2900.0,
+      "stop_loss": 2292.7
+    },
+    "recomputed": {
+      "close": 2592.9,
+      "ret_252": 2.152963,
+      "vol_252": 0.448561,
+      "volar": 4.79971,
+      "high_252": 2900.0,
+      "ema_200": 1692.7329,
+      "atr14": 150.1,
+      "stop_loss": 2292.7
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 22.8683,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "HFCL",
+    "scanner": {
+      "close": 268.81,
+      "volar": 4.785250421117824,
+      "ret_252": 2.4806420861804437,
+      "ema_200": 175.72338617858927,
+      "high_252": 275.91,
+      "stop_loss": 240.85
+    },
+    "recomputed": {
+      "close": 268.81,
+      "ret_252": 2.480642,
+      "vol_252": 0.518393,
+      "volar": 4.78525,
+      "high_252": 275.91,
+      "ema_200": 174.0675,
+      "atr14": 13.9793,
+      "stop_loss": 240.85
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 1.6558,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "LAURUSLABS",
+    "scanner": {
+      "close": 2069.0,
+      "volar": 4.757701948098674,
+      "ret_252": 1.368066871028029,
+      "ema_200": 1531.3201833595524,
+      "high_252": 2089.0,
+      "stop_loss": 1966.99
+    },
+    "recomputed": {
+      "close": 2069.0,
+      "ret_252": 1.368067,
+      "vol_252": 0.287548,
+      "volar": 4.757702,
+      "high_252": 2089.0,
+      "ema_200": 1508.3161,
+      "atr14": 51.0071,
+      "stop_loss": 1966.99
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 23.0041,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "SANSERA",
+    "scanner": {
+      "close": 4150.3,
+      "volar": 4.5580630699894495,
+      "ret_252": 1.9131046130704261,
+      "ema_200": 3137.9264227935973,
+      "high_252": 4743.5,
+      "stop_loss": 3763.54
+    },
+    "recomputed": {
+      "close": 4150.3,
+      "ret_252": 1.913105,
+      "vol_252": 0.419719,
+      "volar": 4.558063,
+      "high_252": 4743.5,
+      "ema_200": 3095.4166,
+      "atr14": 193.3786,
+      "stop_loss": 3763.54
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 42.5098,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "CPPLUS",
+    "scanner": {
+      "close": 4010.0,
+      "volar": 4.073554531490868,
+      "ret_252": 1.8186751713925995,
+      "ema_200": 3049.966247495467,
+      "high_252": 4620.0,
+      "stop_loss": 3552.21
+    },
+    "recomputed": {
+      "close": 4010.0,
+      "ret_252": 1.818675,
+      "vol_252": 0.446459,
+      "volar": 4.073555,
+      "high_252": 4620.0,
+      "ema_200": 3049.9662,
+      "atr14": 228.8929,
+      "stop_loss": 3552.21
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 0.0,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "ATHERENERG",
+    "scanner": {
+      "close": 1459.0,
+      "volar": 2.7209736977270333,
+      "ret_252": 1.2958300550747444,
+      "ema_200": 1150.0080922395157,
+      "high_252": 1744.0,
+      "stop_loss": 1341.5
+    },
+    "recomputed": {
+      "close": 1459.0,
+      "ret_252": 1.29583,
+      "vol_252": 0.476238,
+      "volar": 2.720974,
+      "high_252": 1744.0,
+      "ema_200": 1150.0081,
+      "atr14": 58.75,
+      "stop_loss": 1341.5
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 0.0,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "AETHER",
+    "scanner": {
+      "close": 1521.4,
+      "volar": 2.474882239793126,
+      "ret_252": 1.0354538432713243,
+      "ema_200": 1348.3098737765672,
+      "high_252": 1814.1,
+      "stop_loss": 1369.0
+    },
+    "recomputed": {
+      "close": 1521.4,
+      "ret_252": 1.035454,
+      "vol_252": 0.418385,
+      "volar": 2.474882,
+      "high_252": 1814.1,
+      "ema_200": 1337.1075,
+      "atr14": 76.2,
+      "stop_loss": 1369.0
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 11.2024,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  },
+  {
+    "symbol": "ACUTAAS",
+    "scanner": {
+      "close": 3253.4,
+      "volar": 2.4591173941419995,
+      "ret_252": 1.1005939420402484,
+      "ema_200": 2850.9169545222826,
+      "high_252": 3740.0,
+      "stop_loss": 3030.0
+    },
+    "recomputed": {
+      "close": 3253.4,
+      "ret_252": 1.100594,
+      "vol_252": 0.447556,
+      "volar": 2.459117,
+      "high_252": 3740.0,
+      "ema_200": 2807.8777,
+      "atr14": 111.7,
+      "stop_loss": 3030.0
+    },
+    "checks": {
+      "volar_diff": 0.0,
+      "ret_diff": 0.0,
+      "ema_diff": 43.0392,
+      "high_diff": 0.0,
+      "stop_diff": 0.0,
+      "pass_retrace": true,
+      "pass_trend": true,
+      "pass_momentum": true
+    }
+  }
+]

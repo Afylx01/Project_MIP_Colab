@@ -10,6 +10,8 @@ Validates:
 
 import unittest
 import sys
+import shutil
+import tempfile
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -111,7 +113,9 @@ class TestBenchmarkSelection(unittest.TestCase):
 
     def test_05_backtester_benchmark_integration(self):
         """Verify LightweightBacktester runs with custom benchmark."""
-        bt = LightweightBacktester(base_dir=PROJECT_ROOT, benchmark="NIFTY50")
+        output_dir = Path(tempfile.mkdtemp(prefix="mip_bench_bt_"))
+        self.addCleanup(shutil.rmtree, output_dir, True)
+        bt = LightweightBacktester(base_dir=PROJECT_ROOT, benchmark="NIFTY50", output_dir=output_dir)
         self.assertEqual(bt.benchmark_name, "NIFTY50")
         res = bt.run(start_date="2024-01-01", end_date="2024-12-31", top_n=10)
         self.assertIn("benchmark_name", res)
