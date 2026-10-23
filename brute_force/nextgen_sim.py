@@ -342,7 +342,7 @@ class NextGenSimulationEngine:
             "max_drawdown_pct": float(round(max_dd * 100.0, 2)),
             "calmar_ratio": float(round(calmar, 2)),
             "win_rate_pct": float(round(win_rate, 2)),
-            "profit_factor": float(round(profit_factor, 2)) if np.isfinite(profit_factor) else None,
+            "profit_factor": float(round(profit_factor, 2)) if np.isfinite(profit_factor) else profit_factor,
             "ending_equity": float(round(final_equity, 2)),
             "total_trades": int(closed_trades),
             "winning_trades": int(winning_trades),

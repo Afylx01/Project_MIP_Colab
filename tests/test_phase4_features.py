@@ -84,16 +84,31 @@ class TestDeflatedSharpeRatio:
         assert dsr_multiple < dsr_single, f"Multi-trial DSR ({dsr_multiple}) must be strictly deflated compared to single ({dsr_single})"
         assert dsr_multiple < 0.50, f"Multi-trial DSR should reflect severe selection bias penalty, got {dsr_multiple}"
 
-    def test_deflated_sharpe_handles_nonpositive_variance(self):
-        """Degenerate constant returns or non-positive variance must return finite float in [0, 1] without unhandled crash."""
-        const_ret = pd.Series([0.01] * 300)
-        dsr_const = compute_deflated_sharpe_ratio(const_ret, n_trials=10)
-        assert isinstance(dsr_const, float) and 0.0 <= dsr_const <= 1.0
+    def test_degenerate_constant_returns_fail_closed(self):
+        """Degenerate zero-variance returns must fail closed with 0.0 in both PSR and DSR."""
+        const = pd.Series([0.01] * 300)
+        assert compute_probabilistic_sharpe_ratio(const, benchmark_sr=0.0) == 0.0
+        assert compute_deflated_sharpe_ratio(const, n_trials=1) == 0.0
+        assert compute_deflated_sharpe_ratio(const, n_trials=10) == 0.0
+        assert compute_deflated_sharpe_ratio(const, n_trials=10) < 0.5
 
-        # Heavily skewed series
-        skew_ret = pd.Series([0.02] * 290 + [-0.50] * 10)
-        dsr_skew = compute_deflated_sharpe_ratio(skew_ret, n_trials=10)
-        assert isinstance(dsr_skew, float) and 0.0 <= dsr_skew <= 1.0
+    def test_deflated_sharpe_handles_nonpositive_variance(self):
+        """Degenerate constant returns or non-positive variance must fail closed returning 0.0."""
+        const_ret = pd.Series([0.01] * 300)
+        assert compute_deflated_sharpe_ratio(const_ret, n_trials=10) == 0.0
+        assert compute_deflated_sharpe_ratio(const_ret, n_trials=1) == 0.0
+
+        from unittest.mock import patch
+        # Branch-forcing test: patch moments to produce negative var_sr_ann
+        with patch("nextgen.risk_statistics.compute_sample_moments") as mock_moments:
+            mock_moments.return_value = {
+                "n": 300.0,
+                "mean": 1.0,
+                "std": 0.01,
+                "skew": 100.0,
+                "kurtosis": 3.0,
+            }
+            assert compute_deflated_sharpe_ratio(const_ret, n_trials=10) == 0.0
 
     def test_expected_max_sharpe_ratio_raises_on_nonpositive_variance(self):
         """compute_expected_max_sharpe_ratio must fail closed with ValueError when var_sr <= 0."""

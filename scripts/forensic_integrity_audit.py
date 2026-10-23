@@ -99,23 +99,34 @@ def compute_significance_verdict(
     K: int,
     required_sharpe: float,
     sharpes: List[float],
+    alpha: float = 0.05,
+    dsr_threshold: float = 0.50,
 ) -> Tuple[str, str]:
     """
     Computes multiple-testing significance verdict and formatted statement.
-    Policy A Uniform Rule: A feature passes only if BOTH p_bonf < 0.05 AND DSR >= 0.50
+    Policy A Uniform Rule: A feature passes only if BOTH p_bonf < alpha AND DSR >= dsr_threshold
     (i.e. row['statistically_significant_05'] is True).
     If no feature passes both criteria, overall significance verdict is 'FAIL'.
     """
-    passing_features = [r for r in reconcile_results if r.get("statistically_significant_05")]
-    best_sr = round(float(max(sharpes)), 2) if sharpes else 0.0
+    valid_sharpes = [s for s in sharpes if s is not None and np.isfinite(s)]
+    best_sr_str = f"{round(float(max(valid_sharpes)), 2):.2f}" if valid_sharpes else "N/A"
     req_sr_str = f"{required_sharpe:.2f}"
 
-    dsr_pass = [r for r in reconcile_results if r.get("deflated_sharpe_ratio", 0.0) >= 0.5]
-    p_pass = [r for r in reconcile_results if r.get("p_value_bonferroni", 1.0) < 0.05]
+    def _is_dsr_pass(r):
+        v = r.get("deflated_sharpe_ratio")
+        return v is not None and np.isfinite(v) and float(v) >= dsr_threshold
+
+    def _is_p_pass(r):
+        v = r.get("p_value_bonferroni")
+        return v is not None and np.isfinite(v) and float(v) < alpha
+
+    dsr_pass = [r for r in reconcile_results if _is_dsr_pass(r)]
+    p_pass = [r for r in reconcile_results if _is_p_pass(r)]
+    passing_features = [r for r in reconcile_results if _is_dsr_pass(r) and _is_p_pass(r)]
 
     if passing_features:
         verdict = "PASS"
-        statement = f"With {K} trials at α=0.05, required Sharpe is {req_sr_str}. Best observed is {best_sr:.2f}. Statistical significance test PASSES for {len(passing_features)} configuration(s) under Bonferroni FWER control and Deflated Sharpe Ratio."
+        statement = f"With {K} trials at α={alpha:.2f}, required Sharpe is {req_sr_str}. Best observed is {best_sr_str}. Statistical significance test PASSES for {len(passing_features)} configuration(s) under Bonferroni FWER control and Deflated Sharpe Ratio."
     else:
         verdict = "FAIL"
         unmet_clauses = []
@@ -131,7 +142,7 @@ def compute_significance_verdict(
         else:
             clause_str = "joint Bonferroni-DSR multiple testing hurdle"
 
-        statement = f"With {K} trials at α=0.05, required Sharpe is {req_sr_str}. Best observed is {best_sr:.2f}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under {clause_str}."
+        statement = f"With {K} trials at α={alpha:.2f}, required Sharpe is {req_sr_str}. Best observed is {best_sr_str}. Statistical significance test FAILS across all configurations; no feature reaches multiple-testing significance under {clause_str}."
 
     return verdict, statement
 
@@ -156,7 +167,6 @@ def compute_multiple_testing_stats(
             "var_sr_sampling": 0.0,
             "expected_max_sharpe": 0.0,
             "expected_max_sharpe_null": 0.0,
-            "expected_max_sharpe_hurdle": 0.0,
             "required_sharpe": 0.0,
             "alpha": alpha,
             "alpha_bonferroni": alpha,
@@ -201,7 +211,6 @@ def compute_multiple_testing_stats(
         "var_sr_sampling": round(var_sr_sampling, 6),
         "expected_max_sharpe": round(expected_max_sharpe, 4),
         "expected_max_sharpe_null": round(expected_max_sharpe, 4),
-        "expected_max_sharpe_hurdle": round(expected_max_sharpe, 4),
         "required_sharpe": required_sharpe,
         "alpha": alpha,
         "alpha_bonferroni": round(alpha / K, 6) if K > 0 else alpha,
@@ -934,9 +943,7 @@ def render_markdown_report(
     lines.append("> [!NOTE]\n")
     bonf_alpha = f"{0.05 / K:.4f}" if K > 0 else "N/A"
     lines.append(f"> **Multiple-Testing Correction (Bailey & López de Prado 2014 & Policy A Uniform Rule)**: {K} model variations evaluated against Canonical Baseline. Family-wise error rate controlled at $\\alpha = 0.05$; Bonferroni threshold $\\alpha_{{adj}} = {bonf_alpha}$. Under **Policy A**, features with $p_{{bonf}} > 0.05$ or $\\text{{DSR}} < 0.50$ are uniformly classified as `NOT_STATISTICALLY_SIGNIFICANT`.\n\n")
-    best_sharpe_str = fmt_num(max(sharpes)) if sharpes else "N/A"
-    req_sharpe_str = fmt_num(required_sharpe)
-    verdict, sig_summary = compute_significance_verdict(reconcile_results, K, required_sharpe, sharpes)
+    _, sig_summary = compute_significance_verdict(reconcile_results, K, required_sharpe, sharpes)
     lines.append(f"> **Required Sharpe Statement**: {sig_summary}\n\n")
     lines.append("| Feature / Stack | CAGR (%) | MaxDD (%) | Calmar | Sharpe | DSR | $p_{{bonf}}$ | Sig? | Trades | Equity (INR) | Δ vs cross-engine baseline (%) | Classification |\n")
     lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
@@ -1586,10 +1593,10 @@ def run_forensic_audit():
     # Save Granular Trade Ledger for Institutional Provenance
     # stress_trade_ledger.json is the AUTHORITATIVE trade ledger
     with open(output_dir / "stress_trade_ledger.json", "w") as f:
-        json.dump(all_stress_trades, f, indent=2)
+        json.dump(sanitize_json_obj(all_stress_trades), f, indent=2)
     # stress_rebalance_events.json is DERIVED from stress_trade_ledger.json
     with open(output_dir / "stress_rebalance_events.json", "w") as f:
-        json.dump(all_stress_trades, f, indent=2)
+        json.dump(sanitize_json_obj(all_stress_trades), f, indent=2)
 
     # Save Structured Results to JSON
     json_out_path = output_dir / "forensic_audit_results.json"
@@ -1622,7 +1629,6 @@ def run_forensic_audit():
                 "bonferroni_adjusted_alpha": round(0.05 / K, 5) if K > 0 else 0.05,
                 "benchmark_sharpe": benchmark_sharpe,
                 "expected_max_sharpe_null": round(expected_max_sharpe, 4),
-                "expected_max_sharpe_hurdle": round(expected_max_sharpe, 4),
                 "var_sr_sampling": stats.get("var_sr_sampling"),
                 "required_sharpe_bonferroni": required_sharpe,
                 "best_observed_sharpe": best_sr,

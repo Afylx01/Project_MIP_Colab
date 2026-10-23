@@ -905,11 +905,40 @@ class TestForensicIntegrityAudit(unittest.TestCase):
         expected_keys = {
             "n_trials", "n_sessions", "n_years", "benchmark_sharpe",
             "var_sr_sampling", "expected_max_sharpe", "expected_max_sharpe_null",
-            "expected_max_sharpe_hurdle", "required_sharpe", "alpha",
+            "required_sharpe", "alpha",
             "alpha_bonferroni", "results"
         }
         for k in expected_keys:
             self.assertIn(k, stats, f"Missing key '{k}' in empty-trials schema")
+        self.assertEqual(stats["n_trials"], 0)
+        self.assertEqual(stats["results"], [])
+        self.assertEqual(stats["required_sharpe"], 0.0)
+        self.assertGreaterEqual(stats["n_years"], 1.0)
+
+    def test_json_and_markdown_significance_statement_agree(self):
+        js = self.data["multiple_testing_audit"]
+        line = next(l for l in self.md_text.splitlines()
+                    if l.startswith("> **Required Sharpe Statement**"))
+        self.assertIn(js["statement"], line)
+        rows = self.data["canonical_reconciliation"]
+        self.assertEqual(js["significance_verdict"] == "PASS",
+                         any(r["statistically_significant_05"] for r in rows))
+
+    def test_significance_verdict_pass_path_and_mixed_legs(self):
+        from scripts.forensic_integrity_audit import compute_significance_verdict
+        rows_pass = [{"deflated_sharpe_ratio": 0.90, "p_value_bonferroni": 0.01,
+                      "statistically_significant_05": True}]
+        verdict, stmt = compute_significance_verdict(rows_pass, K=8, required_sharpe=1.91, sharpes=[1.5])
+        self.assertEqual(verdict, "PASS")
+        self.assertIn("PASSES", stmt)
+
+        rows_mixed = [
+            {"deflated_sharpe_ratio": 0.90, "p_value_bonferroni": 0.50, "statistically_significant_05": False},
+            {"deflated_sharpe_ratio": 0.20, "p_value_bonferroni": 0.01, "statistically_significant_05": False},
+        ]
+        verdict, stmt = compute_significance_verdict(rows_mixed, K=8, required_sharpe=1.91, sharpes=[1.0, 0.9])
+        self.assertEqual(verdict, "FAIL")
+        self.assertIn("joint", stmt.lower())
 
     def test_required_sharpe_monotonicity_and_bonferroni_sensitivity(self):
         """required_sharpe must increase monotonically with trial count K, and Bonferroni p-value must detect high SR."""

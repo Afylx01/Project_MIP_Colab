@@ -1038,7 +1038,7 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         self.assertEqual(res["profit_factor"], 0.0)
 
     def test_nextgen_sim_profit_factor_semantics(self):
-        """nextgen_sim.py must emit inf for zero losses with positive gains, and 0.0 for zero gains."""
+        """nextgen_sim.py must emit inf for zero losses with positive gains, and sanitize to None for strict JSON serialization."""
         from brute_force.nextgen_sim import NextGenSimulationEngine
         from unittest.mock import MagicMock
 
@@ -1080,8 +1080,11 @@ class TestForensicLedgerEngineEquivalence(unittest.TestCase):
         )
         self.assertEqual(res["total_trades"], 1)
         self.assertEqual(res["winning_trades"], 1)
-        self.assertIsNone(res["profit_factor"])
-        json_str = json.dumps(res, allow_nan=False)
+        self.assertEqual(res["profit_factor"], float("inf"))
+        from scripts.forensic_integrity_audit import sanitize_json_obj
+        sanitized = sanitize_json_obj(res)
+        self.assertIsNone(sanitized["profit_factor"])
+        json_str = json.dumps(sanitized, allow_nan=False)
         self.assertIsNone(json.loads(json_str)["profit_factor"])
 
     def test_ledger_entry_nonfinite_exec_price_fails_closed(self):

@@ -243,17 +243,17 @@ class SystematicAblationAuditor:
                 n_years = float(res.get("years", 1.0))
                 annual_trades = round(total_trades / max(1.0, n_years), 1)
 
-                # Compute DSR assuming K=20 parameter trials
-                # Create surrogate returns from annual Sharpe
-                dsr = 0.5
-                psr = 0.5
-                try:
-                    # Construct monthly return array approximation from equity series
-                    # We estimate DSR and PSR using standard formulation
-                    dsr = round(compute_deflated_sharpe_ratio(np.random.normal(sharpe/math.sqrt(12), 1.0/math.sqrt(12), 120), n_trials=20, annualization_factor=12), 4)
-                    psr = round(compute_probabilistic_sharpe_ratio(np.random.normal(sharpe/math.sqrt(12), 1.0/math.sqrt(12), 120), benchmark_sr=0.0, annualization_factor=12), 4)
-                except Exception:
-                    pass
+                # Compute Deflated and Probabilistic Sharpe from real empirical return series
+                monthly_rets = res.get("monthly_returns")
+                if monthly_rets and len(monthly_rets) >= 3:
+                    ret_arr = np.array(monthly_rets, dtype=float)
+                    dsr = round(compute_deflated_sharpe_ratio(ret_arr, n_trials=20, annualization_factor=12), 4)
+                    psr = round(compute_probabilistic_sharpe_ratio(ret_arr, benchmark_sr=0.0, annualization_factor=12), 4)
+                    statistics_unavailable = False
+                else:
+                    dsr = None
+                    psr = None
+                    statistics_unavailable = True
 
                 # Store baseline for delta calculation
                 if exp_id == "RUN_0_BASELINE":
@@ -300,6 +300,7 @@ class SystematicAblationAuditor:
                     "profit_factor": profit_factor,
                     "psr": psr,
                     "dsr": dsr,
+                    "statistics_unavailable": statistics_unavailable,
                     "delta_cagr": delta_cagr,
                     "delta_sharpe": delta_sharpe,
                     "delta_sortino": delta_sortino,

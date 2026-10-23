@@ -60,12 +60,16 @@ def compute_sample_moments(returns: Union[pd.Series, np.ndarray]) -> Dict[str, f
 
     mean = float(np.mean(arr))
     var = float(np.var(arr, ddof=1))
-    std = math.sqrt(var) if var > 0.0 else 1e-8
+    std = math.sqrt(var) if var > 0.0 else 0.0
 
     # Standardized moments
-    z = (arr - mean) / std
-    skew = float(np.mean(z ** 3))
-    kurtosis = float(np.mean(z ** 4))  # Pearson kurtosis (normal = 3.0)
+    if std > 0.0:
+        z = (arr - mean) / std
+        skew = float(np.mean(z ** 3))
+        kurtosis = float(np.mean(z ** 4))  # Pearson kurtosis (normal = 3.0)
+    else:
+        skew = 0.0
+        kurtosis = 3.0
 
     return {
         "n": float(n),
@@ -84,14 +88,15 @@ def compute_probabilistic_sharpe_ratio(
     """
     Computes the Probabilistic Sharpe Ratio (PSR) of Bailey & López de Prado (2012/2014).
     Accounts for non-normality: return skewness (gamma_3) and fat tails (gamma_4).
+    Returns 0.0 (fail-closed, not statistically significant) for n < 3 or std <= 0.0.
     
     Formula:
         PSR(SR*) = Phi( (SR - SR*) * sqrt(N - 1) / sqrt(1 - gamma_3 * SR + (gamma_4 - 1)/4 * SR^2) )
     """
     moments = compute_sample_moments(returns)
     n = moments["n"]
-    if n < 3 or moments["std"] <= 0.0:
-        return 0.5
+    if n < 3 or not np.isfinite(moments["std"]) or moments["std"] <= 0.0:
+        return 0.0
 
     # Unannualized daily Sharpe ratio
     sr = moments["mean"] / moments["std"]
@@ -143,6 +148,7 @@ def compute_deflated_sharpe_ratio(
     """
     Computes Deflated Sharpe Ratio (DSR) by testing observed Sharpe against the expected
     maximum Sharpe ratio across K multiple parameter testing trials.
+    Returns 0.0 (fail-closed, not statistically significant) for n < 3, std <= 0, or non-positive variance.
     
     Formula:
         DSR = PSR(SR_0)
@@ -153,8 +159,8 @@ def compute_deflated_sharpe_ratio(
 
     moments = compute_sample_moments(returns)
     n = moments["n"]
-    if n < 3 or moments["std"] <= 0.0:
-        return 0.5
+    if n < 3 or not np.isfinite(moments["std"]) or moments["std"] <= 0.0:
+        return 0.0
 
     sr_daily = moments["mean"] / moments["std"]
     sr_ann = sr_daily * math.sqrt(annualization_factor)
@@ -164,8 +170,8 @@ def compute_deflated_sharpe_ratio(
     kurt = moments["kurtosis"]
     var_sr_unann = (1.0 - skew * sr_daily + ((kurt - 1.0) / 4.0) * (sr_daily ** 2)) / max(n - 1.0, 1.0)
     var_sr_ann = var_sr_unann * annualization_factor
-    if var_sr_ann <= 0.0:
-        return 0.5
+    if not np.isfinite(var_sr_ann) or var_sr_ann <= 0.0:
+        return 0.0
 
     # Compute expected maximum annualized SR under K trials
     sr_0_ann = compute_expected_max_sharpe_ratio(n_trials=n_trials, var_sr=var_sr_ann)
