@@ -149,7 +149,7 @@ class TestBenchmarkSelection(unittest.TestCase):
             schedules=["monthly"],
             start_date="2024-01-01",
             end_date="2024-06-30",
-            universe_name="NIFTY500",
+            universe_name="ALL",
             benchmark="NIFTY50",
             progress_callback=dummy_callback,
         )

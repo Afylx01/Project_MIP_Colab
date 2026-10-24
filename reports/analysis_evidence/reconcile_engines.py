@@ -1,21 +1,13 @@
-"""Single reconciliation harness for every published (engine, universe, config).
+"""Reconcile every published (engine, universe, config) under PIT membership.
 
-Outputs:
-  reports/analysis_evidence/33_reconciliation.json
-  reports/ENGINE_RECONCILIATION.md
-
-Requirements enforced:
-  * stress windows are labelled VALID or DATA_INSUFFICIENT from measured
-    in-universe coverage, not from the calendar label;
-  * strategy and benchmark use identical effective return windows;
-  * the survivorship estimate comes from two real same-engine runs
-    (all DB symbols incl. delisted vs survivors only), not a literature range;
-  * the 5.5-vs-9D discrepancy is decomposed into its generating mechanisms.
+Canonical: NIFTY500 point-in-time membership, 2018-01-01..2026-08-31.
+A 2016-01-01 start is refused (no snapshot on/before it). The canonical window
+starts in 2018, the first year with >=70% tradable coverage; 2017 is runnable
+but outside the pre-registered window. The live scanner uses the latest list.
 """
 import sys, json, math, sqlite3, gc, time, argparse
 from pathlib import Path
 import numpy as np
-import pandas as pd
 
 ROOT = Path("/mnt/sdcard/Subtitles/Project/Project_MIP_Colab")
 sys.path.insert(0, str(ROOT))
@@ -24,11 +16,14 @@ from brute_force.cube_builder import build_tensor_cube
 from brute_force.grid import (FILTER_RETRACE, FILTER_TREND, FILTER_RS,
                               FILTER_REGIME, FILTER_SECTOR_CAP,
                               LOOKBACK_VALUES, EMA_SPAN_VALUES)
+from core.pit_membership import coverage_stats
+from core.universe_policy import MIN_ELIGIBLE_SYMBOLS
 
 OUT = ROOT / "reports" / "analysis_evidence"
 REPORT = ROOT / "reports" / "ENGINE_RECONCILIATION.md"
 DB = ROOT / "data" / "universe.db"
 RF = 0.065
+START, END = "2018-01-01", "2026-08-31"
 
 CONFIGS = {
     "D_canonical": dict(lookback=252, ema=200, top_n=20, buffer=40, cap=2,
@@ -41,14 +36,8 @@ WINDOWS = {
     "euro_2011": ("2011-01-01", "2011-12-31"),
     "midcap_2018": ("2018-01-01", "2018-12-31"),
     "covid_2020": ("2020-01-01", "2020-05-29"),
-    "full_2016_2026": ("2016-01-01", "2026-08-31"),
+    "full_2018_2026": ("2018-01-01", "2026-08-31"),
 }
-
-# Label rule (fixed before looking at results):
-#   VALID requires >=50% of the declared universe to have the 252-bar history
-#   the strategy's anti-IPO filter needs, and >=80 sessions (~4 months).
-MIN_HISTORY_PCT = 0.50
-MIN_SESSIONS = 80
 
 
 def flags_for(c):
@@ -60,38 +49,28 @@ def flags_for(c):
     return f
 
 
-def con_ro():
-    return sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+def coverage(start, raw_as_of=None):
+    """PIT coverage at window start; raw DB breadth optionally as of another date.
 
-
-def universe_symbols(label):
-    from core.data_engine import load_universe_constituents
-    return sorted(set(load_universe_constituents(label)))
-
-
-def window_coverage(con, symbols, start, end):
-    q = ",".join("?" * len(symbols))
-    any_data = con.execute(
-        f"SELECT COUNT(DISTINCT symbol) FROM prices WHERE symbol IN ({q}) AND date>=? AND date<=?",
-        (*symbols, start, end)).fetchone()[0]
-    with_history = con.execute(
-        f"SELECT COUNT(*) FROM (SELECT symbol, COUNT(*) c FROM prices "
-        f"WHERE symbol IN ({q}) AND date<=? GROUP BY symbol HAVING c>=252)",
-        (*symbols, end)).fetchone()[0]
-    sessions = con.execute(
-        "SELECT COUNT(DISTINCT date) FROM prices WHERE date>=? AND date<=?",
-        (start, end)).fetchone()[0]
-    pct = with_history / max(len(symbols), 1)
-    label = "VALID" if (pct >= MIN_HISTORY_PCT and sessions >= MIN_SESSIONS) else "DATA_INSUFFICIENT"
-    return {
-        "universe_size": len(symbols),
-        "symbols_with_any_bar": any_data,
-        "symbols_with_252_bar_history": with_history,
-        "history_coverage_pct": round(pct * 100, 2),
-        "sessions": sessions,
-        "label": label,
-        "rule": f">=252 bars by window end for >={int(MIN_HISTORY_PCT*100)}% of universe and >={MIN_SESSIONS} sessions",
-    }
+    The raw DB count is an independent check on data availability. For stress
+    windows we measure it at the window *end* (the label must describe the
+    whole window), while PIT eligibility is measured at the window start.
+    """
+    st = coverage_stats("NIFTY500", start, base_dir=ROOT)
+    raw_as_of = raw_as_of or start
+    con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+    try:
+        total = int(con.execute("SELECT COUNT(DISTINCT symbol) FROM prices").fetchone()[0])
+        raw252 = int(con.execute(
+            "SELECT COUNT(*) FROM (SELECT symbol, COUNT(*) c FROM prices WHERE date<=? "
+            "GROUP BY symbol HAVING c>=252)", (raw_as_of,)).fetchone()[0])
+    finally:
+        con.close()
+    label = "VALID" if st["eligible_symbols"] >= MIN_ELIGIBLE_SYMBOLS else "DATA_INSUFFICIENT"
+    return {**st, "label": label, "min_eligible_symbols": MIN_ELIGIBLE_SYMBOLS,
+            "raw_db_as_of": raw_as_of,
+            "raw_db_symbols_total": total, "raw_db_symbols_252": raw252,
+            "raw_db_coverage_pct": round(raw252 / max(total, 1) * 100, 2)}
 
 
 def idx_for(cube, start, end):
@@ -121,21 +100,18 @@ def base_param(c, s, e):
     }
 
 
-def continuous(runner, cube, cfg, start="2016-01-01", end="2026-08-31"):
-    res = runner.run_custom_backtest(
-        start_date=start, end_date=end, universe_name=cube.universe_name,
+def continuous(runner, cube, cfg, universe, start=START, end=END):
+    return runner.run_custom_backtest(
+        start_date=start, end_date=end, universe_name=universe,
         benchmark="NIFTY500", schedule="monthly",
         lookback=cfg["lookback"], ema_trend=cfg["ema"], top_n=cfg["top_n"],
         exit_buffer_rank=cfg["buffer"], max_per_sector=cfg["cap"],
         sizing_mode=cfg["sizing"],
     )
-    return res
 
 
-def monthly_curve(runner, cube, cfg, shift=0):
-    """shift=0 values at the signal date; shift=1 at the next session (T+1),
-    which is where sim_kernel.c actually marks period_nav (exec_date=sig+1)."""
-    s, e, idx = rebalance_indices(cube, "2016-01-01", "2026-08-31")
+def monthly_curve(runner, cube, cfg, start=START, end=END, shift=0):
+    s, e, idx = rebalance_indices(cube, start, end)
     p = base_param(cfg, s, e)
     dates, eq = [], []
     for i in idx:
@@ -146,7 +122,7 @@ def monthly_curve(runner, cube, cfg, shift=0):
     return dates, np.array(eq, dtype=float)
 
 
-def monthly_metrics(dates, eq, start="2016-01-01", end="2026-08-31", include_initial=False):
+def monthly_metrics(dates, eq, start=START, end=END, include_initial=False):
     mask = np.array([(d >= start and d <= end) for d in dates])
     idx = np.where(mask)[0]
     if len(idx) < 2:
@@ -154,15 +130,13 @@ def monthly_metrics(dates, eq, start="2016-01-01", end="2026-08-31", include_ini
     if idx[0] > 0:
         idx = np.concatenate([[idx[0] - 1], idx])
     e = eq[idx]
-    d = [dates[i] for i in idx]
     if include_initial:
         e = np.concatenate([[1_000_000.0], e])
-        d = ["initial"] + d
     rets = np.diff(e) / e[:-1]
     n = len(rets)
     years = n / 12.0
     total = e[-1] / e[0] - 1.0
-    cagr = (e[-1] / e[0]) ** (1.0 / years) - 1.0
+    cagr = (e[-1] / e[0]) ** (1.0 / max(years, 1e-9)) - 1.0
     vol = rets.std(ddof=1) * math.sqrt(12)
     sharpe = (rets.mean() * 12 - RF) / vol if vol > 0 else 0.0
     peak = np.maximum.accumulate(e)
@@ -172,7 +146,6 @@ def monthly_metrics(dates, eq, start="2016-01-01", end="2026-08-31", include_ini
         "cagr_pct": round(cagr * 100, 2), "sharpe": round(float(sharpe), 2),
         "maxdd_monthly_pct": round(float(mdd) * 100, 2),
         "calmar": round(float(cagr / abs(mdd)), 2) if mdd < 0 else 0.0,
-        "first": d[0], "last": d[-1],
     }
 
 
@@ -181,13 +154,22 @@ def row(engine, universe, config, method, res):
         return None if v is None else round(float(v), 2)
     return {
         "engine": engine, "universe": universe, "config": config, "method": method,
-        "cagr_pct": r2(res.get("cagr_pct")), "sharpe": r2(res.get("sharpe", res.get("sharpe_ratio"))),
+        "cagr_pct": r2(res.get("cagr_pct")),
+        "sharpe": r2(res.get("sharpe", res.get("sharpe_ratio"))),
         "maxdd_pct": r2(res.get("maxdd_monthly_pct", res.get("max_drawdown_pct"))),
         "maxdd_basis": "monthly rebalance NAV" if "maxdd_monthly_pct" in res else "daily intra-period",
         "trades": res.get("total_trades", res.get("trades")),
         "ending_equity": res.get("ending_equity", res.get("final_equity")),
-        "period": "2016-01-01..2026-08-31",
-        "status": "REPRODUCED",
+        "period": f"{START}..{END}", "status": "REPRODUCED",
+    }
+
+
+def refused(engine, universe, config, reason):
+    return {
+        "engine": engine, "universe": universe, "config": config, "method": "—",
+        "cagr_pct": None, "sharpe": None, "maxdd_pct": None, "maxdd_basis": "—",
+        "trades": None, "ending_equity": None, "period": "—",
+        "status": "REFUSED", "reason": reason,
     }
 
 
@@ -198,266 +180,316 @@ def main():
     t0 = time.time()
     out = {
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "period": "2016-01-01..2026-08-31",
+        "period": f"{START}..{END}",
         "costs": "15 bps friction + 5 bps slippage",
-        "canonical_strategy_engine": {
-            "engine": "C99 kernel (run_custom_backtest)",
-            "universe": "NIFTY500 (current constituents, survivorship_bias_risk=True)",
-            "config": "D: lookback 252, EMA 200, top20, buffer40, cap2, ATR risk parity, regime on",
+        "policy": {
+            "index_universe": "NIFTY500 point-in-time membership (NSE interval table)",
+            "period_note": "2016-01-01 start refused (no snapshot on/before it); canonical starts 2018 (first year with >=70% tradable coverage); 2017 runnable (305 eligible) but outside the pre-registered window",
+            "live_scanner": "latest constituents (the only component allowed to use them)",
+            "min_eligible_symbols": MIN_ELIGIBLE_SYMBOLS,
         },
         "table": [],
         "stress_windows": {},
-        "reconciliation_5_5_vs_9D": {},
+        "reconciliation": {},
     }
 
-    syms500 = universe_symbols("NIFTY500")
-    con = con_ro()
     for name, (ws, we) in WINDOWS.items():
-        cov = window_coverage(con, syms500, ws, we)
-        out["stress_windows"][name] = {"window": [ws, we], "universe": "NIFTY500", **cov}
-    con.close()
+        out["stress_windows"][name] = {"window": [ws, we], **coverage(ws, raw_as_of=we)}
 
-    # ---- C engine: NIFTY500 (D continuous + monthly, A continuous) ----
+    # ---- Canonical PIT NIFTY500: C engine ----
     runner = BruteForceCampaignRunner(base_dir=ROOT)
     cube = runner.ensure_cube(universe_name="NIFTY500", benchmark="NIFTY500")
-    d_cont = continuous(runner, cube, CONFIGS["D_canonical"])
-    d_dates, d_eq = monthly_curve(runner, cube, CONFIGS["D_canonical"])
-    d_month = monthly_metrics(d_dates, d_eq)
-    d_month_init = monthly_metrics(d_dates, d_eq, include_initial=True)
-    d_dates_t1, d_eq_t1 = monthly_curve(runner, cube, CONFIGS["D_canonical"], shift=1)
-    d_month_t1 = monthly_metrics(d_dates_t1, d_eq_t1, include_initial=True)
-    a_cont = continuous(runner, cube, CONFIGS["A_balanced"])
-    out["table"].append(row("C99 kernel", "NIFTY500", "D", "continuous", d_cont))
-    d_month_row = row("C99 kernel", "NIFTY500", "D", "monthly-sampled", d_month)
-    d_month_row["trades"] = d_cont["total_trades"]
-    out["table"].append(d_month_row)
-    out["table"].append(row("C99 kernel", "NIFTY500", "A", "continuous", a_cont))
+    d_cont = continuous(runner, cube, CONFIGS["D_canonical"], "NIFTY500")
+    d_date, d_eq = monthly_curve(runner, cube, CONFIGS["D_canonical"], shift=1)
+    d_month = monthly_metrics(d_date, d_eq)
+    d_date_t1, d_eq_t1 = monthly_curve(runner, cube, CONFIGS["D_canonical"], shift=1)
+    d_month_t1 = monthly_metrics(d_date_t1, d_eq_t1, include_initial=True)
+    a_cont = continuous(runner, cube, CONFIGS["A_balanced"], "NIFTY500")
+    a_date, a_eq = monthly_curve(runner, cube, CONFIGS["A_balanced"], shift=1)
 
-    s_full, e_full = idx_for(cube, "2016-01-01", "2026-08-31")
-    full_single = runner.engine.execute_sweep(
-        [{**base_param(CONFIGS["D_canonical"], s_full, e_full), "end_date_idx": e_full}],
-        cube, num_threads=1)[0]
+    out["table"].append(row("C99 kernel", "NIFTY500 (PIT)", "D", "continuous", d_cont))
+    r = row("C99 kernel", "NIFTY500 (PIT)", "D", "monthly-sampled", d_month)
+    r["trades"] = d_cont["total_trades"]
+    out["table"].append(r)
+    out["table"].append(row("C99 kernel", "NIFTY500 (PIT)", "A", "continuous", a_cont))
+    r = row("C99 kernel", "NIFTY500 (PIT)", "A", "monthly-sampled", monthly_metrics(a_date, a_eq))
+    r["trades"] = a_cont["total_trades"]
+    out["table"].append(r)
 
-    out["reconciliation_5_5_vs_9D"] = {
-        "same_engine": True, "same_universe": True, "same_config": True,
-        "continuous_5_5": {
-            "cagr_pct": d_cont["cagr_pct"], "sharpe": d_cont["sharpe_ratio"],
-            "maxdd_pct": d_cont["max_drawdown_pct"], "maxdd_basis": "daily intra-period",
-            "trades": d_cont["total_trades"], "ending_equity": d_cont["ending_equity"],
-            "cagr_basis": "(end_session-start_session)/252",
-        },
-        "monthly_9D_after_fix": d_month,
-        "monthly_9D_with_initial_period": d_month_init,
-        "monthly_9D_t_plus_1_valuation": d_month_t1,
-        "sharpe_gap_status": {
-            "status": "INCOMPLETE",
-            "kernel": d_cont["sharpe_ratio"],
-            "signal_date_sampler": d_month["sharpe"],
-            "t_plus_1_sampler": d_month_t1["sharpe"],
-            "residual_after_t_plus_1": round(d_cont["sharpe_ratio"] - d_month_t1["sharpe"], 4),
-            "reason": "The C kernel does not expose its internal periodic return array. T+1 period valuation explains most of the gap; the residual is period-count/float32 rounding and is reported, not smoothed over.",
-        },
-        "old_published_9D_cagr_pct": 28.69,
-        "old_9D_was": "equal_weight (integer sizing code 0 was read as equal-weight by bridge.py:431)",
-        "corrected_monthly_atr_cagr_pct": d_month["cagr_pct"],
-        "mechanisms": [
-            "label bug: 28.69 was equal-weight; the row claimed ATR risk parity",
-            "annualization: identical ending equity, but sessions/252 (27.39) vs months/12 (26.81)",
-            "drawdown sampling: daily intra-period (38.32) vs monthly rebalance NAV (20.69)",
-        ],
-        "identical_ending_equity": d_cont["ending_equity"] == float(d_eq[-1]) == float(full_single["ending_equity"]),
-        "identical_trades": d_cont["total_trades"] == int(full_single["total_trades"]) == int(d_cont["total_trades"]),
-    }
-
-    # A monthly-sampled (headline in the strategy proof)
-    a_dates, a_eq = monthly_curve(runner, cube, CONFIGS["A_balanced"])
-    a_month_row = row("C99 kernel", "NIFTY500", "A", "monthly-sampled", monthly_metrics(a_dates, a_eq, include_initial=False))
-    a_month_row["trades"] = a_cont["total_trades"]
-    out["table"].append(a_month_row)
-
-    # B/C/E continuous rows already regenerated in 22 by summarize_candidates.py.
     summ22 = json.loads((OUT / "22_candidate_engine_summaries.json").read_text())
     for key, letter in (("B_max_sharpe", "B"), ("C_max_cagr", "C"), ("E_max_robust", "E")):
         s = summ22[key]
         out["table"].append({
-            "engine": "C99 kernel", "universe": "NIFTY500", "config": letter,
+            "engine": "C99 kernel", "universe": "NIFTY500 (PIT)", "config": letter,
             "method": "continuous", "cagr_pct": round(float(s["cagr_pct"]), 2),
             "sharpe": round(float(s["sharpe_ratio"]), 2),
             "maxdd_pct": round(float(s["max_drawdown_pct"]), 2),
             "maxdd_basis": "daily intra-period", "trades": int(s["total_trades"]),
             "ending_equity": float(s["ending_equity"]),
-            "period": "2016-01-01..2026-08-31", "status": "REPRODUCED",
+            "period": f"{START}..{END}", "status": "REPRODUCED",
         })
+
+    s_full, e_full = idx_for(cube, START, END)
+    full_single = runner.engine.execute_sweep(
+        [{**base_param(CONFIGS["D_canonical"], s_full, e_full), "end_date_idx": e_full}],
+        cube, num_threads=1)[0]
+    out["reconciliation"] = {
+        "same_engine": True, "same_universe": "NIFTY500 (PIT)", "same_config": True,
+        "continuous": {
+            "cagr_pct": d_cont["cagr_pct"], "sharpe": d_cont["sharpe_ratio"],
+            "maxdd_pct": d_cont["max_drawdown_pct"], "maxdd_basis": "daily intra-period",
+            "trades": d_cont["total_trades"], "ending_equity": d_cont["ending_equity"],
+            "cagr_basis": "(end_session-start_session)/252",
+        },
+        "monthly_sampled": d_month,
+        "monthly_t_plus_1": d_month_t1,
+        "identical_ending_equity": d_cont["ending_equity"] == float(d_eq[-1]) == float(full_single["ending_equity"]),
+        "identical_trades": d_cont["total_trades"] == int(full_single["total_trades"]),
+        "mechanisms": [
+            "CAGR: identical ending equity, sessions/252 vs months/12",
+            "MaxDD: daily intra-period vs monthly rebalance NAV",
+            "Sharpe: INCOMPLETE — kernel internal periodic series not exposed; T+1 explains most of the gap",
+        ],
+    }
     del cube; runner.cube = None; gc.collect()
 
-    # ---- C engine: NIFTY750 ----
-    cube = runner.ensure_cube(universe_name="NIFTY750", benchmark="NIFTY500")
-    out["table"].append(row("C99 kernel", "NIFTY750", "D", "continuous", continuous(runner, cube, CONFIGS["D_canonical"])))
-    del cube; runner.cube = None; gc.collect()
-
-    # ---- C engine: ALL and SURVIVORS (same config, same period) ----
-    con = con_ro()
-    survivors = [r[0] for r in con.execute(
-        "SELECT symbol FROM prices GROUP BY symbol HAVING MAX(date) >= '2026-09-01'")]
-    delisted = [r[0] for r in con.execute(
-        "SELECT symbol FROM prices GROUP BY symbol HAVING MAX(date) < '2026-09-01'")]
-    con.close()
-
+    # ---- ALL reference (same period) ----
     cube_all = runner.ensure_cube(universe_name="ALL", benchmark="NIFTY500")
-    all_res = continuous(runner, cube_all, CONFIGS["D_canonical"])
-    out["table"].append(row("C99 kernel", "ALL", "D", "continuous", all_res))
+    out["table"].append(row("C99 kernel", "ALL (reference)", "D", "continuous",
+                            continuous(runner, cube_all, CONFIGS["D_canonical"], "ALL")))
     del cube_all; runner.cube = None; gc.collect()
 
-    cube_surv = build_tensor_cube(
-        start_date="2007-01-02", end_date=None, universe_name="SURVIVORS",
-        benchmark_name="NIFTY500", symbols=survivors,
-        lookback_values=LOOKBACK_VALUES, ema_span_values=EMA_SPAN_VALUES)
-    runner.cube = cube_surv
-    runner._cube_universe = "SURVIVORS"
-    runner._cube_benchmark = "NIFTY500"
-    surv_res = continuous(runner, cube_surv, CONFIGS["D_canonical"])
-    out["table"].append(row("C99 kernel", "SURVIVORS", "D", "continuous", surv_res))
-    del cube_surv; runner.cube = None; gc.collect()
+    # ---- NIFTY750 has no PIT table ----
+    out["table"].append(refused("C99 kernel", "NIFTY750", "D", "NO_POINT_IN_TIME_TABLE"))
+    out["table"].append(refused("Python LightweightBacktester", "NIFTY750", "D", "NO_POINT_IN_TIME_TABLE"))
 
-    out["survivorship"] = {
-        "method": "same engine, same config D, same dates; ALL symbols vs symbols still quoting after 2026-08-31",
-        "all_symbols": len(survivors) + len(delisted),
-        "survivors": len(survivors),
-        "delisted": len(delisted),
-        "cagr_all_pct": all_res["cagr_pct"],
-        "cagr_survivors_pct": surv_res["cagr_pct"],
-        "survivorship_bias_pp": round(surv_res["cagr_pct"] - all_res["cagr_pct"], 2),
-        "interpretation": "positive = current-survivor universe overstates CAGR vs including dead names",
-        "nifty500_vs_all_pp": round(d_cont["cagr_pct"] - all_res["cagr_pct"], 2),
-    }
+    # ---- Historical legacy numbers: listed so they are explicitly retired ----
+    # 04b is the full ALL cross-section (delisted names included, so *not*
+    # survivorship-biased per its own metadata); it is retired because it starts
+    # 2016-01-01, before the first PIT snapshot (2016-01-18), and is benchmarked
+    # against NIFTY500 while holding the whole DB cross-section.
+    b = json.loads((OUT / "04b_backtest_all.json").read_text())
+    out["table"].append({
+        "engine": "Python LightweightBacktester", "universe": "ALL (full cross-section, legacy)",
+        "config": "D", "method": "continuous",
+        "cagr_pct": b["cagr_pct"], "sharpe": b["sharpe_ratio"],
+        "maxdd_pct": b["max_drawdown_pct"], "maxdd_basis": "monthly",
+        "trades": b["total_trades"], "ending_equity": b["final_equity"],
+        "period": f"{b['start_date']}..{b['end_date']}",
+        "status": "RETIRED_LEGACY_NON_PIT",
+        "reason": "2016-01-01 start predates the first PIT snapshot (2016-01-18); "
+                  "ALL cross-section, outside the pre-registered PIT contract",
+    })
+    c = json.loads((OUT / "06_c_engine_nifty750.json").read_text())["summary"]
+    out["table"].append({
+        "engine": "C99 kernel", "universe": "NIFTY750 (current-list, historical)",
+        "config": "D", "method": "monthly",
+        "cagr_pct": round(float(c["cagr_pct"]), 2), "sharpe": round(float(c["sharpe_ratio"]), 2),
+        "maxdd_pct": -round(float(c["max_drawdown_pct"]), 2), "maxdd_basis": "monthly",
+        "trades": c["total_trades"], "ending_equity": c["ending_equity"],
+        "period": f"{c['start_date']}..{c['end_date']}",
+        "status": "RETIRED_SURVIVORSHIP_BIAS",
+        "reason": "2026 constituent list applied backwards; NIFTY750 has no PIT table",
+    })
 
-    # ---- Python production engine (optional inside this run) ----
+    # ---- Old canonical NIFTY500 current-list run (30.01%): the headline this tag retires ----
+    o = json.loads((OUT / "04c_backtest_nifty500_current_list.json").read_text())
+    out["table"].append({
+        "engine": "Python LightweightBacktester", "universe": "NIFTY500 (current 2026 list, 2016 start)",
+        "config": "D", "method": "continuous",
+        "cagr_pct": o["cagr_pct"], "sharpe": o["sharpe_ratio"],
+        "maxdd_pct": o["max_drawdown_pct"], "maxdd_basis": "monthly",
+        "trades": o["total_trades"], "ending_equity": o["final_equity"],
+        "period": f"{o['start_date']}..{o['end_date']}",
+        "status": "RETIRED_SURVIVORSHIP_BIAS",
+        "reason": "today's NIFTY500 list applied to 2016-2026; start predates the first PIT snapshot",
+    })
+
+    # ---- Python production engine, PIT NIFTY500 ----
     if not args.skip_python:
         from core.backtest import LightweightBacktester
-        py_out = {}
         py_dir = OUT / "_python_runs"
         py_dir.mkdir(exist_ok=True)
-        for uni in ("NIFTY500", "ALL"):
-            bt = LightweightBacktester(base_dir=ROOT, output_dir=py_dir / uni)
-            r = bt.run(start_date="2016-01-01", end_date="2026-08-31", top_n=20,
-                       exit_buffer=40, use_regime_filter=True, max_per_sector=2,
-                       sizing_mode="atr_risk_parity", risk_per_trade_pct=1.0,
-                       universe_mode=uni)
-            py_out[uni] = {k: r.get(k) for k in (
-                "cagr_pct", "sharpe_ratio", "sortino_ratio", "calmar_ratio",
-                "max_drawdown_pct", "daily_max_drawdown_pct", "total_trades",
-                "win_rate_pct", "final_equity", "universe_mode", "universe_size",
-                "survivorship_bias_risk", "universe_point_in_time")}
-            out["table"].append({
-                "engine": "Python LightweightBacktester", "universe": uni,
-                "config": "D", "method": "continuous",
-                "cagr_pct": py_out[uni]["cagr_pct"], "sharpe": py_out[uni]["sharpe_ratio"],
-                "maxdd_pct": py_out[uni]["max_drawdown_pct"], "maxdd_basis": "monthly",
-                "trades": py_out[uni]["total_trades"], "ending_equity": py_out[uni]["final_equity"],
-                "period": "2016-01-01..2026-08-31", "status": "REPRODUCED",
-            })
-        out["python_runs"] = py_out
+        bt = LightweightBacktester(base_dir=ROOT, output_dir=py_dir / "NIFTY500")
+        r = bt.run(start_date=START, end_date=END, top_n=20,
+                   exit_buffer=40, use_regime_filter=True, max_per_sector=2,
+                   sizing_mode="atr_risk_parity", risk_per_trade_pct=1.0,
+                   universe_mode="NIFTY500")
+        py = {k: r.get(k) for k in (
+            "cagr_pct", "sharpe_ratio", "sortino_ratio", "calmar_ratio",
+            "max_drawdown_pct", "daily_max_drawdown_pct", "total_trades",
+            "win_rate_pct", "final_equity", "universe_mode", "universe_size",
+            "universe_source", "universe_point_in_time", "pit_index",
+            "pit_members_start", "pit_members_end", "eligible_symbols",
+            "survivorship_bias_risk", "data_completeness_risk")}
+        out["python_runs"] = {"NIFTY500": py}
         out["canonical_production"] = {
             "engine": "Python LightweightBacktester (production contract)",
-            "universe": "NIFTY500 (current constituents, survivorship_bias_risk=True)",
+            "universe": "NIFTY500 point-in-time membership",
             "config": "D: lookback 252, EMA 200, top20, buffer40, cap2, ATR risk parity, regime on",
-            "cagr_pct": py_out["NIFTY500"]["cagr_pct"],
-            "sharpe": py_out["NIFTY500"]["sharpe_ratio"],
-            "maxdd_pct": py_out["NIFTY500"]["max_drawdown_pct"],
-            "trades": py_out["NIFTY500"]["total_trades"],
+            "cagr_pct": py["cagr_pct"], "sharpe": py["sharpe_ratio"],
+            "maxdd_pct": py["max_drawdown_pct"], "trades": py["total_trades"],
         }
-        (OUT / "34_python_canonical.json").write_text(json.dumps(py_out, indent=2, default=str))
+        out["table"].append({
+            "engine": "Python LightweightBacktester", "universe": "NIFTY500 (PIT)",
+            "config": "D", "method": "continuous",
+            "cagr_pct": py["cagr_pct"], "sharpe": py["sharpe_ratio"],
+            "maxdd_pct": py["max_drawdown_pct"], "maxdd_basis": "monthly",
+            "trades": py["total_trades"], "ending_equity": py["final_equity"],
+            "period": f"{START}..{END}", "status": "REPRODUCED",
+        })
+        (OUT / "34_python_canonical.json").write_text(json.dumps({"NIFTY500": py}, indent=2, default=str))
 
-    # ---- Attach matched stress-window metrics from 21 (aligned harness) ----
+        # ---- Survivorship / look-ahead control: same engine, config and dates ----
+        # Only the membership source differs: today's 2026 NIFTY500 list vs PIT.
+        from core.data_engine import load_universe_constituents
+        current = sorted(load_universe_constituents("NIFTY500"))
+        bt_cur = LightweightBacktester(base_dir=ROOT, output_dir=py_dir / "NIFTY500_CURRENT_CONTROL")
+        r_cur = bt_cur.run(start_date=START, end_date=END, top_n=20,
+                           exit_buffer=40, use_regime_filter=True, max_per_sector=2,
+                           sizing_mode="atr_risk_parity", risk_per_trade_pct=1.0,
+                           universe_mode="NIFTY500-CURRENT-CONTROL",
+                           explicit_symbols=current)
+        cur = {k: r_cur.get(k) for k in (
+            "cagr_pct", "sharpe_ratio", "sortino_ratio", "calmar_ratio",
+            "max_drawdown_pct", "daily_max_drawdown_pct", "total_trades",
+            "win_rate_pct", "final_equity", "universe_size", "universe_mode",
+            "universe_source", "survivorship_bias_risk")}
+        out["survivorship_control"] = {
+            "description": "Same engine, dates and config; current 2026 NIFTY500 list (biased control) vs PIT membership.",
+            "requested_members": len(current),
+            "pit_cagr_pct": py["cagr_pct"],
+            "current_list_cagr_pct": cur["cagr_pct"],
+            "cagr_overstatement_pp": round(float(cur["cagr_pct"]) - float(py["cagr_pct"]), 2),
+            "pit": py,
+            "current_list": cur,
+        }
+        (OUT / "35_current_list_control.json").write_text(
+            json.dumps(out["survivorship_control"], indent=2, default=str))
+        out["table"].append({
+            "engine": "Python LightweightBacktester",
+            "universe": "NIFTY500 (current 2026 list, biased control)",
+            "config": "D", "method": "continuous",
+            "cagr_pct": cur["cagr_pct"], "sharpe": cur["sharpe_ratio"],
+            "maxdd_pct": cur["max_drawdown_pct"], "maxdd_basis": "monthly",
+            "trades": cur["total_trades"], "ending_equity": cur["final_equity"],
+            "period": f"{START}..{END}", "status": "BIASED_CONTROL",
+        })
+
+    # ---- Stress-window metrics from the PIT validation harness ----
     v21 = json.loads((OUT / "21_strategy_validation.json").read_text())
     a = v21["candidates"]["A_balanced"]
     for name in WINDOWS:
         sw = out["stress_windows"][name]
-        m = a["windows"].get(name)
-        bm = v21["benchmark"].get(name)
+        sw["strategy_config"] = "A_balanced"
+        sw["strategy"] = a["windows"].get(name)
+        sw["benchmark"] = v21["benchmark"].get(name)
         align = a["alignment"].get(name, {})
-        sw["strategy"] = {k: m.get(k) for k in ("total_return_pct", "cagr_pct", "maxdd_pct", "months")} if m else None
-        sw["benchmark"] = {k: bm.get(k) for k in ("total_return_pct", "cagr_pct", "maxdd_pct", "months")} if bm else None
         sw["effective_window_aligned"] = bool(align.get("aligned"))
-        # A data-insufficient window cannot support a headline drawdown claim.
         sw["headline_eligible"] = sw["label"] == "VALID" and sw["effective_window_aligned"]
+
+    # ---- PIT membership provenance ----
+    con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+    pit = [r[0] for r in con.execute(
+        "SELECT DISTINCT symbol FROM prices")]
+    con.close()
+    out["pit_provenance"] = {
+        "primary_source": "https://niftyhistory.in/ full Nifty500 snapshots",
+        "secondary_source": "https://github.com/aditya-jha/nse-historical-membership (CC BY 4.0 intervals)",
+        "coverage_start": "2016-01-18 snapshots; 2018+ used for the canonical backtest",
+        "note": "Membership is resolved per rebalance date from the snapshot table; API names are mapped to DB symbols. Unmapped names are retained in the metadata and verification report.",
+        "verification": "reports/PIT_MEMBERSHIP_VERIFICATION.md",
+    }
 
     out["elapsed_sec"] = round(time.time() - t0, 1)
     (OUT / "33_reconciliation.json").write_text(json.dumps(out, indent=2, default=str))
 
-    # ---- Markdown table ----
-    lines = ["# Engine reconciliation — 2026-10-23", "",
+    def fmt(x):
+        return "—" if x is None else f"{x:.2f}" if isinstance(x, float) else str(x)
+
+    lines = ["# Engine reconciliation — PIT membership", "",
              f"Generated {out['generated']}. Period {out['period']}; costs {out['costs']}.", "",
-             "## Canonical baselines (both NIFTY500)", "",
-             f"- **Production backtest** (Python, canonical): "
-             + (f"CAGR **{out.get('canonical_production', {}).get('cagr_pct', '—')}%**, "
-                f"Sharpe {out.get('canonical_production', {}).get('sharpe', '—')}, "
-                f"MaxDD {out.get('canonical_production', {}).get('maxdd_pct', '—')}%, "
-                f"{out.get('canonical_production', {}).get('trades', '—')} trades"
-                if "canonical_production" in out else "not run in this invocation"),
-             f"- **Strategy-engine baseline** (C99 kernel, config D): "
-             f"CAGR **{d_cont['cagr_pct']:.2f}%**, Sharpe {d_cont['sharpe_ratio']:.2f}, "
-             f"daily MaxDD {d_cont['max_drawdown_pct']:.2f}%, {d_cont['total_trades']} trades",
-             "- Both universes are NIFTY500 current constituents; both carry `survivorship_bias_risk=True`.", "",
-             "## Every published (engine, universe, config)", "",
-             "| Engine | Universe | Config | Method | CAGR % | Sharpe | MaxDD % | DD basis | Trades | Status |",
-             "|---|---|---|---|---:|---:|---:|---|---:|---|"]
+             "## Policy", "",
+             "- Historical index universe: **NIFTY500 point-in-time membership**, resolved per rebalance date.",
+             "- A 2016-01-01 start is refused: no snapshot exists on or before it. The canonical window starts in "
+             "2018, the first year with ≥70% tradable coverage (356 eligible of 377 mapped). 2017 is runnable "
+             "(305 eligible, verified) but is outside the pre-registered window.",
+             "- Live scanner: latest constituents (the only component allowed to use them).",
+             f"- Breadth gate: at least **{MIN_ELIGIBLE_SYMBOLS}** eligible PIT members (scaled down for small indices).", "",
+             "## Canonical baselines (NIFTY500 PIT, 2018–2026)", ""]
+    if "canonical_production" in out:
+        cp = out["canonical_production"]
+        lines.append(f"- **Production backtest** (Python): CAGR **{cp['cagr_pct']}%**, "
+                     f"Sharpe {cp['sharpe']}, MaxDD {cp['maxdd_pct']}%, {cp['trades']} trades.")
+    lines += [f"- **Strategy-engine baseline** (C99 kernel, config D): CAGR **{d_cont['cagr_pct']:.2f}%**, "
+              f"Sharpe {d_cont['sharpe_ratio']:.2f}, daily MaxDD {d_cont['max_drawdown_pct']:.2f}%, "
+              f"{d_cont['total_trades']} trades.", "",
+              "## Every published (engine, universe, config)", "",
+              "| Engine | Universe | Config | Method | CAGR % | Sharpe | MaxDD % | DD basis | Trades | Status |",
+              "|---|---|---|---|---:|---:|---:|---|---:|---|"]
     for r in out["table"]:
         lines.append(f"| {r['engine']} | {r['universe']} | {r['config']} | {r['method']} | "
-                     f"{r['cagr_pct']} | {r['sharpe']} | {r['maxdd_pct']} | {r['maxdd_basis']} | "
-                     f"{r['trades']} | {r['status']} |")
+                     f"{fmt(r['cagr_pct'])} | {fmt(r['sharpe'])} | {fmt(r['maxdd_pct'])} | "
+                     f"{r['maxdd_basis']} | {fmt(r['trades'])} | {r['status']} |")
 
-    lines += ["", "## §5.5 vs §9 D — same config, different numbers", "",
-              "Both rows are NIFTY500, config D (LB252/EMA200/top20/buf40/cap2/ATR), 2016-01-01→2026-08-31.",
-              "", "| Quantity | §5.5 (continuous kernel) | §9 D (monthly-sampled) | Mechanism |",
+    lines += ["", "`RETIRED_LEGACY_NON_PIT` rows are old numbers that are not reproducible under the PIT "
+              "contract (the 04b row starts 2016-01-01, before the first snapshot, and holds the full ALL "
+              "cross-section rather than an index). `RETIRED_SURVIVORSHIP_BIAS` rows applied a 2026 "
+              "constituent list backwards. Both are listed so they are explicitly retired rather than "
+              "silently deleted, and neither is part of the canonical contract. "
+              "`REFUSED` rows are named indices or windows with no PIT table/breadth.", "",
+              "## Continuous vs monthly-sampled (same config, same PIT universe)", "",
+              "| Quantity | Continuous | Monthly-sampled | Mechanism |",
               "|---|---:|---:|---|",
-              f"| CAGR | {d_cont['cagr_pct']:.2f}% | {d_month['cagr_pct']:.2f}% | same ending equity; sessions/252 vs months/12 |",
+              f"| CAGR | {d_cont['cagr_pct']:.2f}% | {d_month['cagr_pct']:.2f}% | identical ending equity; sessions/252 vs months/12 |",
               f"| Ending equity | ₹{d_cont['ending_equity']:,.0f} | ₹{d_eq[-1]:,.0f} | identical path |",
               f"| Trades | {d_cont['total_trades']} | {d_cont['total_trades']} | identical selection |",
-              f"| Sharpe | {d_cont['sharpe_ratio']:.2f} | {d_month['sharpe']:.2f} (T+1: {d_month_t1['sharpe']:.2f}) | **INCOMPLETE**: kernel internal series not exposed; T+1 explains most of the gap |",
-              f"| MaxDD | {d_cont['max_drawdown_pct']:.2f}% daily | {d_month['maxdd_monthly_pct']:.2f}% monthly | daily intra-period vs monthly sampling |",
-              "",
-              f"The previously published §9 D value **28.69%** was equal-weight: the harness passed "
-              f"integer code `0`, and `bridge.py:431` treated any non-string code as equal-weight. "
-              f"The corrected ATR monthly value is **{d_month['cagr_pct']:.2f}%**; the continuous ATR value is "
-              f"**{d_cont['cagr_pct']:.2f}%**. The CAGR residual is annualization; the drawdown residual is "
-              f"daily-vs-monthly sampling. The Sharpe sub-gap is **INCOMPLETE**, not attributed.", ""]
-
-    lines += ["## Stress windows — labelled, not assumed", "",
-              "| Window | Sessions | 252-bar coverage | Label | Strategy total | Benchmark total | Aligned | Headline? |",
-              "|---|---:|---:|---|---:|---:|---|---|"]
+              f"| Sharpe | {d_cont['sharpe_ratio']:.2f} | {d_month['sharpe']:.2f} (T+1 {d_month_t1['sharpe']:.2f}) | INCOMPLETE: kernel internal series not exposed |",
+              f"| MaxDD | {d_cont['max_drawdown_pct']:.2f}% daily | {d_month['maxdd_monthly_pct']:.2f}% monthly | daily intra-period vs monthly sampling |", "",
+              "## Stress windows — PIT breadth-gated", "",
+              "| Window | PIT members | Eligible | Raw DB 252-bar (at window end) | Label | Strategy total (config A) | Benchmark total | Aligned | Headline? |",
+              "|---|---:|---:|---:|---|---:|---:|---|---|"]
     for name, sw in out["stress_windows"].items():
         st = sw.get("strategy") or {}
         bm = sw.get("benchmark") or {}
-        lines.append(f"| {name} | {sw['sessions']} | {sw['history_coverage_pct']}% "
-                     f"({sw['symbols_with_252_bar_history']}/{sw['universe_size']}) | **{sw['label']}** | "
-                     f"{st.get('total_return_pct','—')}% | {bm.get('total_return_pct','—')}% | "
-                     f"{sw.get('effective_window_aligned','—')} | {sw.get('headline_eligible','—')} |")
-
-    lines += ["", "The 2008 and 2011 windows fail the coverage rule (≈15% and ≈16% of today's NIFTY500 "
-              "constituents have the required 252-bar history). Any drawdown claim that depends on them is "
-              "retracted from headline status and retained only as a labelled data-insufficiency note.", "",
-              f"**2008 denominator:** {out['stress_windows']['gfc_2008']['symbols_with_any_bar']} DB symbols have "
-              f"any 2008 bar ({out['stress_windows']['gfc_2008']['symbols_with_any_bar']/1083*100:.1f}% of the "
-              f"1,083-symbol database), but only {out['stress_windows']['gfc_2008']['symbols_with_252_bar_history']} "
-              f"have the required 252-bar history and are current NIFTY500 members "
-              f"({out['stress_windows']['gfc_2008']['history_coverage_pct']:.1f}% of 501). The '~75 symbols / 7%' "
-              "caveat is therefore correct against the full database; against the declared universe it is 14.8%. "
-              "Both fail the 50% rule.", "",
-              "## Survivorship bias — one number from a real run", "",
-              f"Same engine, same config D, same dates. ALL symbols: **{out['survivorship']['all_symbols']}**; "
-              f"still quoting after 2026-08-31: **{out['survivorship']['survivors']}** "
-              f"({out['survivorship']['delisted']} dead names).", "",
-              f"- CAGR ALL: **{out['survivorship']['cagr_all_pct']:.2f}%**",
-              f"- CAGR survivors only: **{out['survivorship']['cagr_survivors_pct']:.2f}%**",
-              f"- Survivorship overstatement: **{out['survivorship']['survivorship_bias_pp']:.2f} pp CAGR**",
-              f"- NIFTY500-vs-ALL (index membership + breadth, not survivorship alone): "
-              f"**{out['survivorship']['nifty500_vs_all_pp']:.2f} pp**", "",
-              "## Reproduction", "",
-              "```bash",
-              "python3 reports/analysis_evidence/validate_candidates.py   # 21, aligned windows",
-              "python3 reports/analysis_evidence/summarize_candidates.py  # 22, continuous engine",
-              "python3 reports/analysis_evidence/reconcile_engines.py     # 33 + this report",
+        raw = f"{sw.get('raw_db_symbols_252', '—')}/{sw.get('raw_db_symbols_total', '—')} ({sw.get('raw_db_coverage_pct', '—')}%)"
+        lines.append(f"| {name} | {sw.get('members', '—')} | {sw.get('eligible_symbols', '—')} | {raw} | "
+                     f"**{sw['label']}** | {st.get('total_return_pct', '—')}% | "
+                     f"{bm.get('total_return_pct', '—')}% | {sw.get('effective_window_aligned', '—')} | "
+                     f"{sw.get('headline_eligible', '—')} |")
+    lines += ["", "Stress-window strategy totals and benchmark totals use the recommended **config A** monthly "
+              "validation harness (`21_strategy_validation.json`, same PIT membership and effective windows); the "
+              "canonical config-D production result is in the baseline section above and is not a stress-window total.", "",
+              "Under-covered windows are refused by the engine, not merely labelled. "
+              "The raw DB column is the independent check: at 2008-12-31 only 94 of 1,083 symbols "
+              "(8.7%) have 252 bars; at 2011-12-31, 106 (9.8%). The shortfall is the documented data "
+              "artifact, so 2008/2011 are DATA_INSUFFICIENT and no headline claim depends on them.", ""]
+    if "survivorship_control" in out:
+        sc = out["survivorship_control"]
+        pit, ctl = sc["pit"], sc["current_list"]
+        lines += ["## Survivorship / look-ahead control", "",
+                  "Same production engine, config D, dates and costs; only membership differs.", "",
+                  "| Run | Universe | CAGR | Sharpe | MaxDD | Trades |",
+                  "|---|---|---:|---:|---:|---:|",
+                  f"| PIT (canonical) | {pit.get('universe_size')} symbols, per-rebalance | "
+                  f"{pit['cagr_pct']}% | {pit['sharpe_ratio']} | {pit['max_drawdown_pct']}% | {pit['total_trades']} |",
+                  f"| Current 2026 list (biased control) | {ctl.get('universe_size')} symbols | "
+                  f"{ctl['cagr_pct']}% | {ctl['sharpe_ratio']} | {ctl['max_drawdown_pct']}% | {ctl['total_trades']} |",
+                  "", f"**Current-list look-ahead overstatement: +{sc['cagr_overstatement_pp']} pp CAGR.**", ""]
+    lines += ["## Provenance", "",
+              "| Item | Value |", "|---|---|",
+              "| Primary membership source | niftyhistory.in full Nifty500 snapshots |",
+              "| Secondary cross-check | aditya-jha/nse-historical-membership (CC BY 4.0) |",
+              "| Snapshot coverage | 2016-01-18 onward; canonical 2018-2026 |",
+              "| Resolution | Per rebalance date; dead names included while members |",
+              "| Verification | reports/PIT_MEMBERSHIP_VERIFICATION.md |", "",
+              "## Reproduction", "", "```bash",
+              "python3 scripts/build_pit_constituents.py",
+              "python3 reports/analysis_evidence/canonical_backtest.py",
+              "python3 reports/analysis_evidence/validate_candidates.py",
+              "python3 reports/analysis_evidence/summarize_candidates.py",
+              "python3 reports/analysis_evidence/reconcile_engines.py",
+              "python3 reports/analysis_evidence/label_random_windows.py",
               "```", ""]
     REPORT.write_text("\n".join(lines))
     print("\n".join(lines))

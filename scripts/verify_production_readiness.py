@@ -137,16 +137,16 @@ def verify_production_readiness(base_dir: Path = PROJECT_ROOT) -> Dict[str, Any]
         results["checks"]["strategy_fingerprint"] = {"passed": False, "error": str(e)}
         results["errors"].append(f"Strategy fingerprint validation failed: {e}")
 
-    # 6. Core Modules Decoupling (25 modules)
+    # 6. Core Modules Decoupling (27 modules)
     try:
         core_files = sorted([f.name for f in (base_dir / "core").glob("*.py")])
-        core_ok = (len(core_files) == 25)
+        core_ok = (len(core_files) == 27)
         results["checks"]["core_modules"] = {
             "passed": core_ok,
             "count": len(core_files),
         }
         if not core_ok:
-            results["errors"].append(f"Core module count mismatch: {len(core_files)} != 25")
+            results["errors"].append(f"Core module count mismatch: {len(core_files)} != 27")
     except Exception as e:
         results["checks"]["core_modules"] = {"passed": False, "error": str(e)}
         results["errors"].append(f"Core module audit failed: {e}")

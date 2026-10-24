@@ -55,7 +55,7 @@ def run_full_variable_audit():
 
     runner = BruteForceCampaignRunner()
     print("[1/5] Building/Loading 3D Tensor Cube (NIFTY500)...")
-    cube = runner.ensure_cube(universe_name="NIFTY500", benchmark="NIFTY500")
+    cube = runner.ensure_cube(universe_name="ALL", benchmark="NIFTY500")
     print(f"Cube loaded: {cube.num_dates} trading sessions, {cube.num_symbols} symbols, footprint {cube.memory_footprint_mb:.1f} MB.")
 
     output_dir = PROJECT_ROOT / "reports" / "full_variable_audit"

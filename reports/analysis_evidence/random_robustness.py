@@ -11,6 +11,7 @@ from brute_force.grid import (CANONICAL_BASELINE, FILTER_RETRACE, FILTER_TREND,
                               FILTER_RS, FILTER_REGIME, FILTER_SECTOR_CAP,
                               FILTER_VOL_TARGETING, LOOKBACK_VALUES,
                               EMA_SPAN_VALUES, SCHEDULE_MAP)
+from core.universe_policy import MIN_ELIGIBLE_SYMBOLS, check_breadth
 
 OUT = ROOT / "reports" / "analysis_evidence"
 RF = 0.065
@@ -55,6 +56,18 @@ def idx_for(cube, start, end):
     e = max(cube.date_to_idx[d] for d in cube.dates if d <= end)
     return s, e
 
+def eligible_at(s):
+    """PIT members with 252 bars at the given session index."""
+    mask = getattr(cube, "valid_price_mask", None)
+    if mask is None:
+        return None
+    combined = np.asarray(mask[: int(s) + 1])
+    membership = getattr(cube, "universe_membership_mask", None)
+    if membership is not None:
+        combined = combined & np.asarray(membership[: int(s) + 1])
+    counts = combined.sum(axis=0)
+    return int((counts >= 252).sum())
+
 def bench_cagr(cube, start, end):
     s, e = idx_for(cube, start, end)
     b0, b1 = float(cube.bench_closes[s]), float(cube.bench_closes[e])
@@ -77,7 +90,7 @@ results = {"generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "recommended": W, "tests": {}}
 
 # ---------------- R1 random rolling windows ----------------
-dates = [d for d in cube.dates if "2008-01-01" <= d <= "2026-08-31"]
+dates = [d for d in cube.dates if "2018-01-01" <= d <= "2026-08-31"]
 start_candidates = [d for d in dates if d <= "2024-08-31"]
 r1 = []
 for _ in range(200):
@@ -88,38 +101,53 @@ for _ in range(200):
     e = idx_for(cube, start, str(end_ts.date()))[1]
     if e - s < 200:
         continue
+    elig = eligible_at(s)
+    label = "VALID" if (elig is not None and elig >= MIN_ELIGIBLE_SYMBOLS) else "DATA_INSUFFICIENT"
+    base = {"start": cube.dates[s], "end": cube.dates[e], "months": int(e - s),
+            "eligible_symbols": elig, "label": label}
+    if label != "VALID":
+        r1.append({**base, "cagr": np.nan, "sharpe": np.nan, "maxdd": np.nan,
+                   "calmar": np.nan, "trades": 0, "bench_cagr": np.nan, "excess": np.nan})
+        continue
     p = param(W, s, e)
     row = runner.engine.execute_sweep([p], cube, num_threads=1)[0]
     bc = bench_cagr(cube, cube.dates[s], cube.dates[e])
-    r1.append({"start": cube.dates[s], "end": cube.dates[e], "months": int(e - s),
-               "cagr": float(row["cagr"]), "sharpe": float(row["sharpe"]),
+    r1.append({**base, "cagr": float(row["cagr"]), "sharpe": float(row["sharpe"]),
                "maxdd": float(row["max_drawdown"]), "calmar": float(row["calmar"]),
                "trades": int(row["total_trades"]), "bench_cagr": bc,
                "excess": float(row["cagr"]) - bc})
 r1df = pd.DataFrame(r1)
+valid = r1df[r1df.label == "VALID"]
+insufficient = r1df[r1df.label == "DATA_INSUFFICIENT"]
 results["tests"]["R1_random_windows"] = {
     "windows": len(r1df),
-    "cagr": dist(r1df.cagr, "cagr"),
-    "sharpe": dist(r1df.sharpe, "sharpe"),
-    "maxdd": dist(r1df.maxdd, "maxdd"),
-    "excess": dist(r1df.excess, "excess"),
-    "pct_beat_benchmark": round(float((r1df.excess > 0).mean() * 100), 1),
+    "valid_windows": int(len(valid)),
+    "data_insufficient_windows": int(len(insufficient)),
+    "cagr": dist(valid.cagr, "cagr"),
+    "sharpe": dist(valid.sharpe, "sharpe"),
+    "maxdd": dist(valid.maxdd, "maxdd"),
+    "excess": dist(valid.excess, "excess"),
+    "pct_beat_benchmark": round(float((valid.excess > 0).mean() * 100), 1),
     # kernel max_drawdown is reported as a positive percentage
-    "pct_dd_under_20": round(float((r1df.maxdd < 20).mean() * 100), 1),
-    "pct_dd_under_30": round(float((r1df.maxdd < 30).mean() * 100), 1),
-    "worst_window": r1df.sort_values("cagr").iloc[0].to_dict(),
-    "best_window": r1df.sort_values("cagr").iloc[-1].to_dict(),
+    "pct_dd_under_20": round(float((valid.maxdd < 20).mean() * 100), 1),
+    "pct_dd_under_30": round(float((valid.maxdd < 30).mean() * 100), 1),
+    "worst_window": valid.sort_values("cagr").iloc[0].to_dict(),
+    "best_window": valid.sort_values("cagr").iloc[-1].to_dict(),
+    "data_insufficient_median_cagr": round(float(insufficient.cagr.median()), 2) if len(insufficient) else None,
 }
 r1df.to_csv(OUT / "24_random_windows.csv", index=False)
-print("R1 done", results["tests"]["R1_random_windows"]["cagr"], results["tests"]["R1_random_windows"]["pct_beat_benchmark"])
+print("R1 done", results["tests"]["R1_random_windows"]["cagr"], results["tests"]["R1_random_windows"]["pct_beat_benchmark"],
+      "valid", len(valid), "insufficient", len(insufficient))
 
 # ---------------- R2 random parameter perturbations ----------------
 combos = list(itertools.product([189, 252, 315], [150, 200, 250], [15, 20, 25],
                                [20, 30, 40], [1, 2, 3], ["equal_weight", "atr_risk_parity"]))
 RNG.shuffle(combos)
 combos = combos[:500]
-s_is, e_is = idx_for(cube, "2016-01-01", "2021-12-31")
+s_is, e_is = idx_for(cube, "2018-01-01", "2021-12-31")
 s_oos, e_oos = idx_for(cube, "2022-01-01", "2026-08-31")
+check_breadth(eligible_at(s_is), "FULL_CROSS_SECTION")
+check_breadth(eligible_at(s_oos), "FULL_CROSS_SECTION")
 params_is, params_oos = [], []
 for i, (lb, ema, tn, buf, cap, sizing) in enumerate(combos):
     c = dict(lookback=lb, ema=ema, top_n=tn, buffer=buf, cap=cap, sizing=sizing, regime=True)
@@ -146,7 +174,8 @@ m.to_csv(OUT / "25_random_perturbations.csv", index=False)
 print("R2 done", results["tests"]["R2_random_perturbations"]["pct_oos_beat_bench"])
 
 # ---------------- R3 random cost regimes ----------------
-s_f, e_f = idx_for(cube, "2016-01-01", "2026-08-31")
+s_f, e_f = idx_for(cube, "2018-01-01", "2026-08-31")
+check_breadth(eligible_at(s_f), "FULL_CROSS_SECTION")
 cost_params = []
 costs = []
 for i in range(200):
@@ -175,13 +204,14 @@ def exact_curve(c, start, end):
     p = param(c, s, e)
     eq = []
     for i in idx:
-        q = dict(p); q["end_date_idx"] = i
+        j = min(i + 1, e)
+        q = dict(p); q["end_date_idx"] = j
         eq.append(float(runner.engine.execute_sweep([q], cube, num_threads=1)[0]["ending_equity"]))
-    return [cube.dates[i] for i in idx], np.array(eq)
+    return [cube.dates[min(i + 1, e)] for i in idx], np.array(eq)
 
-dts, eq = exact_curve(W, "2016-01-01", "2026-08-31")
+dts, eq = exact_curve(W, "2018-01-01", "2026-08-31")
 rets = np.diff(eq) / eq[:-1]
-s_idx, e_idx = idx_for(cube, "2016-01-01", "2026-08-31")
+s_idx, e_idx = idx_for(cube, "2018-01-01", "2026-08-31")
 off = int(cube.schedule_offsets[1]); ln = int(cube.schedule_lengths[1])
 bidx = [int(i) for i in cube.rebalance_indices[off:off+ln] if s_idx <= i <= e_idx][1:]
 b = np.array([float(cube.bench_closes[i]) for i in bidx])

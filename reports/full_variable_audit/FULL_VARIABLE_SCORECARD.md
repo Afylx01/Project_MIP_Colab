@@ -1,5 +1,13 @@
 # Full Codebase Variable Audit & Global Optimization Scorecard
 
+> **RETRACTED AS A PERFORMANCE CLAIM (2026-10-24).** This run applied the 2026 NIFTY500
+> constituent list backwards over 2016–2026 (survivorship/look-ahead bias) and used an older
+> engine build. Its CAGR / Sharpe / drawdown / Calmar figures are **not reproducible** under the
+> point-in-time `v2.4.2-pit-membership` contract and are withdrawn. Retained only as a record of
+> the parameter sweep. Canonical PIT results: `reports/STRATEGY_PROOF_AND_BEST_SETTINGS.md`,
+> `reports/ENGINE_RECONCILIATION.md`. Current-list overstatement measured at **+2.81 pp CAGR**
+> (`reports/analysis_evidence/35_current_list_control.json`).
+
 **Execution Timestamp:** 2026-10-21 15:55:40 UTC  
 **Total Backtests Executed:** 6,956 simulations across 10.7 Years (2016–2026)  
 **Universe:** NIFTY 500 (501 Constituents, 1.28M Raw Bars)  

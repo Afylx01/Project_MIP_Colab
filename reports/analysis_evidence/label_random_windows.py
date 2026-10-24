@@ -1,45 +1,41 @@
-"""Label every random rolling window VALID / DATA_INSUFFICIENT and recompute
-summary statistics on the comparable subset.
+"""Label every random rolling window VALID / DATA_INSUFFICIENT.
+
+The label uses the same breadth gate as the engines: a window is VALID only if
+at least MIN_ELIGIBLE_SYMBOLS have the 252-bar history the strategy needs at
+the window start. Coverage is measured against the whole price store (ALL),
+not against a current index list.
 
 Reads   reports/analysis_evidence/24_random_windows.csv
 Writes  reports/analysis_evidence/24_random_windows_labelled.csv
         reports/analysis_evidence/33b_random_window_quality.json
 """
-import json, sqlite3
+import json, sqlite3, sys
 from pathlib import Path
-import numpy as np
 import pandas as pd
 
 ROOT = Path("/mnt/sdcard/Subtitles/Project/Project_MIP_Colab")
+sys.path.insert(0, str(ROOT))
+from core.pit_membership import coverage_stats
+from core.universe_policy import min_pit_eligible
 OUT = ROOT / "reports" / "analysis_evidence"
 DB = ROOT / "data" / "universe.db"
-MIN_HISTORY_PCT = 0.50
-MIN_SESSIONS = 80
+MIN_ELIGIBLE_SYMBOLS = 100
 
 
 def main():
-    import sys
-    sys.path.insert(0, str(ROOT))
-    from core.data_engine import load_universe_constituents
-    syms = sorted(set(load_universe_constituents("NIFTY500")))
-    q = ",".join("?" * len(syms))
     con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+    total_symbols = con.execute("SELECT COUNT(DISTINCT symbol) FROM prices").fetchone()[0]
 
     df = pd.read_csv(OUT / "24_random_windows.csv")
-    covs, labels = [], []
+    elig, members, labels = [], [], []
     for _, r in df.iterrows():
-        hist = con.execute(
-            f"SELECT COUNT(*) FROM (SELECT symbol, COUNT(*) c FROM prices "
-            f"WHERE symbol IN ({q}) AND date<=? GROUP BY symbol HAVING c>=252)",
-            (*syms, r["end"])).fetchone()[0]
-        sess = con.execute(
-            "SELECT COUNT(DISTINCT date) FROM prices WHERE date>=? AND date<=?",
-            (r["start"], r["end"])).fetchone()[0]
-        pct = hist / len(syms)
-        covs.append(round(pct * 100, 2))
-        labels.append("VALID" if (pct >= MIN_HISTORY_PCT and sess >= MIN_SESSIONS) else "DATA_INSUFFICIENT")
+        st = coverage_stats("NIFTY500", r["start"], base_dir=ROOT)
+        e, m = int(st["eligible_symbols"]), int(st["members"])
+        elig.append(e); members.append(m)
+        labels.append("VALID" if e >= min_pit_eligible(m) else "DATA_INSUFFICIENT")
     con.close()
-    df["history_coverage_pct"] = covs
+    df["eligible_symbols"] = elig
+    df["pit_members"] = members
     df["label"] = labels
     df.to_csv(OUT / "24_random_windows_labelled.csv", index=False)
 
@@ -59,14 +55,16 @@ def main():
         }
 
     out = {
-        "rule": f">=252 bars by window end for >={int(MIN_HISTORY_PCT*100)}% of NIFTY500 and >={MIN_SESSIONS} sessions",
+        "rule": "VALID iff eligible PIT members >= max(10, members//2), capped at 100",
+        "universe": "NIFTY500 point-in-time membership",
+        "total_db_symbols": int(total_symbols),
         "all_200": block(df),
         "valid_only": block(df[df.label == "VALID"]),
         "data_insufficient_only": block(df[df.label == "DATA_INSUFFICIENT"]),
         "modern_2016_plus_all": block(df[df.start >= "2016-01-01"]),
         "modern_2016_plus_valid": block(df[(df.start >= "2016-01-01") & (df.label == "VALID")]),
         "counts": {k: int(v) for k, v in df.label.value_counts().items()},
-        "note": "maxdd column is the C-kernel DAILY intra-period drawdown; cagr uses sessions/252.",
+        "note": "maxdd is the C-kernel DAILY intra-period drawdown; cagr uses sessions/252.",
     }
     (OUT / "33b_random_window_quality.json").write_text(json.dumps(out, indent=2))
     print(json.dumps(out, indent=2))

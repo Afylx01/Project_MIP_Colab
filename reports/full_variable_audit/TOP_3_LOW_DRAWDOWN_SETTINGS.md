@@ -1,5 +1,11 @@
 # 🏆 Top 3 Low-Drawdown Settings Combinations with Superior CAGR
 
+> **RETRACTED AS A PERFORMANCE CLAIM (2026-10-24).** Train/test windows here were run on the
+> 2026 NIFTY500 constituent list applied backwards (survivorship/look-ahead bias) and an older
+> engine build. The CAGR / MaxDD / Calmar numbers are **not reproducible** under the point-in-time
+> `v2.4.2-pit-membership` contract and are withdrawn. Canonical PIT results:
+> `reports/STRATEGY_PROOF_AND_BEST_SETTINGS.md`, `reports/ENGINE_RECONCILIATION.md`.
+
 **Execution Timestamp:** 2026-10-21 15:59:13 UTC  
 **Universe:** NIFTY 500 (501 Liquid Equities, 1.28M Bars)  
 **Validation Framework:** Train (70%, 2016–2022) vs Out-of-Sample Test (30%, 2023–2026) Walk-Forward  

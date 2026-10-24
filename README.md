@@ -63,11 +63,10 @@
    - Benchmark Latency: 41.3 ms Single Sim (1,590x Speedup)
    - Sweep Throughput: 767+ Runs/Sec (23,260x Speedup)
 10. [Comprehensive Empirical Backtest Results & Comparative Benchmarks](#-comprehensive-empirical-backtest-results--comparative-benchmarks)
-    - 10-Year Canonical Modern Baseline (2016–2026 Monthly)
-    - Full 18-Year Historical Macro Cycle (2008–2026 GFC to Present)
-    - Multi-Schedule Rebalance Matrix (Weekly, Monthly, Quarterly, Half-Yearly, Yearly)
-    - Historical Regime Stress Testing (Covid Shock, Bull Cycles, Policy Crises)
-    - Next-Gen System Upgrades vs. Baseline Comparison (+34.4% Terminal Wealth)
+    - PIT Canonical Baseline (2018–2026 Monthly)
+    - Recommended Profile A vs NIFTY 500
+    - Survivorship / Look-Ahead Control (+2.81 pp CAGR)
+    - Retired Legacy Tables (withdrawn — survivorship-biased)
 11. [Universal NSE Index Catalog (36 Universes)](#-universal-nse-index-catalog-36-universes)
     - Broad Market, Sectoral, and Thematic Universes
     - Constituent Reconciliation Engine & 30-Day Cache TTL Policy
@@ -408,7 +407,9 @@ If the total cost of calculated buy tickets exceeds available cash, an automated
   ```
 
 ### Survivorship Bias Elimination
-Traditional backtests that query only currently active NIFTY 500 stocks suffer from **survivorship bias**. In this dataset the effect is measured, not assumed: two runs of the same engine, config and dates — all **1,083** DB symbols vs the **1,033** still quoting after 2026-08-31 — give **27.00% vs 28.51% CAGR**, i.e. **1.51 pp of survivorship overstatement**. The earlier "4–8% annually" range is not reproducible under this tag and is retracted. NIFTY500-vs-ALL (index membership plus breadth, not survivorship alone) is **+0.39 pp**. Full run: `reports/ENGINE_RECONCILIATION.md`.
+Historical index backtests now use **point-in-time membership**, not the current list. `data/pit_constituents/nifty500_snapshots.csv` contains 50 full NIFTY500 snapshots (2016-01-18 → 2026-09-30) from niftyhistory.in, cross-checked against the CC BY 4.0 `nse-historical-membership` interval table. Membership is resolved on every rebalance; a holding removed from the index is exited. **2016-01-01 is refused** because no snapshot exists on or before that date. The canonical window starts in 2018 — the first year with at least 70% tradable coverage (377 mapped / 356 eligible). 2017 is runnable (305 eligible) but is outside the pre-registered canonical window. The live scanner is the only component that uses the latest constituents.
+
+The residual limitation is **price-history completeness**, not membership selection: in 2018, 377 of 501 members map to a DB price series and 356 have the required 252 bars (453/434 by 2024; 496 mapped by 2026). The measured current-list control — same engine, config and dates on today's 2026 list — overstates CAGR by **+2.81 pp** (25.75% vs 22.94%); that is the one-number survivorship/look-ahead estimate under this tag. The old "4–8% annually" range and the ALL-vs-survivors 1.51 pp diagnostic are retired. Verification: `reports/PIT_MEMBERSHIP_VERIFICATION.md`; engine matrix and control: `reports/ENGINE_RECONCILIATION.md`.
 
 Project MIP maintains complete historical records of **delisted, merged, and suspended scrips**:
 * Tickers such as `DHFL`, `ABAN`, `CORPBANK`, `RCOM`, `SUZLON` (historical distressed era), `UNITECH`, and `YESBANK` are fully preserved in the database during their active trading years. `JETAIRWAYS` has no price history in the current database.
@@ -509,83 +510,65 @@ The simulation sweep divides parameter combinations across CPU hardware threads 
 
 ---
 
-## 📊 Comprehensive Empirical Backtest Results & Comparative Benchmarks
+## 📊 Canonical PIT Backtest Results
 
-> **Measurement note (2026-10-23):** Backtest figures in this section were captured on an earlier build and configuration. The execution engine now skips non-session placeholder bars and defers fills on halted scrips; regenerate results with the current engine before quoting them. The post-fix canonical run is documented in `reports/CODEBASE_DEEP_ANALYSIS.md` §5.2.
+> **Measurement note (2026-10-24):** the canonical backtest uses **NIFTY500 point-in-time membership** — 50 full snapshots from 2016-01-18 to 2026-09-30 (niftyhistory.in; cross-checked against the CC BY 4.0 `nse-historical-membership` interval table). Membership is resolved on every rebalance. **2016-01-01 is refused** (no snapshot on or before that date). The canonical window starts in 2018, the first year with ≥70% tradable coverage (377 mapped / 356 eligible); 2017 is runnable (305 eligible) but is outside the pre-registered window. The old 2016–2026 / 2008–2026 tables used the 2026 constituent list and are **retracted**.
 
-### 1. 10-Year Canonical Modern Baseline (2016–2026 Monthly Rebalance)
-* **Testing Window:** January 1, 2016 to August 31, 2026 (Modern Post-Demonetization / GST Regime)
-* **Universe:** NIFTY 500 / NIFTY 750 liquid equity cross-section
-* **Initial Capital:** ₹10,00,000 (₹10 Lakhs)
-* **Rebalancing Cadence:** Monthly (First trading session of each month)
-* **Execution Frictions:** 15 bps statutory frictions + 5 bps slippage (20 bps total roundtrip drag)
+### 1. Canonical PIT NIFTY500 baseline (2018-01 → 2026-08, monthly)
 
-```
-========================================================================================
-             CANONICAL BASELINE SIMULATION REPORT (2016–2026)
-========================================================================================
-  • Initial Portfolio Capital:         ₹10,00,000.00 (₹10.00 Lakhs)
-  • Final Portfolio Value:             ₹1,32,18,621.00 (₹1.32 Crores)
-  • Absolute Wealth Multiplier:        13.22x
-  • Compound Annual Growth Rate (CAGR): +28.22%
-  • Annualized Sharpe Ratio (Rf=6.5%):  0.98
-  • Downside Sortino Ratio:             1.61
-  • Maximum Historical Drawdown:        -20.17%
-  • Calmar Ratio (CAGR / MaxDD):        1.40
-  • Overall Win Rate:                   44.63% (270 Wins / 605 Closed Trades)
-  • Profit Factor:                      2.28
-  • Total Closed Trades:                605 trades
-  • Annualized Portfolio Turnover:      375.28%
-  • C99 SIMD Simulation Latency:        41.3 milliseconds
-========================================================================================
-```
+* **Universe:** NIFTY500 point-in-time membership (377 mapped members at the 2018 start; 356 with 252 bars)
+* **Initial capital:** ₹10,00,000
+* **Costs:** 15 bps statutory frictions + 5 bps slippage
 
-### 2. Full 18-Year Historical Macro Cycle (2008–2026 GFC to Present)
-Simulating through the 2008 Global Financial Crisis, 2011–2013 European Debt Crisis & Policy Paralysis, 2014 Modi Election Bull Run, 2017 Demonetization, 2018 Midcap Crash, 2020 Covid Shock, and the 2021–2026 Post-Covid Bull Market:
+| Metric | Value |
+| :--- | ---: |
+| Final equity | **₹59,82,486.73** |
+| Total return | **+498.25%** |
+| CAGR | **22.94%** |
+| NIFTY500 CAGR | +11.08% |
+| Excess CAGR | +11.85% |
+| Sharpe (Rf 6.5%) | **0.82** |
+| Sortino | 1.09 |
+| Calmar | 0.97 |
+| Max drawdown (monthly) | **−23.66%** |
+| Max drawdown (daily) | −27.68% |
+| Closed trades | 492 |
+| Win rate | 42.1% |
+| Profit factor | 2.16 |
+| Annual turnover | 471.3% |
+| Deferred fills / non-session dates | 3 / 1 |
+| Current-list control overstatement | **+2.81 pp CAGR** (25.75% vs 22.94%) |
 
-| Rebalancing Schedule | CAGR (%) | Annualized Sharpe | Downside Sortino | Max Drawdown (%) | Calmar Ratio | Win Rate (%) | Profit Factor | Ending Value (₹10L Initial) | Total Trades | Annual Turnover (%) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Monthly Rebalance** | **+34.45%** | **0.48** | **2.02** | **-58.75%** | **0.59** | **44.87%** | **2.39** | **₹22,55,78,270 (₹22.55 Cr)** | 867 | 208.38% |
-| **Quarterly Rebalance** | +33.93% | 0.40 | 2.64 | -48.00% | 0.71 | 52.55% | 3.09 | ₹20,08,83,180 (₹20.08 Cr) | 470 | 145.10% |
-| **Half-Yearly Rebalance** | +31.04% | 0.43 | 2.52 | -44.16% | 0.70 | 59.82% | 4.16 | ₹12,66,58,440 (₹12.67 Cr) | 326 | 109.12% |
-| **Yearly Rebalance** | +29.66% | 0.51 | 3.04 | **-17.17%** | **1.73** | **63.54%** | **7.59** | ₹9,22,31,680 (₹9.22 Cr) | 192 | 67.91% |
-| **Weekly Rebalance** | +23.47% | 0.42 | 1.22 | -79.78% | 0.29 | 39.95% | 1.39 | ₹3,93,54,988 (₹3.94 Cr) | 1,920 | 584.65% |
+### 2. Recommended profile A vs NIFTY 500 (2018-01 → 2026-08)
 
-*Key Quantitative Takeaway:*
-* **Weekly rebalancing is severely degraded by turnover friction and whipsaws** (Turnover 584%, Win Rate 39.95%, CAGR 23.47%).
-* **Monthly rebalancing maximizes absolute wealth compounding** (CAGR 34.45%, ₹22.55 Cr terminal equity).
-* **Yearly rebalancing maximizes drawdown protection** (Max Drawdown compressed to only **17.17%** across the entire 2008 GFC and 2020 Covid crises, with Win Rate jumping to **63.54%** and Profit Factor to **7.59**).
+| Metric | A · Balanced | NIFTY 500 |
+| :--- | ---: | ---: |
+| CAGR | **24.97%** | 10.85% |
+| Sharpe | **0.92** | 0.31 |
+| Max drawdown (monthly) | **−27.10%** | −31.85% |
+| Calmar | **0.92** | 0.34 |
+| OOS CAGR (2022–2026) | **25.83%** | 10.20% |
+| OOS Sharpe | **1.00** | 0.30 |
 
-### 3. Historical Macro Regime Stress Testing
+> Sampling basis: table 1 is session-based CAGR from the production engine (benchmark 11.08%); table 2 uses
+> monthly rebalance NAVs, the same basis as the C-kernel monthly rows (benchmark 10.85%). The gap is annualization
+> sampling, not a different data source — see `reports/ENGINE_RECONCILIATION.md`.
 
-| Historical Regime Window | Market Environment Description | Monthly CAGR (%) | Monthly Sharpe | Max Drawdown (%) | Win Rate (%) | Profit Factor |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **2010 – 2013** | Post-GFC / Euro Sovereign Debt Consolidation | +10.27% | 0.29 | -22.97% | 37.32% | 1.52 |
-| **2011 – 2021** | 10-Year Secular Bull Market | +44.76% | 0.53 | -58.74% | 45.55% | 3.29 |
-| **2010 – 2016** | Policy Paralysis to Modi Election & Demonetization | +44.08% | 0.51 | -58.05% | 44.88% | 7.98 |
-| **2012 – 2018** | Midcap & Smallcap Supercycle | +52.67% | 0.56 | -58.54% | 47.62% | 3.15 |
-| **2016 – 2026** | Modern 10-Year Post-Demonetization Regime | +28.22% | 0.98 | -20.17% | 44.63% | 2.28 |
-| **2020 – 2021** | Covid Crash & Rapid Recovery Crisis Alpha | +85.04% | 3.19 | -0.12% | 55.13% | 5.54 |
+### 3. Survivorship / look-ahead control (measured)
 
-### 4. Next-Gen Institutional Upgrades vs. Baseline System
-In addition to the canonical baseline, Project MIP includes an upgraded **Next-Gen Simulation Architecture** integrating four institutional research layers:
-1. **Residual Momentum (Blitz, Baltussen, van Vliet):** Beta-neutralized momentum with a 21-day short-term reversal exclusion window.
-2. **2D Contiguous Vector Engine:** Matrix vectorization of rolling windows.
-3. **Realized Volatility Targeting:** Dynamic cash shield scalar scaling portfolio equity to target $15\%$ annualized portfolio risk.
-4. **NSE Delivery Flow Volume Absorption:** Close Location Value (CLV) and Delivery Volume Absorption vetoing institutional distribution spikes.
+Same Python engine, config D, dates and costs; only the membership source changes.
 
-| Performance Category | Evaluated Metric | Canonical Baseline | Next-Gen Institutional System | System Improvement ($\Delta$) |
-| :--- | :--- | :---: | :---: | :---: |
-| **Returns & Wealth** | **CAGR (%)** | +25.79% | **+29.36%** | **+3.57% Alpha** |
-| **Returns & Wealth** | **Ending NAV (₹10L Basis)** | ₹1,13,39,078.00 | **₹1,52,43,153.00** | **+₹39,04,075.00 (+34.4%)** |
-| **Risk-Adjusted Alpha** | **Annualized Sharpe Ratio** | 0.91 | **1.04** | **+14.3%** |
-| **Risk-Adjusted Alpha** | **Downside Sortino Ratio** | 1.50 | **1.74** | **+16.0%** |
-| **Tail Risk & Preservation** | **Maximum Historical Drawdown** | -26.93% | **-23.41%** | **-3.52% Risk Reduction** |
-| **Tail Risk & Preservation** | **Calmar Ratio (CAGR / MaxDD)** | 0.96 | **1.25** | **+30.2%** |
-| **Execution Microstructure** | **Win Rate (%)** | 45.83% | **47.21%** | +1.38% |
-| **Execution Microstructure** | **Profit Factor** | 1.96 | **2.13** | +0.17 |
-| **Architecture Latency** | **Single Simulation Run** | 30,050 ms (Pandas) | **17.6 ms (C99 NEON)** | **1,590x Speedup** |
-| **Hardware Efficiency** | **Brute Force Throughput** | 0.033 runs/sec | **767.6 runs/sec** | **23,260x Speedup** |
+| Run | Universe | CAGR | Sharpe | MaxDD (monthly) | Trades |
+| :--- | :--- | ---: | ---: | ---: | ---: |
+| **PIT (canonical)** | NIFTY500 per-rebalance snapshots | **22.94%** | 0.82 | −23.66% | 492 |
+| Current 2026 list (biased control) | today’s NIFTY500, applied backwards | 25.75% | 0.93 | −20.96% | 495 |
+
+**Current-list look-ahead overstatement: +2.81 pp CAGR.** This is the one-number survivorship estimate; the
+artifact is `reports/analysis_evidence/35_current_list_control.json`.
+
+### 4. Retired legacy tables
+
+The previous 2016–2026 canonical table, the 2008–2026 multi-schedule matrix, the macro-era stress table, and the next-gen comparison table were produced from current constituents or a non-PIT full cross-section, and from an older engine build. They are **not reproducible under the PIT tag** and are withdrawn from this README. The authoritative numbers are in `reports/STRATEGY_PROOF_AND_BEST_SETTINGS.md`, `reports/CODEBASE_DEEP_ANALYSIS.md`, and `reports/ENGINE_RECONCILIATION.md`.
 
 ---
 
@@ -720,7 +703,7 @@ Click the badge to launch the pre-configured notebook:
 * **Cell 2: Interactive IPyWidgets Screener Dashboard:**
   Select Universe (NIFTY 750, NIFTY 500, Sectoral), Top N, and toggle Telegram alerts or Excel auto-download. Click **Run Momentum Scan** to generate full reports.
 * **Cell 3: High-Performance C99 SIMD Cockpit:**
-  Select custom date ranges, macro eras (e.g., 2016–2026 Modern Regime, 2020–2021 Covid Shock), rebalancing frequency, and run 40 ms simulations or parallel brute-force sweeps with real-time equity curves.
+  Select custom date ranges and stress windows (canonical 2018–2026 PIT; 2020 Covid Shock), rebalancing frequency, and run 40 ms simulations or parallel brute-force sweeps with real-time equity curves. Windows without PIT breadth (2008, 2011, and any start before 2016-01-18) are refused rather than silently simulated.
 * **Cell 4: Headless CLI Execution Examples:**
   Direct terminal commands for batch flows and automated scheduling.
 
@@ -800,7 +783,7 @@ Project MIP enforces strict institutional secret isolation:
 
 ### Pre-Completion Audit Protocol (The 5 Quantitative Validity Pillars)
 Every release and feature commit is audited against the institutional 5-pillar validation standard:
-1. **Pillar 1 — Data Biases & Point-in-Time Correctness:** Strict survivorship bias elimination, point-in-time corporate action adjustments, and zero look-ahead bias.
+1. **Pillar 1 — Data Biases & Point-in-Time Correctness:** Per-rebalance point-in-time index membership (2016–2026 snapshots; 2016-01-01 refused), point-in-time corporate action adjustments, and zero look-ahead bias. Named historical indices without a PIT table are refused.
 2. **Pillar 2 — Execution & Timing Realism:** Next-day Open execution ($T+1$), 20 bps statutory frictions and slippage, and whole-share integer rounding.
 3. **Pillar 3 — Portfolio & Accounting Invariants:** Cash conservation, strict $0 \le \text{Total Allocated} \le \text{Capital}$, and anti-clustering sector caps (max 2 per sector).
 4. **Pillar 4 — Statistical & Experimental Validity:** Deflated Sharpe Ratio (DSR) evaluation, multi-era regime stress testing, and frozen canonical parameters.
@@ -818,6 +801,8 @@ Project MIP follows strict [Semantic Versioning](https://semver.org/) and instit
 
 | Version | Release Date | Key Enhancements & Defect Fixes | Verification Status |
 | :--- | :--- | :--- | :--- |
+| **`v2.4.2`** | 2026-10-24 | **Point-in-time NIFTY500 membership**: 50 full snapshots (2016-01-18 → 2026-09-30), per-rebalance resolution in Python + C kernel, refusal of pre-2016-01-18 starts and 2008/2011; survivorship control (+2.81 pp); stale current-list tables retracted. | **630 passed, 5 skipped, 0 failed** |
+| **`v2.4.1`** | 2026-10-23 | Engine reconciliation, stress-window labelling, survivorship measurement, forensic integrity fixes. | **574 passed, 5 skipped, 0 failed** (pre-PIT baseline) |
 | **`v2.4.0`** | 2026-10-18 | **Institutional Engine & 52 Defect Hardening (3 Continuous Multi-Agent Loops)**: FastDataCache, Risk & Tail Analytics, Menchero Log Linking Factor Attribution, Microstructure Liquidity Modeler, SEBI Pre-Trade Compliance, Interactive HTML Tearsheet, SIMD C99 uint8 Stride & Double Accumulators, 37/37 Real Multi-Variation Sweep passed. | **100% Passed (58 unit tests + 37/37 real sweep, exit code 0)** |
 | **`v2.3.0`** | 2026-10-17 | Universal Benchmark Selection (Scanner, Backtester, Brute Force), Chunked SIMD Streaming Telemetry (No UI Freezes), Dynamic Colab Cockpit. | **100% Passed (346 tests, exit code 0)** |
 | **`v2.2.0`** | 2026-10-17 | Screener Residual Momentum (`use_residual_momentum`), Real-Time EOD Guarantee past calendar boundary (DEF-C03), True NIFTY 500 Benchmark Continuity eliminating pre-2020 collapse (DEF-C04). | **100% Passed (339 tests, exit code 0)** |

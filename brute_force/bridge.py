@@ -210,7 +210,7 @@ class CSimParams(ctypes.Structure):
     ]
 
 
-# 192-byte Tensor Cube Specification matching C99 TensorCube
+# 200-byte Tensor Cube Specification matching C99 TensorCube
 class CTensorCube(ctypes.Structure):
     _fields_ = [
         ("num_dates", ctypes.c_uint32),
@@ -235,6 +235,7 @@ class CTensorCube(ctypes.Structure):
         ("rs_pass_cubes", ctypes.c_void_p),
         ("vol_target_scalar", ctypes.c_void_p),
         ("delivery_veto_plane", ctypes.c_void_p),
+        ("universe_membership_mask", ctypes.c_void_p),
     ]
 
 
@@ -507,6 +508,8 @@ class NativeBruteForceEngine:
         c_cube.rs_pass_cubes = _pin_and_get_ptr(cube.rs_pass_cubes, np.uint8)
         vol_tgt = cube.vol_target_scalar if hasattr(cube, "vol_target_scalar") and cube.vol_target_scalar is not None else None
         c_cube.vol_target_scalar = _pin_and_get_ptr(vol_tgt, np.float32)
+        _membership = getattr(cube, "universe_membership_mask", None)
+        c_cube.universe_membership_mask = _pin_and_get_ptr(_membership, np.uint8)
         deliv_p = cube.delivery_veto_plane if hasattr(cube, "delivery_veto_plane") and cube.delivery_veto_plane is not None else None
         c_cube.delivery_veto_plane = _pin_and_get_ptr(deliv_p, np.uint8)
 

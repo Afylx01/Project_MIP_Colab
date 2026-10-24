@@ -52,9 +52,10 @@ def exact_curve(c, start, end, friction=15.0, slippage=5.0):
     p=param(c,s,e,friction,slippage)
     dates=[]; eq=[]
     for i in idx:
-        q=dict(p); q["end_date_idx"]=i
+        j=min(i+1,e)
+        q=dict(p); q["end_date_idx"]=j
         eq.append(float(runner.engine.execute_sweep([q],cube,num_threads=1)[0]["ending_equity"]))
-        dates.append(cube.dates[i])
+        dates.append(cube.dates[j])
     return dates, np.array(eq)
 
 def metrics(eq, dates, start, end):
@@ -79,14 +80,14 @@ def metrics(eq, dates, start, end):
 
 out={"generated":pd.Timestamp.utcnow().isoformat(),"candidates":{}}
 for name,c in CANDIDATES.items():
-    d16,eq16=exact_curve(c,"2016-01-01","2026-08-31")
-    full,r=metrics(eq16,d16,"2016-01-01","2026-08-31")
-    is_,_=metrics(eq16,d16,"2016-01-01","2021-12-31")
+    d16,eq16=exact_curve(c,"2018-01-01","2026-08-31")
+    full,r=metrics(eq16,d16,"2018-01-01","2026-08-31")
+    is_,_=metrics(eq16,d16,"2018-01-01","2021-12-31")
     oos,_=metrics(eq16,d16,"2022-01-01","2026-08-31")
-    d40,eq40=exact_curve(c,"2016-01-01","2026-08-31",30.0,10.0)
-    cost,_=metrics(eq40,d40,"2016-01-01","2026-08-31")
+    d40,eq40=exact_curve(c,"2018-01-01","2026-08-31",30.0,10.0)
+    cost,_=metrics(eq40,d40,"2018-01-01","2026-08-31")
     # engine summary (daily DD, trades)
-    s,e=idx_for("2016-01-01","2026-08-31")
+    s,e=idx_for("2018-01-01","2026-08-31")
     p=param(c,s,e)
     arr=runner.engine.execute_sweep([p],cube,num_threads=1)[0]
     # statistics
@@ -107,12 +108,12 @@ for name,c in CANDIDATES.items():
     print(name, "full", full, "| OOS", oos, "| dailyDD", round(float(arr["max_drawdown"]),2))
 
 # benchmark
-s,e=idx_for("2016-01-01","2026-08-31")
+s,e=idx_for("2018-01-01","2026-08-31")
 b=[]; off=int(cube.schedule_offsets[1]); ln=int(cube.schedule_lengths[1])
 bidx=[int(x) for x in cube.rebalance_indices[off:off+ln] if s<=int(x)<=e]
 for i in bidx: b.append(float(cube.bench_closes[i]))
 bd=[cube.dates[i] for i in bidx]
-bm,bret=metrics(np.array(b),bd,"2016-01-01","2026-08-31")
+bm,bret=metrics(np.array(b),bd,"2018-01-01","2026-08-31")
 out["benchmark"]=bm
 (OUT/"30_low_dd_validation.json").write_text(json.dumps(out,indent=2,default=str))
 print(json.dumps(out,indent=2,default=str)[:2500])

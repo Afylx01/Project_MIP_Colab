@@ -1,5 +1,11 @@
 # FORENSIC BACKTEST INTEGRITY AUDIT REPORT
 
+> **RETRACTED AS A PERFORMANCE CLAIM (2026-10-24).** The backtest sections of this report used the
+> 2026 NIFTY500 constituent list applied backwards and an older engine build. Their CAGR / Sharpe /
+> drawdown figures are **not reproducible** under the point-in-time `v2.4.2-pit-membership` contract
+> and are withdrawn. The code-defect findings remain valid. Canonical PIT results:
+> `reports/ENGINE_RECONCILIATION.md`.
+
 **Status**: AUDITED WITH CAVEATS (3 WINDOWS NON-VALID)
 **Date**: 2026-10-23 06:38:37 UTC
 **Target Dataset**: NIFTY500 (`data/universe.db`, 2007-01-02 to 2026-10-19)

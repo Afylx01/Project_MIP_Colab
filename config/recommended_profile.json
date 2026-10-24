@@ -1,10 +1,10 @@
 {
   "schema": "mip.recommended_profile.v1",
-  "generated": "2026-10-23",
+  "generated": "2026-10-24",
   "name": "Balanced 50% Buffer",
-  "status": "research recommendation — not investment advice",
+  "status": "research recommendation \u2014 not investment advice",
   "market": "NSE India",
-  "universe": "NIFTY500",
+  "universe": "NIFTY500 point-in-time membership",
   "benchmark": "NIFTY500",
   "rebalance": "monthly",
   "lookback_bars": 315,
@@ -20,27 +20,16 @@
   "friction_bps": 15.0,
   "slippage_bps": 5.0,
   "initial_capital": 1000000.0,
-  "expected_performance_2016_2026": {
-    "cagr_pct": 32.4,
-    "sharpe": 1.2,
-    "sortino": 1.74,
-    "max_drawdown_monthly_pct": -21.36,
-    "max_drawdown_daily_pct": -26.83,
-    "calmar": 1.52,
-    "benchmark_cagr_pct": 13.16,
-    "alpha_annual_pct": 19.8,
-    "beta": 0.76
-  },
   "expected_performance_oos_2022_2026": {
-    "cagr_pct": 28.77,
-    "sharpe": 1.08,
-    "max_drawdown_pct": -18.89,
-    "benchmark_cagr_pct": 10.05,
-    "benchmark_effective_months": 56
+    "cagr_pct": 25.83,
+    "sharpe": 1.0,
+    "max_drawdown_pct": -19.62,
+    "benchmark_cagr_pct": 10.2,
+    "benchmark_effective_months": 57
   },
   "alternatives": {
     "lower_forward_drawdown": {
-      "name": "L6 — lower OOS drawdown",
+      "name": "L6 \u2014 lower OOS drawdown",
       "lookback_bars": 315,
       "ema_trend_span": 200,
       "top_n": 25,
@@ -48,11 +37,20 @@
       "max_per_sector": 3,
       "sizing_mode": "equal_weight",
       "volatility_targeting": true,
-      "expected_2016_2026": {"cagr_pct": 31.4, "sharpe": 1.25, "max_drawdown_monthly_pct": -24.12, "max_drawdown_daily_pct": -28.68},
-      "expected_oos_2022_2026": {"cagr_pct": 29.29, "sharpe": 1.19, "max_drawdown_pct": -16.28}
+      "expected_2018_2026": {
+        "cagr_pct": 24.66,
+        "sharpe": 0.96,
+        "max_drawdown_monthly_pct": -25.38,
+        "max_drawdown_daily_pct": 29.69
+      },
+      "expected_oos_2022_2026": {
+        "cagr_pct": 28.25,
+        "sharpe": 1.19,
+        "max_drawdown_pct": -14.68
+      }
     },
     "capital_preservation": {
-      "name": "L5 — lowest full-period monthly drawdown",
+      "name": "L5 \u2014 lowest full-period monthly drawdown",
       "lookback_bars": 252,
       "ema_trend_span": 200,
       "top_n": 25,
@@ -60,11 +58,20 @@
       "max_per_sector": 1,
       "sizing_mode": "equal_weight",
       "volatility_targeting": false,
-      "expected_2016_2026": {"cagr_pct": 22.76, "sharpe": 0.88, "max_drawdown_monthly_pct": -18.01, "max_drawdown_daily_pct": -33.47},
-      "expected_oos_2022_2026": {"cagr_pct": 14.19, "sharpe": 0.6, "max_drawdown_pct": -10.87}
+      "expected_2018_2026": {
+        "cagr_pct": 17.69,
+        "sharpe": 0.72,
+        "max_drawdown_monthly_pct": -22.09,
+        "max_drawdown_daily_pct": 30.88
+      },
+      "expected_oos_2022_2026": {
+        "cagr_pct": 14.32,
+        "sharpe": 0.62,
+        "max_drawdown_pct": -13.37
+      }
     },
     "higher_cagr": {
-      "name": "L3 — higher CAGR, deeper full-period drawdown",
+      "name": "L3 \u2014 higher CAGR, deeper full-period drawdown",
       "lookback_bars": 315,
       "ema_trend_span": 200,
       "top_n": 25,
@@ -72,29 +79,53 @@
       "max_per_sector": 3,
       "sizing_mode": "equal_weight",
       "volatility_targeting": false,
-      "expected_2016_2026": {"cagr_pct": 32.89, "sharpe": 1.26, "max_drawdown_monthly_pct": -24.55, "max_drawdown_daily_pct": -29.77},
-      "expected_oos_2022_2026": {"cagr_pct": 29.56, "sharpe": 1.15, "max_drawdown_pct": -17.25}
+      "expected_2018_2026": {
+        "cagr_pct": 26.75,
+        "sharpe": 1.01,
+        "max_drawdown_monthly_pct": -25.21,
+        "max_drawdown_daily_pct": 29.3
+      },
+      "expected_oos_2022_2026": {
+        "cagr_pct": 28.47,
+        "sharpe": 1.15,
+        "max_drawdown_pct": -15.55
+      }
     }
   },
   "random_test_summary": {
-    "random_windows_200_median_cagr": 40.49,
+    "random_windows_200_median_cagr": 36.71,
     "random_windows_200_pct_beat_benchmark": 97.0,
-    "random_windows_valid_158_median_cagr": 44.16,
-    "random_windows_valid_158_pct_beat_benchmark": 98.7,
-    "random_windows_data_insufficient_42_median_cagr": 20.26,
-    "random_windows_modern_median_cagr": 35.15,
-    "random_perturbations_486_oos_median_cagr": 23.12,
-    "random_cost_regimes_200_median_cagr": 31.5,
+    "random_windows_valid_200_median_cagr": 36.71,
+    "random_perturbations_486_oos_median_cagr": 21.58,
+    "random_cost_regimes_200_median_cagr": 24.0,
     "retracted": [
       "random_universe_subsets_5 (no generator under tag)",
       "random_selection_ranking_edge (no generator under tag)"
     ]
   },
   "caveats": [
-    "No historical point-in-time constituents before Oct 2026; measured survivorship overstatement is 1.51 pp CAGR (all-symbols vs survivors, same engine/config).",
-    "DSR with 8000 trials is 0.42; the edge is not proof against exhaustive data mining.",
-    "Random 2-5 year windows had a median daily max drawdown of 25.3%; only 20% stayed under 20% (9.5% of coverage-valid windows).",
-    "2008 and 2011 stress windows are DATA_INSUFFICIENT (14.8% and 16.2% of current NIFTY500 constituents have the required history) and are excluded from headline claims.",
-    "Run the liquidity and pre-trade compliance engines before deploying real capital."
-  ]
+    "NIFTY500 membership is point-in-time (50 snapshots, 2016-01-18 to 2026-09-30); a 2016-01-01 start is refused and the canonical period starts in 2018 (2017 is runnable at 305 eligible but outside the pre-registered window).",
+    "Price-history completeness: 377 of 501 2018 members map to a DB series and 356 have 252 bars (453/434 by 2024; 496 mapped by 2026).",
+    "DSR with 8000 trials is 0.095; the edge is not proof against exhaustive data mining.",
+    "Random 2-5 year windows had a median daily max drawdown of 25.45%; only 3.5% stayed under 20%.",
+    "Current-list look-ahead control (same engine/config/dates, 2026 NIFTY500 list) overstates CAGR by 2.81 pp (25.75% vs 22.94%).",
+    "2018 was a -19.68% loss vs -5.78% for the index; do not treat the strategy as a crisis hedge.",
+    "Run the liquidity and pre-trade compliance engines before deploying real capital.",
+    "2008 and 2011 are DATA_INSUFFICIENT: no PIT snapshot predates 2016, and only 94 (8.7%) / 106 (9.8%) of 1,083 DB symbols have 252 bars by those year-ends."
+  ],
+  "period": {
+    "start": "2018-01-01",
+    "end": "2026-08-31"
+  },
+  "expected_performance_2018_2026": {
+    "cagr_pct": 24.97,
+    "sharpe": 0.92,
+    "sortino": 1.21,
+    "max_drawdown_monthly_pct": -27.1,
+    "max_drawdown_daily_pct": -27.86,
+    "calmar": 0.92,
+    "benchmark_cagr_pct": 10.85,
+    "alpha_annual_pct": 15.7,
+    "beta": 0.72
+  }
 }

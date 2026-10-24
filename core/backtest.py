@@ -17,7 +17,7 @@ import math
 import json
 import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 import pandas as pd
 import numpy as np
 
@@ -28,6 +28,12 @@ from .data_engine import (
     load_symbol_sector_map,
 )
 from .portfolio import PortfolioManager, normalize_sector
+from .universe_policy import (
+    MIN_ELIGIBLE_SYMBOLS,
+    check_breadth,
+    min_pit_eligible,
+    resolve_universe,
+)
 
 
 class LightweightBacktester:
@@ -108,7 +114,8 @@ class LightweightBacktester:
         risk_per_trade_pct: Optional[float] = None,
         allow_research_overrides: bool = False,
         universe_mode: Optional[str] = None,
-        strict_point_in_time: bool = False,
+        explicit_symbols: Optional[Sequence[str]] = None,
+        strict_point_in_time: bool = True,  # deprecated: historical index runs are always strict
     ) -> Dict:
         """
         Runs historical monthly rebalance backtest with t+1 Open execution,
@@ -116,11 +123,12 @@ class LightweightBacktester:
         max_per_sector concentration hard cap, and configurable sizing mode.
         Defaults to production-authoritative 'atr_risk_parity'.
 
-        universe_mode: "ALL" (default, full database) or any index name. When an
-        index is selected, point-in-time constituents are used if a snapshot exists
-        on/before start_date; otherwise current constituents are used and the
-        survivorship-bias risk is flagged in the result. strict_point_in_time=True
-        raises instead of falling back.
+        universe_mode: "ALL" (full database cross-section) or a named index. A
+        named index is resolved to point-in-time membership on each rebalance
+        date. A named index without a PIT table, or a window with insufficient
+        PIT breadth, is refused — there is no current-constituent fallback.
+        strict_point_in_time is retained for API compatibility; historical
+        index runs are always strict.
         """
         if not math.isfinite(initial_capital) or initial_capital <= 0:
             raise ValueError(f"INVALID_CAPITAL: initial_capital must be a positive finite number, got {initial_capital}")
@@ -140,44 +148,26 @@ class LightweightBacktester:
                 f"Resolved value is {risk_per_trade_pct}%. Research overrides require allow_research_overrides=True."
             )
 
-        # Resolve the requested universe. "ALL" keeps the historical behaviour of
-        # screening the full database; an index name filters to its constituents.
-        universe_label = str(universe_mode or "ALL").strip().upper()
-        universe_symbols: Optional[List[str]] = None
-        universe_point_in_time = False
-        survivorship_bias_risk = False
-        if universe_label not in ("", "ALL", "MASTER", "PIT"):
-            pit_symbols = None
-            try:
-                from brute_force.cube_builder import load_point_in_time_constituents
-                pit_symbols = load_point_in_time_constituents(
-                    universe_label, as_of_date=start_date, base_dir=self.base_dir
-                )
-            except Exception:
-                pit_symbols = None
-            if pit_symbols:
-                universe_symbols = sorted(pit_symbols)
-                universe_point_in_time = True
-            else:
-                from .data_engine import load_universe_constituents
-                current_symbols = load_universe_constituents(universe_label)
-                if current_symbols:
-                    if strict_point_in_time:
-                        raise ValueError(
-                            f"NO_POINT_IN_TIME_SNAPSHOT: no constituent snapshot on or before {start_date} "
-                            f"for universe '{universe_label}'. Refusing to fall back to current constituents."
-                        )
-                    universe_symbols = sorted(current_symbols)
-                    survivorship_bias_risk = True
-                    self.log(
-                        f"WARNING: No point-in-time snapshot for {universe_label} on/before {start_date}; "
-                        f"using {len(universe_symbols)} current constituents. Survivorship bias risk flagged."
-                    )
-                else:
-                    self.log(f"WARNING: Universe '{universe_label}' unresolved; falling back to ALL symbols.")
-                    universe_label = "ALL"
+        # Resolve the requested universe. ALL is the full database cross-section
+        # (delisted names included). A named index is resolved from PIT snapshots;
+        # there is no current-list fallback because that would be survivorship/
+        # look-ahead biased. The live scanner is the only component allowed to use
+        # the latest constituents.
+        policy = resolve_universe(
+            universe_mode, start_date, self.base_dir, explicit_symbols=explicit_symbols,
+            end_date=end_date,
+        )
+        universe_label = str(policy["label"])
+        universe_symbols: Optional[List[str]] = policy["symbols"]  # type: ignore[assignment]
+        universe_source = str(policy["source"])
+        pit_index = policy.get("pit_index")
+        universe_point_in_time = bool(pit_index)
+        survivorship_bias_risk = bool(policy["survivorship_bias_risk"])
+        data_completeness_risk = bool(policy["data_completeness_risk"])
+        if universe_symbols is not None:
+            self.log(f"Using explicit research universe: {len(universe_symbols)} symbols.")
         else:
-            universe_label = "ALL"
+            self.log("Using ALL symbols (full delisted-inclusive cross-section).")
 
         mode_str = f"Random Selection (Seed {seed})" if random_selection else "Volar Momentum Ranking"
         self.log(f"Running backtest {start_date} to {end_date} (Top {top_n}, Mode: {mode_str}, Max/Sector: {max_per_sector}, Sizing: {sizing_mode}, Universe: {universe_label})...")
@@ -205,6 +195,14 @@ class LightweightBacktester:
             valid_dates_by_symbol = c.get("valid_dates_by_symbol", {})
             calendar_filtered_dates = c.get("calendar_filtered_dates", 0)
             universe_size = c.get("universe_size", 0)
+            eligible_symbols = c.get("eligible_symbols", 0)
+            if pit_index and eligible_symbols < MIN_ELIGIBLE_SYMBOLS:
+                raise ValueError(
+                    f"INSUFFICIENT_PIT_BREADTH: only {eligible_symbols} point-in-time members of "
+                    f"'{pit_index}' have the required 252-bar history on {start_date}; minimum is "
+                    f"{MIN_ELIGIBLE_SYMBOLS}."
+                )
+            check_breadth(eligible_symbols, universe_source)
         else:
             self.log(f"Loading bars from SQLite ({warmup_str} to {end_date})...")
             bars = load_bars(start_date=warmup_str, end_date=end_date, symbols=universe_symbols)
@@ -331,6 +329,29 @@ class LightweightBacktester:
                 valid_dates_by_symbol[str(sym)] = sorted(g["date"].unique())
             universe_size = int(bars["symbol"].nunique())
 
+            # Breadth gate: refuse a cross-sectional run when too few symbols
+            # have the history the strategy needs. This is what makes 2008/2011
+            # fail closed instead of producing a misleading "crisis" number.
+            warm_counts = bars[bars["date"] <= start_date].groupby("symbol").size()
+            if pit_index:
+                from .pit_membership import identity_map, members_db_as_of
+                _idmap = identity_map(self.base_dir)
+                _members = members_db_as_of(
+                    str(pit_index), start_date, self.base_dir,
+                    symbols=list(warm_counts.index), identity=_idmap,
+                )
+                eligible_symbols = int(sum(1 for s in _members if warm_counts.get(s, 0) >= 252))
+                _min_pit = min_pit_eligible(len(_members))
+                if eligible_symbols < _min_pit:
+                    raise ValueError(
+                        f"INSUFFICIENT_PIT_BREADTH: only {eligible_symbols} point-in-time members of "
+                        f"'{pit_index}' have the required 252-bar history on {start_date}; minimum is "
+                        f"{_min_pit}. Start later or repair the price history."
+                    )
+            else:
+                eligible_symbols = int((warm_counts >= 252).sum())
+                check_breadth(eligible_symbols, universe_source)
+
             self._prepared_cache = {
                 "bars_by_date": bars_by_date,
                 "open_by_date": open_by_date,
@@ -344,6 +365,7 @@ class LightweightBacktester:
                 "valid_dates_by_symbol": valid_dates_by_symbol,
                 "calendar_filtered_dates": calendar_filtered_dates,
                 "universe_size": universe_size,
+                "eligible_symbols": eligible_symbols,
             }
             self._prepared_cache_key = cache_key
 
@@ -358,6 +380,25 @@ class LightweightBacktester:
 
         if len(rebalance_signal_dates) < 2:
             return {"error": "Insufficient rebalance dates in range"}
+
+        # Per-rebalance point-in-time membership. A symbol may enter/leave the
+        # index between rebalances; selection uses the snapshot on the signal
+        # date, and a holding that leaves is exited at the next rebalance.
+        pit_members_by_date = {}
+        if pit_index:
+            from .pit_membership import identity_map, members_db_as_of
+            _idmap = identity_map(self.base_dir)
+            _pool = list(universe_symbols or [])
+            for _d in rebalance_signal_dates:
+                pit_members_by_date[_d] = members_db_as_of(
+                    str(pit_index), _d, self.base_dir, symbols=_pool, identity=_idmap
+                )
+        pit_members_start = (
+            len(pit_members_by_date[rebalance_signal_dates[0]]) if pit_index else None
+        )
+        pit_members_end = (
+            len(pit_members_by_date[rebalance_signal_dates[-1]]) if pit_index else None
+        )
 
         # State tracking
         cash = initial_capital
@@ -409,10 +450,13 @@ class LightweightBacktester:
 
             # 1. EVALUATE EXITS FOR CURRENT HOLDINGS (Rank 40 Exit Buffer & Trend Rules)
             retained_holdings = {}
+            pit_members = pit_members_by_date.get(signal_date) if pit_index else None
             if current_holdings:
                 sig_slice = bars_by_date.get(signal_date, pd.DataFrame())
                 rank_map = {}
                 sym_metrics = {}
+                if pit_members is not None and not sig_slice.empty:
+                    sig_slice = sig_slice[sig_slice["symbol"].isin(pit_members)]
                 if not sig_slice.empty:
                     q_cands = sig_slice[sig_slice["pass_all"]].sort_values(by="volar", ascending=False)
                     rank_map = {sym: r + 1 for r, sym in enumerate(q_cands["symbol"].tolist())}
@@ -440,7 +484,9 @@ class LightweightBacktester:
                     rank = rank_map.get(sym, 999999)
 
                     exit_reason = None
-                    if m is None or m["close"] <= 0:
+                    if pit_members is not None and sym not in pit_members:
+                        exit_reason = "INDEX_REMOVAL"
+                    elif m is None or m["close"] <= 0:
                         exit_reason = "NO_DATA"
                     elif m["close"] < 0.80 * m["high_252"]:
                         exit_reason = "STOP_52W_HIGH_RETRACEMENT"
@@ -516,6 +562,8 @@ class LightweightBacktester:
 
             if open_slots > 0 and is_bull and not sig_slice.empty:
                 candidates = sig_slice[sig_slice["pass_all"]].copy()
+                if pit_members is not None:
+                    candidates = candidates[candidates["symbol"].isin(pit_members)]
                 candidates = candidates[~candidates["symbol"].isin(set(current_holdings.keys()))]
                 if random_selection:
                     rnd_seed = (seed + i) if seed is not None else None
@@ -739,9 +787,17 @@ class LightweightBacktester:
             "return_type": "price_appreciation_adjusted",
             "universe_mode": universe_label,
             "universe_size": universe_size,
+            "universe_source": universe_source,
+            "eligible_symbols": int(eligible_symbols),
+            "min_eligible_symbols": int(MIN_ELIGIBLE_SYMBOLS),
             "universe_point_in_time": bool(universe_point_in_time),
+            "pit_index": str(pit_index) if pit_index else None,
+            "pit_source": "nse-historical-membership (CC BY 4.0)" if pit_index else None,
+            "pit_members_start": pit_members_start,
+            "pit_members_end": pit_members_end,
             "survivorship_bias_risk": bool(survivorship_bias_risk),
-            "strict_point_in_time": bool(strict_point_in_time),
+            "data_completeness_risk": bool(data_completeness_risk),
+            "strict_point_in_time": True,
             "calendar_filtered_dates": int(calendar_filtered_dates),
             "deferred_fills": int(deferred_fills),
             "total_trades": total_closed_trades,

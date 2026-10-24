@@ -1156,7 +1156,7 @@ def run_forensic_audit(output_dir=None):
 
     runner = BruteForceCampaignRunner()
     print("[1/4] Ensuring NIFTY500 3D Tensor Cube...")
-    cube = runner.ensure_cube(universe_name="NIFTY500", benchmark="NIFTY500")
+    cube = runner.ensure_cube(universe_name="ALL", benchmark="NIFTY500")
 
     # -------------------------------------------------------------
     # TASK 2: DEDUPLICATION AUDIT (All distinct signatures exposed)

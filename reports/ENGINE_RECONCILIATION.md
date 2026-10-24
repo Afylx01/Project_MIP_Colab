@@ -1,71 +1,93 @@
-# Engine reconciliation — 2026-10-23
+# Engine reconciliation — PIT membership
 
-Generated 2026-10-23T20:27:10Z. Period 2016-01-01..2026-08-31; costs 15 bps friction + 5 bps slippage.
+Generated 2026-10-24T13:21:30Z. Period 2018-01-01..2026-08-31; costs 15 bps friction + 5 bps slippage.
 
-## Canonical baselines (both NIFTY500)
+## Policy
 
-- **Production backtest** (Python, canonical): CAGR **30.01%**, Sharpe 1.13, MaxDD -20.47%, 604 trades
-- **Strategy-engine baseline** (C99 kernel, config D): CAGR **27.39%**, Sharpe 0.91, daily MaxDD 38.32%, 595 trades
-- Both universes are NIFTY500 current constituents; both carry `survivorship_bias_risk=True`.
+- Historical index universe: **NIFTY500 point-in-time membership**, resolved per rebalance date.
+- A 2016-01-01 start is refused: no snapshot exists on or before it. The canonical window starts in 2018, the first year with ≥70% tradable coverage (356 eligible of 377 mapped). 2017 is runnable (305 eligible, verified) but is outside the pre-registered window.
+- Live scanner: latest constituents (the only component allowed to use them).
+- Breadth gate: at least **100** eligible PIT members (scaled down for small indices).
+
+## Canonical baselines (NIFTY500 PIT, 2018–2026)
+
+- **Production backtest** (Python): CAGR **22.94%**, Sharpe 0.82, MaxDD -23.66%, 492 trades.
+- **Strategy-engine baseline** (C99 kernel, config D): CAGR **23.70%**, Sharpe 0.80, daily MaxDD 26.44%, 484 trades.
 
 ## Every published (engine, universe, config)
 
 | Engine | Universe | Config | Method | CAGR % | Sharpe | MaxDD % | DD basis | Trades | Status |
 |---|---|---|---|---:|---:|---:|---|---:|---|
-| C99 kernel | NIFTY500 | D | continuous | 27.39 | 0.91 | 38.32 | daily intra-period | 595 | REPRODUCED |
-| C99 kernel | NIFTY500 | D | monthly-sampled | 26.81 | 0.98 | -20.69 | monthly rebalance NAV | 595 | REPRODUCED |
-| C99 kernel | NIFTY500 | A | continuous | 33.12 | 1.17 | 26.83 | daily intra-period | 674 | REPRODUCED |
-| C99 kernel | NIFTY500 | A | monthly-sampled | 32.4 | 1.2 | -21.36 | monthly rebalance NAV | 674 | REPRODUCED |
-| C99 kernel | NIFTY500 | B | continuous | 33.18 | 1.22 | 30.07 | daily intra-period | 881 | REPRODUCED |
-| C99 kernel | NIFTY500 | C | continuous | 37.69 | 1.05 | 32.37 | daily intra-period | 673 | REPRODUCED |
-| C99 kernel | NIFTY500 | E | continuous | 32.85 | 0.95 | 30.43 | daily intra-period | 1340 | REPRODUCED |
-| C99 kernel | NIFTY750 | D | continuous | 28.13 | 0.92 | 34.63 | daily intra-period | 639 | REPRODUCED |
-| C99 kernel | ALL | D | continuous | 27.0 | 0.89 | 37.95 | daily intra-period | 689 | REPRODUCED |
-| C99 kernel | SURVIVORS | D | continuous | 28.51 | 0.95 | 35.63 | daily intra-period | 674 | REPRODUCED |
-| Python LightweightBacktester | NIFTY500 | D | continuous | 30.01 | 1.13 | -20.47 | monthly | 604 | REPRODUCED |
-| Python LightweightBacktester | ALL | D | continuous | 29.59 | 1.06 | -23.65 | monthly | 703 | REPRODUCED |
+| C99 kernel | NIFTY500 (PIT) | D | continuous | 23.70 | 0.80 | 26.44 | daily intra-period | 484 | REPRODUCED |
+| C99 kernel | NIFTY500 (PIT) | D | monthly-sampled | 23.19 | 0.83 | -24.40 | monthly rebalance NAV | 484 | REPRODUCED |
+| C99 kernel | NIFTY500 (PIT) | A | continuous | 25.52 | 0.90 | 27.86 | daily intra-period | 534 | REPRODUCED |
+| C99 kernel | NIFTY500 (PIT) | A | monthly-sampled | 24.97 | 0.92 | -27.10 | monthly rebalance NAV | 534 | REPRODUCED |
+| C99 kernel | NIFTY500 (PIT) | B | continuous | 26.29 | 0.96 | 27.34 | daily intra-period | 702 | REPRODUCED |
+| C99 kernel | NIFTY500 (PIT) | C | continuous | 24.61 | 0.79 | 31.16 | daily intra-period | 512 | REPRODUCED |
+| C99 kernel | NIFTY500 (PIT) | E | continuous | 24.50 | 0.89 | 26.59 | daily intra-period | 1045 | REPRODUCED |
+| C99 kernel | ALL (reference) | D | continuous | 24.70 | 0.80 | 30.38 | daily intra-period | 551 | REPRODUCED |
+| C99 kernel | NIFTY750 | D | — | — | — | — | — | — | REFUSED |
+| Python LightweightBacktester | NIFTY750 | D | — | — | — | — | — | — | REFUSED |
+| Python LightweightBacktester | ALL (full cross-section, legacy) | D | continuous | 29.59 | 1.06 | -23.65 | monthly | 703 | RETIRED_LEGACY_NON_PIT |
+| C99 kernel | NIFTY750 (current-list, historical) | D | monthly | 29.28 | 0.96 | -34.63 | monthly | 652 | RETIRED_SURVIVORSHIP_BIAS |
+| Python LightweightBacktester | NIFTY500 (current 2026 list, 2016 start) | D | continuous | 30.01 | 1.13 | -20.47 | monthly | 604 | RETIRED_SURVIVORSHIP_BIAS |
+| Python LightweightBacktester | NIFTY500 (PIT) | D | continuous | 22.94 | 0.82 | -23.66 | monthly | 492 | REPRODUCED |
+| Python LightweightBacktester | NIFTY500 (current 2026 list, biased control) | D | continuous | 25.75 | 0.93 | -20.96 | monthly | 495 | BIASED_CONTROL |
 
-## §5.5 vs §9 D — same config, different numbers
+`RETIRED_LEGACY_NON_PIT` rows are old numbers that are not reproducible under the PIT contract (the 04b row starts 2016-01-01, before the first snapshot, and holds the full ALL cross-section rather than an index). `RETIRED_SURVIVORSHIP_BIAS` rows applied a 2026 constituent list backwards. Both are listed so they are explicitly retired rather than silently deleted, and neither is part of the canonical contract. `REFUSED` rows are named indices or windows with no PIT table/breadth.
 
-Both rows are NIFTY500, config D (LB252/EMA200/top20/buf40/cap2/ATR), 2016-01-01→2026-08-31.
+## Continuous vs monthly-sampled (same config, same PIT universe)
 
-| Quantity | §5.5 (continuous kernel) | §9 D (monthly-sampled) | Mechanism |
+| Quantity | Continuous | Monthly-sampled | Mechanism |
 |---|---:|---:|---|
-| CAGR | 27.39% | 26.81% | same ending equity; sessions/252 vs months/12 |
-| Ending equity | ₹12,354,160 | ₹12,354,160 | identical path |
-| Trades | 595 | 595 | identical selection |
-| Sharpe | 0.91 | 0.98 (T+1: 0.93) | **INCOMPLETE**: kernel internal series not exposed; T+1 explains most of the gap |
-| MaxDD | 38.32% daily | -20.69% monthly | daily intra-period vs monthly sampling |
+| CAGR | 23.70% | 23.19% | identical ending equity; sessions/252 vs months/12 |
+| Ending equity | ₹5,988,673 | ₹5,988,673 | identical path |
+| Trades | 484 | 484 | identical selection |
+| Sharpe | 0.80 | 0.83 (T+1 0.82) | INCOMPLETE: kernel internal series not exposed |
+| MaxDD | 26.44% daily | -24.40% monthly | daily intra-period vs monthly sampling |
 
-The previously published §9 D value **28.69%** was equal-weight: the harness passed integer code `0`, and `bridge.py:431` treated any non-string code as equal-weight. The corrected ATR monthly value is **26.81%**; the continuous ATR value is **27.39%**. The CAGR residual is annualization; the drawdown residual is daily-vs-monthly sampling. The Sharpe sub-gap is **INCOMPLETE**, not attributed.
+## Stress windows — PIT breadth-gated
 
-## Stress windows — labelled, not assumed
+| Window | PIT members | Eligible | Raw DB 252-bar (at window end) | Label | Strategy total (config A) | Benchmark total | Aligned | Headline? |
+|---|---:|---:|---:|---|---:|---:|---|---|
+| gfc_2008 | 0 | 0 | 94/1083 (8.68%) | **DATA_INSUFFICIENT** | —% | —% | False | False |
+| euro_2011 | 0 | 0 | 106/1083 (9.79%) | **DATA_INSUFFICIENT** | —% | —% | False | False |
+| midcap_2018 | 377 | 356 | 757/1083 (69.9%) | **VALID** | -19.68% | -5.78% | True | True |
+| covid_2020 | 401 | 378 | 801/1083 (73.96%) | **VALID** | -3.4% | -22.46% | True | True |
+| full_2018_2026 | 377 | 356 | 1006/1083 (92.89%) | **VALID** | 577.5% | 142.08% | True | True |
 
-| Window | Sessions | 252-bar coverage | Label | Strategy total | Benchmark total | Aligned | Headline? |
-|---|---:|---:|---|---:|---:|---|---|
-| gfc_2008 | 246 | 14.77% (74/501) | **DATA_INSUFFICIENT** | -6.67% | -57.13% | True | False |
-| euro_2011 | 246 | 16.17% (81/501) | **DATA_INSUFFICIENT** | -17.67% | -27.19% | True | False |
-| midcap_2018 | 246 | 68.66% (344/501) | **VALID** | -2.88% | -3.38% | True | True |
-| covid_2020 | 100 | 72.26% (362/501) | **VALID** | -3.75% | -20.77% | True | True |
-| full_2016_2026 | 2637 | 94.01% (471/501) | **VALID** | 1850.5% | 269.91% | True | True |
+Stress-window strategy totals and benchmark totals use the recommended **config A** monthly validation harness (`21_strategy_validation.json`, same PIT membership and effective windows); the canonical config-D production result is in the baseline section above and is not a stress-window total.
 
-The 2008 and 2011 windows fail the coverage rule (≈15% and ≈16% of today's NIFTY500 constituents have the required 252-bar history). Any drawdown claim that depends on them is retracted from headline status and retained only as a labelled data-insufficiency note.
+Under-covered windows are refused by the engine, not merely labelled. The raw DB column is the independent check: at 2008-12-31 only 94 of 1,083 symbols (8.7%) have 252 bars; at 2011-12-31, 106 (9.8%). The shortfall is the documented data artifact, so 2008/2011 are DATA_INSUFFICIENT and no headline claim depends on them.
 
-**2008 denominator:** 76 DB symbols have any 2008 bar (7.0% of the 1,083-symbol database), but only 74 have the required 252-bar history and are current NIFTY500 members (14.8% of 501). The "~75 symbols / 7%" caveat is therefore correct against the full database; against the declared universe it is 14.8%. Both fail the 50% rule.
+## Survivorship / look-ahead control
 
-## Survivorship bias — one number from a real run
+Same production engine, config D, dates and costs; only membership differs.
 
-Same engine, same config D, same dates. ALL symbols: **1083**; still quoting after 2026-08-31: **1033** (50 dead names).
+| Run | Universe | CAGR | Sharpe | MaxDD | Trades |
+|---|---|---:|---:|---:|---:|
+| PIT (canonical) | 553 symbols, per-rebalance | 22.94% | 0.82 | -23.66% | 492 |
+| Current 2026 list (biased control) | 487 symbols | 25.75% | 0.93 | -20.96% | 495 |
 
-- CAGR ALL: **27.00%**
-- CAGR survivors only: **28.51%**
-- Survivorship overstatement: **1.51 pp CAGR**
-- NIFTY500-vs-ALL (index membership + breadth, not survivorship alone): **0.39 pp**
+**Current-list look-ahead overstatement: +2.81 pp CAGR.**
+
+## Provenance
+
+| Item | Value |
+|---|---|
+| Primary membership source | niftyhistory.in full Nifty500 snapshots |
+| Secondary cross-check | aditya-jha/nse-historical-membership (CC BY 4.0) |
+| Snapshot coverage | 2016-01-18 onward; canonical 2018-2026 |
+| Resolution | Per rebalance date; dead names included while members |
+| Verification | reports/PIT_MEMBERSHIP_VERIFICATION.md |
 
 ## Reproduction
 
 ```bash
-python3 reports/analysis_evidence/validate_candidates.py   # 21, aligned windows
-python3 reports/analysis_evidence/summarize_candidates.py  # 22, continuous engine
-python3 reports/analysis_evidence/reconcile_engines.py     # 33 + this report
+python3 scripts/build_pit_constituents.py
+python3 reports/analysis_evidence/canonical_backtest.py
+python3 reports/analysis_evidence/validate_candidates.py
+python3 reports/analysis_evidence/summarize_candidates.py
+python3 reports/analysis_evidence/reconcile_engines.py
+python3 reports/analysis_evidence/label_random_windows.py
 ```

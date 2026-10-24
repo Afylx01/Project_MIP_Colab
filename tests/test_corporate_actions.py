@@ -19,6 +19,7 @@ class TestCorporateActions(unittest.TestCase):
         with patch("core.analytical_price.AnalyticalPriceEngine", side_effect=Exception("DB connection simulated failure")):
             cube = build_tensor_cube(
                 universe_name="NIFTY500",
+                allow_current_constituents=True,
                 start_date="2020-01-01",
                 end_date="2020-05-29"
             )

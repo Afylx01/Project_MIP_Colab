@@ -110,13 +110,13 @@ def test_fix04_05_06_backtester_metadata_calendar_and_delisting():
         shutil.rmtree(out, ignore_errors=True)
 
 
-def test_fix05_strict_point_in_time_raises():
+def test_fix05_unknown_index_refused_without_pit():
     from core.backtest import LightweightBacktester
 
     bt = LightweightBacktester(PROJECT_ROOT)
-    with pytest.raises(ValueError, match="NO_POINT_IN_TIME_SNAPSHOT"):
+    with pytest.raises(ValueError, match="POINT_IN_TIME"):
         bt.run(start_date="2026-01-01", end_date="2026-08-31", top_n=5,
-               universe_mode="NIFTY500", strict_point_in_time=True)
+               universe_mode="NIFTY_NOT_REAL", strict_point_in_time=True)
 
 
 @pytest.mark.integration

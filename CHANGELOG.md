@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.2] - 2026-10-24
+
+### Added
+- **Point-in-time NIFTY500 membership**: `core/pit_membership.py` resolves membership per rebalance from 50 full
+  snapshots (`data/pit_constituents/`, 2016-01-18 → 2026-09-30), mapped to DB symbols and cross-checked against the
+  CC BY 4.0 `nse-historical-membership` interval table (`reports/PIT_MEMBERSHIP_VERIFICATION.md`).
+- **Universe policy**: `core/universe_policy.py` refuses named indices without a PIT table (e.g. NIFTY750) and refuses
+  windows with insufficient PIT breadth (2008, 2011, and starts before 2016-01-18).
+- **Kernel membership mask**: `universe_membership_mask` in the C cube/kernel; non-members are never selected and an
+  index-removed holding is exited at the next rebalance.
+- **Survivorship control**: same engine/config/dates on today's 2026 list → 25.75% CAGR vs PIT 22.94% = **+2.81 pp**
+  look-ahead overstatement (`reports/analysis_evidence/35_current_list_control.json`).
+- Regression coverage: `tests/test_pit_kernel_membership.py` (4) and `tests/test_universe_bias_policy.py` (13).
+
+### Changed
+- Canonical contract is Python `LightweightBacktester`, config D, NIFTY500 PIT, 2018-01-01 → 2026-08-31:
+  **22.94% CAGR / 0.82 Sharpe / −23.66% monthly (−27.68% daily) / 492 trades**.
+- Every stress window is labelled `VALID` or `DATA_INSUFFICIENT`; 2008/2011 are refused (raw DB breadth 94/1,083
+  and 106/1,083 symbols with 252 bars).
+- Engine reconciliation now includes raw DB coverage and the survivorship control
+  (`reports/ENGINE_RECONCILIATION.md`, `33_reconciliation.json`).
+
+### Retracted
+- 2016–2026/2008–2026 current-constituent performance tables (README) and the ablation/full-variable/forensic
+  scorecards are withdrawn as performance claims; they remain as historical records with retraction banners.
+
+### Verification
+- `python3 -m pytest -q` → 630 passed, 5 skipped, 0 failed (868.76s).
+- `tests/conftest.py` restores tracked scanner deliverables after the session, so a full run leaves the tree clean.
+
+## [2.4.1] - 2026-10-23
+
+### Fixed
+- Forensic-integrity remediation: fail-closed DSR, profit-factor consistency, verdict divergence, JSON safety,
+  window resolver hardening.
+- Engine reconciliation, explicit stress-window labelling, and a first survivorship measurement.
+
+### Verification
+- `python3 -m pytest -q` → 574 passed, 5 skipped, 0 failed (pre-PIT baseline).
+
+---
+
 ## [2.4.0] - 2026-10-18
 
 ### Added

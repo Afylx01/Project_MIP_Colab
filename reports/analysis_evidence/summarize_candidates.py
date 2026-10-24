@@ -27,7 +27,7 @@ cube = runner.ensure_cube(universe_name="NIFTY500", benchmark="NIFTY500")
 rows = {}
 for name, cfg in CANDIDATES.items():
     res = runner.run_custom_backtest(
-        start_date="2016-01-01", end_date="2026-08-31",
+        start_date="2018-01-01", end_date="2026-08-31",
         universe_name="NIFTY500", benchmark="NIFTY500", schedule="monthly", **cfg,
     )
     rows[name] = {

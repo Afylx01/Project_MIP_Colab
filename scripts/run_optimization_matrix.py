@@ -249,7 +249,7 @@ def main():
 
     # 1. Build Full-History In-Memory Tensor Cube
     runner = BruteForceCampaignRunner()
-    cube = runner.ensure_cube(start_date="2007-01-02", end_date="2026-10-09", universe_name="NIFTY500")
+    cube = runner.ensure_cube(start_date="2007-01-02", end_date="2026-10-09", universe_name="ALL")
 
     # -------------------------------------------------------------
     # EXECUTE TIER 1: Baseline Macro Eras x Rebalance Schedules

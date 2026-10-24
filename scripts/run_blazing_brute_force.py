@@ -32,7 +32,7 @@ def main():
                         help="Execution mode: baseline, tier1 (35 era/schedule runs), tier2 (ablation), or comprehensive grid")
     parser.add_argument("--schedule", choices=["weekly", "monthly", "quarterly", "half_yearly", "yearly"],
                         default="monthly", help="Rebalance schedule frequency")
-    parser.add_argument("--universe", type=str, default="NIFTY500", help="Constituent universe name (default NIFTY500)")
+    parser.add_argument("--universe", type=str, default="ALL", help="Universe: ALL (default, delisted-inclusive) or explicit symbols; named indices are refused for historical runs")
     parser.add_argument("--start-date", type=str, default="2016-01-01", help="Backtest start date (YYYY-MM-DD)")
     parser.add_argument("--end-date", type=str, default="2026-08-31", help="Backtest end date (YYYY-MM-DD)")
     parser.add_argument("--top-n", type=int, default=20, help="Portfolio Top N stocks (e.g. 5, 10, 15, 20)")

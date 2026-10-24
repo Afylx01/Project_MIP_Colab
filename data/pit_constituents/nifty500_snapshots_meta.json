@@ -1,0 +1,325 @@
+{
+  "source": "https://niftyhistory.in/",
+  "source_endpoint": "/download?index_type=Nifty 500",
+  "retrieved_at": "2026-10-24T07:14:44.935513+00:00",
+  "files": [
+    "niftyhistory_500_2016.csv",
+    "niftyhistory_500_2017.csv",
+    "niftyhistory_500_2018.csv",
+    "niftyhistory_500_2019.csv",
+    "niftyhistory_500_2020.csv",
+    "niftyhistory_500_2021.csv",
+    "niftyhistory_500_2022.csv",
+    "niftyhistory_500_2023.csv",
+    "niftyhistory_500_2024.csv",
+    "niftyhistory_500_2025.csv",
+    "niftyhistory_500_2026.csv"
+  ],
+  "snapshots": 50,
+  "api_symbols": 782,
+  "mapped_to_db": 20353,
+  "unmapped": 4696,
+  "per_date": [
+    {
+      "snapshot_date": "2016-01-18",
+      "api_symbols": 500,
+      "mapped": 358,
+      "unique_db": 354
+    },
+    {
+      "snapshot_date": "2016-04-01",
+      "api_symbols": 501,
+      "mapped": 364,
+      "unique_db": 360
+    },
+    {
+      "snapshot_date": "2016-04-29",
+      "api_symbols": 501,
+      "mapped": 363,
+      "unique_db": 359
+    },
+    {
+      "snapshot_date": "2016-09-30",
+      "api_symbols": 501,
+      "mapped": 370,
+      "unique_db": 364
+    },
+    {
+      "snapshot_date": "2016-11-15",
+      "api_symbols": 501,
+      "mapped": 371,
+      "unique_db": 365
+    },
+    {
+      "snapshot_date": "2017-01-23",
+      "api_symbols": 501,
+      "mapped": 371,
+      "unique_db": 366
+    },
+    {
+      "snapshot_date": "2017-03-16",
+      "api_symbols": 501,
+      "mapped": 373,
+      "unique_db": 368
+    },
+    {
+      "snapshot_date": "2017-03-31",
+      "api_symbols": 501,
+      "mapped": 377,
+      "unique_db": 372
+    },
+    {
+      "snapshot_date": "2017-05-26",
+      "api_symbols": 501,
+      "mapped": 378,
+      "unique_db": 373
+    },
+    {
+      "snapshot_date": "2017-06-23",
+      "api_symbols": 501,
+      "mapped": 378,
+      "unique_db": 373
+    },
+    {
+      "snapshot_date": "2017-09-05",
+      "api_symbols": 501,
+      "mapped": 379,
+      "unique_db": 374
+    },
+    {
+      "snapshot_date": "2017-09-29",
+      "api_symbols": 501,
+      "mapped": 381,
+      "unique_db": 376
+    },
+    {
+      "snapshot_date": "2017-10-30",
+      "api_symbols": 501,
+      "mapped": 382,
+      "unique_db": 377
+    },
+    {
+      "snapshot_date": "2017-11-13",
+      "api_symbols": 501,
+      "mapped": 382,
+      "unique_db": 377
+    },
+    {
+      "snapshot_date": "2017-11-20",
+      "api_symbols": 501,
+      "mapped": 382,
+      "unique_db": 377
+    },
+    {
+      "snapshot_date": "2018-02-05",
+      "api_symbols": 501,
+      "mapped": 382,
+      "unique_db": 377
+    },
+    {
+      "snapshot_date": "2018-03-13",
+      "api_symbols": 501,
+      "mapped": 382,
+      "unique_db": 377
+    },
+    {
+      "snapshot_date": "2018-04-02",
+      "api_symbols": 501,
+      "mapped": 383,
+      "unique_db": 378
+    },
+    {
+      "snapshot_date": "2018-06-29",
+      "api_symbols": 501,
+      "mapped": 383,
+      "unique_db": 379
+    },
+    {
+      "snapshot_date": "2018-08-08",
+      "api_symbols": 501,
+      "mapped": 383,
+      "unique_db": 379
+    },
+    {
+      "snapshot_date": "2018-09-28",
+      "api_symbols": 501,
+      "mapped": 386,
+      "unique_db": 382
+    },
+    {
+      "snapshot_date": "2018-12-28",
+      "api_symbols": 501,
+      "mapped": 388,
+      "unique_db": 384
+    },
+    {
+      "snapshot_date": "2019-01-28",
+      "api_symbols": 501,
+      "mapped": 388,
+      "unique_db": 384
+    },
+    {
+      "snapshot_date": "2019-03-29",
+      "api_symbols": 501,
+      "mapped": 392,
+      "unique_db": 388
+    },
+    {
+      "snapshot_date": "2019-04-15",
+      "api_symbols": 501,
+      "mapped": 391,
+      "unique_db": 388
+    },
+    {
+      "snapshot_date": "2019-06-28",
+      "api_symbols": 501,
+      "mapped": 392,
+      "unique_db": 389
+    },
+    {
+      "snapshot_date": "2019-09-24",
+      "api_symbols": 501,
+      "mapped": 394,
+      "unique_db": 391
+    },
+    {
+      "snapshot_date": "2019-09-27",
+      "api_symbols": 501,
+      "mapped": 398,
+      "unique_db": 396
+    },
+    {
+      "snapshot_date": "2019-12-26",
+      "api_symbols": 501,
+      "mapped": 399,
+      "unique_db": 398
+    },
+    {
+      "snapshot_date": "2019-12-27",
+      "api_symbols": 501,
+      "mapped": 402,
+      "unique_db": 401
+    },
+    {
+      "snapshot_date": "2020-01-16",
+      "api_symbols": 501,
+      "mapped": 402,
+      "unique_db": 401
+    },
+    {
+      "snapshot_date": "2020-03-19",
+      "api_symbols": 501,
+      "mapped": 404,
+      "unique_db": 403
+    },
+    {
+      "snapshot_date": "2020-06-26",
+      "api_symbols": 501,
+      "mapped": 407,
+      "unique_db": 406
+    },
+    {
+      "snapshot_date": "2020-07-31",
+      "api_symbols": 501,
+      "mapped": 407,
+      "unique_db": 406
+    },
+    {
+      "snapshot_date": "2020-09-14",
+      "api_symbols": 501,
+      "mapped": 408,
+      "unique_db": 407
+    },
+    {
+      "snapshot_date": "2020-09-30",
+      "api_symbols": 501,
+      "mapped": 408,
+      "unique_db": 407
+    },
+    {
+      "snapshot_date": "2021-03-31",
+      "api_symbols": 501,
+      "mapped": 418,
+      "unique_db": 418
+    },
+    {
+      "snapshot_date": "2021-09-30",
+      "api_symbols": 501,
+      "mapped": 428,
+      "unique_db": 428
+    },
+    {
+      "snapshot_date": "2022-03-31",
+      "api_symbols": 501,
+      "mapped": 435,
+      "unique_db": 435
+    },
+    {
+      "snapshot_date": "2022-09-30",
+      "api_symbols": 501,
+      "mapped": 439,
+      "unique_db": 439
+    },
+    {
+      "snapshot_date": "2023-03-31",
+      "api_symbols": 501,
+      "mapped": 445,
+      "unique_db": 445
+    },
+    {
+      "snapshot_date": "2023-09-30",
+      "api_symbols": 501,
+      "mapped": 454,
+      "unique_db": 453
+    },
+    {
+      "snapshot_date": "2024-03-31",
+      "api_symbols": 501,
+      "mapped": 459,
+      "unique_db": 459
+    },
+    {
+      "snapshot_date": "2024-09-30",
+      "api_symbols": 501,
+      "mapped": 467,
+      "unique_db": 467
+    },
+    {
+      "snapshot_date": "2025-03-31",
+      "api_symbols": 501,
+      "mapped": 474,
+      "unique_db": 474
+    },
+    {
+      "snapshot_date": "2025-09-30",
+      "api_symbols": 501,
+      "mapped": 481,
+      "unique_db": 481
+    },
+    {
+      "snapshot_date": "2025-10-14",
+      "api_symbols": 501,
+      "mapped": 483,
+      "unique_db": 483
+    },
+    {
+      "snapshot_date": "2025-11-12",
+      "api_symbols": 501,
+      "mapped": 489,
+      "unique_db": 489
+    },
+    {
+      "snapshot_date": "2026-03-31",
+      "api_symbols": 501,
+      "mapped": 496,
+      "unique_db": 496
+    },
+    {
+      "snapshot_date": "2026-09-30",
+      "api_symbols": 501,
+      "mapped": 497,
+      "unique_db": 497
+    }
+  ],
+  "note": "Primary PIT source. The CC BY 4.0 repo interval table is kept as a secondary cross-check."
+}

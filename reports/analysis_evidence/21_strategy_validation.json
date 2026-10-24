@@ -1,110 +1,86 @@
 {
-  "generated": "2026-10-23T19:50:35Z",
+  "generated": "2026-10-24T07:19:41Z",
   "universe": "NIFTY500",
   "benchmark": {
-    "is_2016_2021": {
-      "months": 71,
-      "total_return_pct": 136.55,
-      "cagr_pct": 15.66,
-      "vol_pct": 18.67,
-      "sharpe": 0.53,
-      "sortino": 0.6,
-      "maxdd_pct": -29.98,
-      "calmar": 0.52,
-      "win_rate_pct": 64.8,
-      "worst_month_pct": -24.25,
-      "best_month_pct": 14.52
+    "is_2018_2021": {
+      "months": 46,
+      "total_return_pct": 52.62,
+      "cagr_pct": 11.66,
+      "vol_pct": 21.14,
+      "sharpe": 0.33,
+      "sortino": 0.33,
+      "maxdd_pct": -31.85,
+      "calmar": 0.37,
+      "win_rate_pct": 63.0,
+      "worst_month_pct": -26.33,
+      "best_month_pct": 12.91
     },
     "oos_2022_2026": {
-      "months": 56,
-      "total_return_pct": 56.38,
-      "cagr_pct": 10.05,
-      "vol_pct": 14.76,
-      "sharpe": 0.28,
-      "sortino": 0.43,
-      "maxdd_pct": -18.0,
-      "calmar": 0.56,
-      "win_rate_pct": 58.9,
-      "worst_month_pct": -11.39,
-      "best_month_pct": 10.5
+      "months": 57,
+      "total_return_pct": 58.61,
+      "cagr_pct": 10.2,
+      "vol_pct": 14.42,
+      "sharpe": 0.3,
+      "sortino": 0.49,
+      "maxdd_pct": -18.02,
+      "calmar": 0.57,
+      "win_rate_pct": 61.4,
+      "worst_month_pct": -8.32,
+      "best_month_pct": 10.84
     },
-    "full_2016_2026": {
-      "months": 127,
-      "total_return_pct": 269.91,
-      "cagr_pct": 13.16,
-      "vol_pct": 17.01,
-      "sharpe": 0.44,
-      "sortino": 0.54,
-      "maxdd_pct": -29.98,
-      "calmar": 0.44,
-      "win_rate_pct": 62.2,
-      "worst_month_pct": -24.25,
-      "best_month_pct": 14.52
+    "full_2018_2026": {
+      "months": 103,
+      "total_return_pct": 142.08,
+      "cagr_pct": 10.85,
+      "vol_pct": 17.65,
+      "sharpe": 0.31,
+      "sortino": 0.37,
+      "maxdd_pct": -31.85,
+      "calmar": 0.34,
+      "win_rate_pct": 62.1,
+      "worst_month_pct": -26.33,
+      "best_month_pct": 12.91
     },
     "long_2008_2026": {
-      "months": 224,
-      "total_return_pct": 337.94,
-      "cagr_pct": 8.23,
-      "vol_pct": 21.57,
-      "sharpe": 0.18,
-      "sortino": 0.23,
-      "maxdd_pct": -60.91,
-      "calmar": 0.14,
-      "win_rate_pct": 58.9,
-      "worst_month_pct": -27.23,
-      "best_month_pct": 34.43
+      "status": "REFUSED",
+      "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+      "eligible_symbols": 0
     },
     "gfc_2008": {
-      "months": 12,
-      "total_return_pct": -57.13,
-      "cagr_pct": -57.13,
-      "vol_pct": 42.55,
-      "sharpe": -1.86,
-      "sortino": -2.59,
-      "maxdd_pct": -60.91,
-      "calmar": -0.94,
-      "win_rate_pct": 41.7,
-      "worst_month_pct": -27.23,
-      "best_month_pct": 10.36
+      "status": "REFUSED",
+      "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+      "eligible_symbols": 0
     },
     "euro_2011": {
-      "months": 12,
-      "total_return_pct": -27.19,
-      "cagr_pct": -27.19,
-      "vol_pct": 20.44,
-      "sharpe": -1.76,
-      "sortino": -2.74,
-      "maxdd_pct": -27.19,
-      "calmar": -1.0,
-      "win_rate_pct": 25.0,
-      "worst_month_pct": -10.45,
-      "best_month_pct": 8.93
+      "status": "REFUSED",
+      "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+      "eligible_symbols": 0
     },
     "midcap_2018": {
-      "months": 12,
-      "total_return_pct": -3.38,
-      "cagr_pct": -3.38,
-      "vol_pct": 16.14,
-      "sharpe": -0.54,
-      "sortino": -0.98,
-      "maxdd_pct": -12.4,
-      "calmar": -0.27,
-      "win_rate_pct": 50.0,
-      "worst_month_pct": -8.77,
-      "best_month_pct": 6.56
+      "months": 10,
+      "total_return_pct": -5.78,
+      "cagr_pct": -6.9,
+      "vol_pct": 15.89,
+      "sharpe": -0.79,
+      "sortino": -1.57,
+      "maxdd_pct": -11.58,
+      "calmar": -0.6,
+      "win_rate_pct": 40.0,
+      "worst_month_pct": -7.62,
+      "best_month_pct": 5.96
     },
     "covid_2020": {
       "months": 5,
-      "total_return_pct": -20.77,
-      "cagr_pct": -42.8,
-      "vol_pct": 48.24,
-      "sharpe": -1.06,
-      "sortino": -1.34,
-      "maxdd_pct": -29.13,
-      "calmar": -1.47,
-      "win_rate_pct": 20.0,
-      "worst_month_pct": -24.25,
-      "best_month_pct": 14.52
+      "total_return_pct": -22.46,
+      "cagr_pct": -45.7,
+      "vol_pct": 48.79,
+      "sharpe": -1.13,
+      "sortino": -1.21,
+      "maxdd_pct": -31.62,
+      "calmar": -1.45,
+      "win_rate_pct": 40.0,
+      "worst_month_pct": -26.33,
+      "best_month_pct": 12.35
     }
   },
   "candidates": {
@@ -119,222 +95,198 @@
         "regime": true
       },
       "windows": {
-        "is_2016_2021": {
-          "months": 71,
-          "total_return_pct": 499.42,
-          "cagr_pct": 35.35,
-          "vol_pct": 20.14,
-          "sharpe": 1.3,
-          "sortino": 1.85,
-          "maxdd_pct": -21.36,
-          "calmar": 1.65,
-          "win_rate_pct": 77.5,
-          "worst_month_pct": -13.88,
-          "best_month_pct": 19.73
+        "is_2018_2021": {
+          "months": 46,
+          "total_return_pct": 127.47,
+          "cagr_pct": 23.91,
+          "vol_pct": 20.68,
+          "sharpe": 0.83,
+          "sortino": 1.04,
+          "maxdd_pct": -27.1,
+          "calmar": 0.88,
+          "win_rate_pct": 71.7,
+          "worst_month_pct": -14.68,
+          "best_month_pct": 18.47
         },
         "oos_2022_2026": {
-          "months": 56,
-          "total_return_pct": 225.4,
-          "cagr_pct": 28.77,
-          "vol_pct": 19.43,
-          "sharpe": 1.08,
-          "sortino": 1.58,
-          "maxdd_pct": -18.89,
-          "calmar": 1.52,
-          "win_rate_pct": 67.9,
-          "worst_month_pct": -13.83,
-          "best_month_pct": 13.54
+          "months": 57,
+          "total_return_pct": 197.85,
+          "cagr_pct": 25.83,
+          "vol_pct": 18.33,
+          "sharpe": 1.0,
+          "sortino": 1.35,
+          "maxdd_pct": -19.62,
+          "calmar": 1.32,
+          "win_rate_pct": 71.9,
+          "worst_month_pct": -13.54,
+          "best_month_pct": 12.41
         },
-        "full_2016_2026": {
-          "months": 127,
-          "total_return_pct": 1850.5,
-          "cagr_pct": 32.4,
-          "vol_pct": 19.77,
-          "sharpe": 1.2,
-          "sortino": 1.74,
-          "maxdd_pct": -21.36,
-          "calmar": 1.52,
-          "win_rate_pct": 73.2,
-          "worst_month_pct": -13.88,
-          "best_month_pct": 19.73
+        "full_2018_2026": {
+          "months": 103,
+          "total_return_pct": 577.5,
+          "cagr_pct": 24.97,
+          "vol_pct": 19.32,
+          "sharpe": 0.92,
+          "sortino": 1.21,
+          "maxdd_pct": -27.1,
+          "calmar": 0.92,
+          "win_rate_pct": 71.8,
+          "worst_month_pct": -14.68,
+          "best_month_pct": 18.47
         },
         "long_2008_2026": {
-          "months": 224,
-          "total_return_pct": 22835.87,
-          "cagr_pct": 33.8,
-          "vol_pct": 61.48,
-          "sharpe": 0.53,
-          "sortino": 1.35,
-          "maxdd_pct": -60.84,
-          "calmar": 0.56,
-          "win_rate_pct": 68.8,
-          "worst_month_pct": -59.34,
-          "best_month_pct": 248.01
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "gfc_2008": {
-          "months": 12,
-          "total_return_pct": -6.67,
-          "cagr_pct": -6.67,
-          "vol_pct": 3.94,
-          "sharpe": -3.38,
-          "sortino": -3.51,
-          "maxdd_pct": -6.82,
-          "calmar": -0.98,
-          "win_rate_pct": 25.0,
-          "worst_month_pct": -2.64,
-          "best_month_pct": 0.86
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "euro_2011": {
-          "months": 12,
-          "total_return_pct": -17.67,
-          "cagr_pct": -17.67,
-          "vol_pct": 15.84,
-          "sharpe": -1.55,
-          "sortino": -2.17,
-          "maxdd_pct": -17.67,
-          "calmar": -1.0,
-          "win_rate_pct": 41.7,
-          "worst_month_pct": -10.2,
-          "best_month_pct": 4.42
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "midcap_2018": {
-          "months": 12,
-          "total_return_pct": -2.88,
-          "cagr_pct": -2.88,
-          "vol_pct": 25.98,
-          "sharpe": -0.25,
-          "sortino": -0.43,
-          "maxdd_pct": -16.87,
-          "calmar": -0.17,
-          "win_rate_pct": 41.7,
-          "worst_month_pct": -13.88,
-          "best_month_pct": 16.83
+          "months": 10,
+          "total_return_pct": -19.68,
+          "cagr_pct": -23.12,
+          "vol_pct": 20.32,
+          "sharpe": -1.5,
+          "sortino": -1.82,
+          "maxdd_pct": -20.51,
+          "calmar": -1.13,
+          "win_rate_pct": 40.0,
+          "worst_month_pct": -14.68,
+          "best_month_pct": 5.14
         },
         "covid_2020": {
           "months": 5,
-          "total_return_pct": -3.75,
-          "cagr_pct": -8.78,
-          "vol_pct": 24.68,
-          "sharpe": -0.53,
-          "sortino": -0.46,
-          "maxdd_pct": -13.25,
-          "calmar": -0.66,
+          "total_return_pct": -3.4,
+          "cagr_pct": -7.97,
+          "vol_pct": 25.58,
+          "sharpe": -0.47,
+          "sortino": -0.47,
+          "maxdd_pct": -13.0,
+          "calmar": -0.61,
           "win_rate_pct": 60.0,
-          "worst_month_pct": -12.43,
-          "best_month_pct": 5.99
+          "worst_month_pct": -12.75,
+          "best_month_pct": 5.5
         }
       },
       "alignment": {
-        "is_2016_2021": {
-          "strategy_months": 71,
-          "benchmark_months": 71,
-          "strategy_first": "2016-01-29",
+        "is_2018_2021": {
+          "strategy_months": 46,
+          "benchmark_months": 46,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "oos_2022_2026": {
-          "strategy_months": 56,
-          "benchmark_months": 56,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 57,
+          "benchmark_months": 57,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
-        "full_2016_2026": {
-          "strategy_months": 127,
-          "benchmark_months": 127,
-          "strategy_first": "2016-01-29",
+        "full_2018_2026": {
+          "strategy_months": 103,
+          "benchmark_months": 103,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "long_2008_2026": {
-          "strategy_months": 224,
-          "benchmark_months": 224,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "gfc_2008": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "euro_2011": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "midcap_2018": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 10,
+          "benchmark_months": 10,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "covid_2020": {
           "strategy_months": 5,
           "benchmark_months": 5,
-          "strategy_first": "2016-01-29",
+          "strategy_first": "2018-02-01",
           "aligned": true
         }
       },
       "cost_30_10bps": {
-        "months": 127,
-        "total_return_pct": 1625.27,
-        "cagr_pct": 30.88,
-        "vol_pct": 19.77,
-        "sharpe": 1.14,
-        "sortino": 1.64,
-        "maxdd_pct": -22.87,
-        "calmar": 1.35,
-        "win_rate_pct": 72.4,
-        "worst_month_pct": -13.97,
-        "best_month_pct": 19.72
+        "months": 103,
+        "total_return_pct": 514.08,
+        "cagr_pct": 23.55,
+        "vol_pct": 19.3,
+        "sharpe": 0.86,
+        "sortino": 1.13,
+        "maxdd_pct": -28.56,
+        "calmar": 0.82,
+        "win_rate_pct": 70.9,
+        "worst_month_pct": -14.75,
+        "best_month_pct": 18.45
       },
       "statistics": {
-        "n_months": 127,
-        "psr_excess": 0.9998,
-        "dsr_k5": 0.9921,
-        "dsr_k8000": 0.4217,
-        "t_stat_vs_zero": 4.99,
-        "p_value_vs_zero": 1e-06,
-        "t_stat_vs_benchmark": 3.43,
-        "p_value_vs_benchmark": 0.000407,
-        "beta_vs_nifty500": 0.76,
-        "alpha_annual_pct": 19.8
+        "n_months": 103,
+        "psr_excess": 0.9937,
+        "dsr_k5": 0.904,
+        "dsr_k8000": 0.0954,
+        "t_stat_vs_zero": 3.69,
+        "p_value_vs_zero": 0.000179,
+        "t_stat_vs_benchmark": 2.37,
+        "p_value_vs_benchmark": 0.009832,
+        "beta_vs_nifty500": 0.72,
+        "alpha_annual_pct": 15.7
       },
       "bootstrap": {
         "cagr_ci95": [
-          17.92,
-          48.55
+          9.1,
+          42.08
         ],
         "sharpe_ci95": [
-          0.6,
-          1.9
+          0.21,
+          1.72
         ],
-        "prob_positive_cagr": 1.0
+        "prob_positive_cagr": 0.9993
       },
-      "full_2016_2026": {
-        "months": 127,
-        "total_return_pct": 1850.5,
-        "cagr_pct": 32.4,
-        "vol_pct": 19.77,
-        "sharpe": 1.2,
-        "sortino": 1.74,
-        "maxdd_pct": -21.36,
-        "calmar": 1.52,
-        "win_rate_pct": 73.2,
-        "worst_month_pct": -13.88,
-        "best_month_pct": 19.73
+      "full_2018_2026": {
+        "months": 103,
+        "total_return_pct": 577.5,
+        "cagr_pct": 24.97,
+        "vol_pct": 19.32,
+        "sharpe": 0.92,
+        "sortino": 1.21,
+        "maxdd_pct": -27.1,
+        "calmar": 0.92,
+        "win_rate_pct": 71.8,
+        "worst_month_pct": -14.68,
+        "best_month_pct": 18.47
       },
       "benchmark_full": {
-        "months": 127,
-        "total_return_pct": 269.91,
-        "cagr_pct": 13.16,
-        "vol_pct": 17.01,
-        "sharpe": 0.44,
-        "sortino": 0.54,
-        "maxdd_pct": -29.98,
-        "calmar": 0.44,
-        "win_rate_pct": 62.2,
-        "worst_month_pct": -24.25,
-        "best_month_pct": 14.52
+        "months": 103,
+        "total_return_pct": 142.08,
+        "cagr_pct": 10.85,
+        "vol_pct": 17.65,
+        "sharpe": 0.31,
+        "sortino": 0.37,
+        "maxdd_pct": -31.85,
+        "calmar": 0.34,
+        "win_rate_pct": 62.1,
+        "worst_month_pct": -26.33,
+        "best_month_pct": 12.91
       }
     },
     "B_max_sharpe": {
@@ -348,222 +300,198 @@
         "regime": true
       },
       "windows": {
-        "is_2016_2021": {
-          "months": 71,
-          "total_return_pct": 507.36,
-          "cagr_pct": 35.65,
-          "vol_pct": 19.18,
-          "sharpe": 1.37,
-          "sortino": 1.8,
-          "maxdd_pct": -24.25,
-          "calmar": 1.47,
-          "win_rate_pct": 74.6,
-          "worst_month_pct": -13.29,
-          "best_month_pct": 15.88
+        "is_2018_2021": {
+          "months": 46,
+          "total_return_pct": 126.66,
+          "cagr_pct": 23.8,
+          "vol_pct": 20.59,
+          "sharpe": 0.83,
+          "sortino": 0.99,
+          "maxdd_pct": -26.53,
+          "calmar": 0.9,
+          "win_rate_pct": 69.6,
+          "worst_month_pct": -14.2,
+          "best_month_pct": 16.59
         },
         "oos_2022_2026": {
-          "months": 56,
-          "total_return_pct": 222.86,
-          "cagr_pct": 28.55,
-          "vol_pct": 18.38,
-          "sharpe": 1.12,
-          "sortino": 1.71,
-          "maxdd_pct": -18.04,
-          "calmar": 1.58,
-          "win_rate_pct": 66.1,
-          "worst_month_pct": -13.19,
-          "best_month_pct": 12.96
+          "months": 57,
+          "total_return_pct": 214.57,
+          "cagr_pct": 27.29,
+          "vol_pct": 17.4,
+          "sharpe": 1.11,
+          "sortino": 1.74,
+          "maxdd_pct": -16.53,
+          "calmar": 1.65,
+          "win_rate_pct": 64.9,
+          "worst_month_pct": -11.56,
+          "best_month_pct": 11.11
         },
-        "full_2016_2026": {
-          "months": 127,
-          "total_return_pct": 1860.89,
-          "cagr_pct": 32.47,
-          "vol_pct": 18.77,
-          "sharpe": 1.26,
-          "sortino": 1.79,
-          "maxdd_pct": -24.25,
-          "calmar": 1.34,
-          "win_rate_pct": 70.9,
-          "worst_month_pct": -13.29,
-          "best_month_pct": 15.88
+        "full_2018_2026": {
+          "months": 103,
+          "total_return_pct": 613.0,
+          "cagr_pct": 25.72,
+          "vol_pct": 18.8,
+          "sharpe": 0.98,
+          "sortino": 1.31,
+          "maxdd_pct": -26.53,
+          "calmar": 0.97,
+          "win_rate_pct": 67.0,
+          "worst_month_pct": -14.2,
+          "best_month_pct": 16.59
         },
         "long_2008_2026": {
-          "months": 224,
-          "total_return_pct": 33491.04,
-          "cagr_pct": 36.56,
-          "vol_pct": 89.7,
-          "sharpe": 0.44,
-          "sortino": 1.76,
-          "maxdd_pct": -58.01,
-          "calmar": 0.63,
-          "win_rate_pct": 67.0,
-          "worst_month_pct": -55.71,
-          "best_month_pct": 377.61
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "gfc_2008": {
-          "months": 12,
-          "total_return_pct": -5.37,
-          "cagr_pct": -5.37,
-          "vol_pct": 3.07,
-          "sharpe": -3.89,
-          "sortino": -4.0,
-          "maxdd_pct": -5.49,
-          "calmar": -0.98,
-          "win_rate_pct": 25.0,
-          "worst_month_pct": -2.1,
-          "best_month_pct": 0.6
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "euro_2011": {
-          "months": 12,
-          "total_return_pct": -9.75,
-          "cagr_pct": -9.75,
-          "vol_pct": 17.66,
-          "sharpe": -0.86,
-          "sortino": -1.09,
-          "maxdd_pct": -14.14,
-          "calmar": -0.69,
-          "win_rate_pct": 50.0,
-          "worst_month_pct": -11.3,
-          "best_month_pct": 7.86
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "midcap_2018": {
-          "months": 12,
-          "total_return_pct": -5.31,
-          "cagr_pct": -5.31,
-          "vol_pct": 24.38,
-          "sharpe": -0.38,
-          "sortino": -0.65,
-          "maxdd_pct": -17.79,
-          "calmar": -0.3,
-          "win_rate_pct": 41.7,
-          "worst_month_pct": -13.29,
-          "best_month_pct": 15.17
+          "months": 10,
+          "total_return_pct": -17.05,
+          "cagr_pct": -20.1,
+          "vol_pct": 19.96,
+          "sharpe": -1.34,
+          "sortino": -1.57,
+          "maxdd_pct": -17.05,
+          "calmar": -1.18,
+          "win_rate_pct": 30.0,
+          "worst_month_pct": -14.2,
+          "best_month_pct": 5.04
         },
         "covid_2020": {
           "months": 5,
-          "total_return_pct": -3.21,
-          "cagr_pct": -7.52,
-          "vol_pct": 22.58,
-          "sharpe": -0.54,
-          "sortino": -0.43,
-          "maxdd_pct": -11.54,
-          "calmar": -0.65,
-          "win_rate_pct": 80.0,
-          "worst_month_pct": -11.54,
-          "best_month_pct": 5.36
+          "total_return_pct": -3.44,
+          "cagr_pct": -8.05,
+          "vol_pct": 25.42,
+          "sharpe": -0.48,
+          "sortino": -0.48,
+          "maxdd_pct": -13.16,
+          "calmar": -0.61,
+          "win_rate_pct": 60.0,
+          "worst_month_pct": -12.72,
+          "best_month_pct": 5.62
         }
       },
       "alignment": {
-        "is_2016_2021": {
-          "strategy_months": 71,
-          "benchmark_months": 71,
-          "strategy_first": "2016-01-29",
+        "is_2018_2021": {
+          "strategy_months": 46,
+          "benchmark_months": 46,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "oos_2022_2026": {
-          "strategy_months": 56,
-          "benchmark_months": 56,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 57,
+          "benchmark_months": 57,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
-        "full_2016_2026": {
-          "strategy_months": 127,
-          "benchmark_months": 127,
-          "strategy_first": "2016-01-29",
+        "full_2018_2026": {
+          "strategy_months": 103,
+          "benchmark_months": 103,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "long_2008_2026": {
-          "strategy_months": 224,
-          "benchmark_months": 224,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "gfc_2008": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "euro_2011": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "midcap_2018": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 10,
+          "benchmark_months": 10,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "covid_2020": {
           "strategy_months": 5,
           "benchmark_months": 5,
-          "strategy_first": "2016-01-29",
+          "strategy_first": "2018-02-01",
           "aligned": true
         }
       },
       "cost_30_10bps": {
-        "months": 127,
-        "total_return_pct": 1621.01,
-        "cagr_pct": 30.85,
-        "vol_pct": 18.78,
-        "sharpe": 1.19,
-        "sortino": 1.7,
-        "maxdd_pct": -25.79,
-        "calmar": 1.2,
-        "win_rate_pct": 69.3,
-        "worst_month_pct": -13.4,
-        "best_month_pct": 15.82
+        "months": 103,
+        "total_return_pct": 541.57,
+        "cagr_pct": 24.18,
+        "vol_pct": 18.8,
+        "sharpe": 0.91,
+        "sortino": 1.22,
+        "maxdd_pct": -28.08,
+        "calmar": 0.86,
+        "win_rate_pct": 66.0,
+        "worst_month_pct": -14.29,
+        "best_month_pct": 16.56
       },
       "statistics": {
-        "n_months": 127,
-        "psr_excess": 0.9999,
-        "dsr_k5": 0.993,
-        "dsr_k8000": 0.4386,
-        "t_stat_vs_zero": 5.23,
-        "p_value_vs_zero": 0.0,
-        "t_stat_vs_benchmark": 3.58,
-        "p_value_vs_benchmark": 0.00024,
-        "beta_vs_nifty500": 0.73,
-        "alpha_annual_pct": 20.02
+        "n_months": 103,
+        "psr_excess": 0.9955,
+        "dsr_k5": 0.9218,
+        "dsr_k8000": 0.1159,
+        "t_stat_vs_zero": 3.87,
+        "p_value_vs_zero": 9.5e-05,
+        "t_stat_vs_benchmark": 2.44,
+        "p_value_vs_benchmark": 0.008102,
+        "beta_vs_nifty500": 0.68,
+        "alpha_annual_pct": 16.67
       },
       "bootstrap": {
         "cagr_ci95": [
-          18.54,
-          47.63
+          10.15,
+          42.32
         ],
         "sharpe_ci95": [
-          0.64,
-          2.0
+          0.26,
+          1.79
         ],
-        "prob_positive_cagr": 1.0
+        "prob_positive_cagr": 0.9995
       },
-      "full_2016_2026": {
-        "months": 127,
-        "total_return_pct": 1860.89,
-        "cagr_pct": 32.47,
-        "vol_pct": 18.77,
-        "sharpe": 1.26,
-        "sortino": 1.79,
-        "maxdd_pct": -24.25,
-        "calmar": 1.34,
-        "win_rate_pct": 70.9,
-        "worst_month_pct": -13.29,
-        "best_month_pct": 15.88
+      "full_2018_2026": {
+        "months": 103,
+        "total_return_pct": 613.0,
+        "cagr_pct": 25.72,
+        "vol_pct": 18.8,
+        "sharpe": 0.98,
+        "sortino": 1.31,
+        "maxdd_pct": -26.53,
+        "calmar": 0.97,
+        "win_rate_pct": 67.0,
+        "worst_month_pct": -14.2,
+        "best_month_pct": 16.59
       },
       "benchmark_full": {
-        "months": 127,
-        "total_return_pct": 269.91,
-        "cagr_pct": 13.16,
-        "vol_pct": 17.01,
-        "sharpe": 0.44,
-        "sortino": 0.54,
-        "maxdd_pct": -29.98,
-        "calmar": 0.44,
-        "win_rate_pct": 62.2,
-        "worst_month_pct": -24.25,
-        "best_month_pct": 14.52
+        "months": 103,
+        "total_return_pct": 142.08,
+        "cagr_pct": 10.85,
+        "vol_pct": 17.65,
+        "sharpe": 0.31,
+        "sortino": 0.37,
+        "maxdd_pct": -31.85,
+        "calmar": 0.34,
+        "win_rate_pct": 62.1,
+        "worst_month_pct": -26.33,
+        "best_month_pct": 12.91
       }
     },
     "C_max_cagr": {
@@ -577,222 +505,198 @@
         "regime": true
       },
       "windows": {
-        "is_2016_2021": {
-          "months": 71,
-          "total_return_pct": 800.99,
-          "cagr_pct": 45.0,
-          "vol_pct": 27.26,
-          "sharpe": 1.26,
-          "sortino": 2.35,
-          "maxdd_pct": -21.34,
-          "calmar": 2.11,
-          "win_rate_pct": 74.6,
-          "worst_month_pct": -13.74,
-          "best_month_pct": 48.8
+        "is_2018_2021": {
+          "months": 46,
+          "total_return_pct": 123.28,
+          "cagr_pct": 23.31,
+          "vol_pct": 21.42,
+          "sharpe": 0.79,
+          "sortino": 1.07,
+          "maxdd_pct": -29.55,
+          "calmar": 0.79,
+          "win_rate_pct": 65.2,
+          "worst_month_pct": -13.64,
+          "best_month_pct": 16.69
         },
         "oos_2022_2026": {
-          "months": 56,
-          "total_return_pct": 207.52,
-          "cagr_pct": 27.22,
-          "vol_pct": 22.06,
-          "sharpe": 0.91,
-          "sortino": 1.65,
-          "maxdd_pct": -19.53,
-          "calmar": 1.39,
-          "win_rate_pct": 58.9,
-          "worst_month_pct": -14.5,
-          "best_month_pct": 19.71
+          "months": 57,
+          "total_return_pct": 185.33,
+          "cagr_pct": 24.7,
+          "vol_pct": 21.68,
+          "sharpe": 0.83,
+          "sortino": 1.49,
+          "maxdd_pct": -21.42,
+          "calmar": 1.15,
+          "win_rate_pct": 59.6,
+          "worst_month_pct": -14.26,
+          "best_month_pct": 18.09
         },
-        "full_2016_2026": {
-          "months": 127,
-          "total_return_pct": 2670.74,
-          "cagr_pct": 36.87,
-          "vol_pct": 25.09,
-          "sharpe": 1.12,
-          "sortino": 2.12,
-          "maxdd_pct": -21.34,
-          "calmar": 1.73,
-          "win_rate_pct": 67.7,
-          "worst_month_pct": -14.5,
-          "best_month_pct": 48.8
+        "full_2018_2026": {
+          "months": 103,
+          "total_return_pct": 537.09,
+          "cagr_pct": 24.08,
+          "vol_pct": 21.46,
+          "sharpe": 0.82,
+          "sortino": 1.28,
+          "maxdd_pct": -29.55,
+          "calmar": 0.81,
+          "win_rate_pct": 62.1,
+          "worst_month_pct": -14.26,
+          "best_month_pct": 18.09
         },
         "long_2008_2026": {
-          "months": 224,
-          "total_return_pct": 48536.86,
-          "cagr_pct": 39.3,
-          "vol_pct": 102.28,
-          "sharpe": 0.44,
-          "sortino": 1.98,
-          "maxdd_pct": -59.89,
-          "calmar": 0.66,
-          "win_rate_pct": 65.2,
-          "worst_month_pct": -58.46,
-          "best_month_pct": 429.79
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "gfc_2008": {
-          "months": 12,
-          "total_return_pct": -6.7,
-          "cagr_pct": -6.7,
-          "vol_pct": 3.85,
-          "sharpe": -3.46,
-          "sortino": -3.56,
-          "maxdd_pct": -6.85,
-          "calmar": -0.98,
-          "win_rate_pct": 25.0,
-          "worst_month_pct": -2.64,
-          "best_month_pct": 0.75
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "euro_2011": {
-          "months": 12,
-          "total_return_pct": -17.1,
-          "cagr_pct": -17.1,
-          "vol_pct": 15.62,
-          "sharpe": -1.53,
-          "sortino": -1.88,
-          "maxdd_pct": -17.1,
-          "calmar": -1.0,
-          "win_rate_pct": 41.7,
-          "worst_month_pct": -11.5,
-          "best_month_pct": 4.37
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "midcap_2018": {
-          "months": 12,
-          "total_return_pct": 17.05,
-          "cagr_pct": 17.05,
-          "vol_pct": 53.58,
-          "sharpe": 0.37,
-          "sortino": 1.41,
-          "maxdd_pct": -21.34,
-          "calmar": 0.8,
-          "win_rate_pct": 33.3,
-          "worst_month_pct": -13.74,
-          "best_month_pct": 48.8
+          "months": 10,
+          "total_return_pct": -17.36,
+          "cagr_pct": -20.45,
+          "vol_pct": 20.62,
+          "sharpe": -1.32,
+          "sortino": -1.65,
+          "maxdd_pct": -17.57,
+          "calmar": -1.16,
+          "win_rate_pct": 40.0,
+          "worst_month_pct": -13.64,
+          "best_month_pct": 6.41
         },
         "covid_2020": {
           "months": 5,
-          "total_return_pct": -6.85,
-          "cagr_pct": -15.66,
-          "vol_pct": 20.12,
-          "sharpe": -1.08,
-          "sortino": -0.91,
-          "maxdd_pct": -12.35,
-          "calmar": -1.27,
-          "win_rate_pct": 60.0,
-          "worst_month_pct": -11.13,
-          "best_month_pct": 3.79
+          "total_return_pct": -4.28,
+          "cagr_pct": -9.96,
+          "vol_pct": 23.98,
+          "sharpe": -0.61,
+          "sortino": -0.6,
+          "maxdd_pct": -12.31,
+          "calmar": -0.81,
+          "win_rate_pct": 40.0,
+          "worst_month_pct": -12.21,
+          "best_month_pct": 5.98
         }
       },
       "alignment": {
-        "is_2016_2021": {
-          "strategy_months": 71,
-          "benchmark_months": 71,
-          "strategy_first": "2016-01-29",
+        "is_2018_2021": {
+          "strategy_months": 46,
+          "benchmark_months": 46,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "oos_2022_2026": {
-          "strategy_months": 56,
-          "benchmark_months": 56,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 57,
+          "benchmark_months": 57,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
-        "full_2016_2026": {
-          "strategy_months": 127,
-          "benchmark_months": 127,
-          "strategy_first": "2016-01-29",
+        "full_2018_2026": {
+          "strategy_months": 103,
+          "benchmark_months": 103,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "long_2008_2026": {
-          "strategy_months": 224,
-          "benchmark_months": 224,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "gfc_2008": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "euro_2011": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "midcap_2018": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 10,
+          "benchmark_months": 10,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "covid_2020": {
           "strategy_months": 5,
           "benchmark_months": 5,
-          "strategy_first": "2016-01-29",
+          "strategy_first": "2018-02-01",
           "aligned": true
         }
       },
       "cost_30_10bps": {
-        "months": 127,
-        "total_return_pct": 2334.28,
-        "cagr_pct": 35.21,
-        "vol_pct": 25.05,
-        "sharpe": 1.07,
-        "sortino": 2.02,
-        "maxdd_pct": -22.54,
-        "calmar": 1.56,
-        "win_rate_pct": 67.7,
-        "worst_month_pct": -14.55,
-        "best_month_pct": 48.6
+        "months": 103,
+        "total_return_pct": 478.92,
+        "cagr_pct": 22.7,
+        "vol_pct": 21.43,
+        "sharpe": 0.76,
+        "sortino": 1.2,
+        "maxdd_pct": -31.1,
+        "calmar": 0.73,
+        "win_rate_pct": 61.2,
+        "worst_month_pct": -14.31,
+        "best_month_pct": 17.95
       },
       "statistics": {
-        "n_months": 127,
-        "psr_excess": 1.0,
-        "dsr_k5": 0.9985,
-        "dsr_k8000": 0.6376,
-        "t_stat_vs_zero": 4.49,
-        "p_value_vs_zero": 8e-06,
-        "t_stat_vs_benchmark": 3.08,
-        "p_value_vs_benchmark": 0.00129,
-        "beta_vs_nifty500": 0.75,
-        "alpha_annual_pct": 24.16
+        "n_months": 103,
+        "psr_excess": 0.9902,
+        "dsr_k5": 0.8734,
+        "dsr_k8000": 0.0707,
+        "t_stat_vs_zero": 3.28,
+        "p_value_vs_zero": 0.000712,
+        "t_stat_vs_benchmark": 1.96,
+        "p_value_vs_benchmark": 0.026341,
+        "beta_vs_nifty500": 0.72,
+        "alpha_annual_pct": 15.43
       },
       "bootstrap": {
         "cagr_ci95": [
-          19.42,
-          57.66
+          7.32,
+          42.6
         ],
         "sharpe_ci95": [
-          0.6,
-          1.73
+          0.14,
+          1.53
         ],
-        "prob_positive_cagr": 1.0
+        "prob_positive_cagr": 0.9977
       },
-      "full_2016_2026": {
-        "months": 127,
-        "total_return_pct": 2670.74,
-        "cagr_pct": 36.87,
-        "vol_pct": 25.09,
-        "sharpe": 1.12,
-        "sortino": 2.12,
-        "maxdd_pct": -21.34,
-        "calmar": 1.73,
-        "win_rate_pct": 67.7,
-        "worst_month_pct": -14.5,
-        "best_month_pct": 48.8
+      "full_2018_2026": {
+        "months": 103,
+        "total_return_pct": 537.09,
+        "cagr_pct": 24.08,
+        "vol_pct": 21.46,
+        "sharpe": 0.82,
+        "sortino": 1.28,
+        "maxdd_pct": -29.55,
+        "calmar": 0.81,
+        "win_rate_pct": 62.1,
+        "worst_month_pct": -14.26,
+        "best_month_pct": 18.09
       },
       "benchmark_full": {
-        "months": 127,
-        "total_return_pct": 269.91,
-        "cagr_pct": 13.16,
-        "vol_pct": 17.01,
-        "sharpe": 0.44,
-        "sortino": 0.54,
-        "maxdd_pct": -29.98,
-        "calmar": 0.44,
-        "win_rate_pct": 62.2,
-        "worst_month_pct": -24.25,
-        "best_month_pct": 14.52
+        "months": 103,
+        "total_return_pct": 142.08,
+        "cagr_pct": 10.85,
+        "vol_pct": 17.65,
+        "sharpe": 0.31,
+        "sortino": 0.37,
+        "maxdd_pct": -31.85,
+        "calmar": 0.34,
+        "win_rate_pct": 62.1,
+        "worst_month_pct": -26.33,
+        "best_month_pct": 12.91
       }
     },
     "D_canonical": {
@@ -806,222 +710,198 @@
         "regime": true
       },
       "windows": {
-        "is_2016_2021": {
-          "months": 71,
-          "total_return_pct": 410.31,
-          "cagr_pct": 31.71,
-          "vol_pct": 21.04,
-          "sharpe": 1.12,
-          "sortino": 1.38,
-          "maxdd_pct": -19.72,
-          "calmar": 1.61,
-          "win_rate_pct": 76.1,
-          "worst_month_pct": -16.18,
-          "best_month_pct": 18.94
+        "is_2018_2021": {
+          "months": 46,
+          "total_return_pct": 159.65,
+          "cagr_pct": 28.26,
+          "vol_pct": 23.66,
+          "sharpe": 0.9,
+          "sortino": 1.12,
+          "maxdd_pct": -24.4,
+          "calmar": 1.16,
+          "win_rate_pct": 71.7,
+          "worst_month_pct": -15.83,
+          "best_month_pct": 19.27
         },
         "oos_2022_2026": {
-          "months": 56,
-          "total_return_pct": 142.09,
-          "cagr_pct": 20.86,
-          "vol_pct": 18.11,
-          "sharpe": 0.78,
-          "sortino": 1.11,
-          "maxdd_pct": -20.69,
-          "calmar": 1.01,
-          "win_rate_pct": 66.1,
-          "worst_month_pct": -13.81,
-          "best_month_pct": 10.32
+          "months": 57,
+          "total_return_pct": 130.65,
+          "cagr_pct": 19.24,
+          "vol_pct": 16.66,
+          "sharpe": 0.76,
+          "sortino": 1.05,
+          "maxdd_pct": -21.5,
+          "calmar": 0.89,
+          "win_rate_pct": 66.7,
+          "worst_month_pct": -12.76,
+          "best_month_pct": 11.19
         },
-        "full_2016_2026": {
-          "months": 127,
-          "total_return_pct": 1135.42,
-          "cagr_pct": 26.81,
-          "vol_pct": 19.77,
-          "sharpe": 0.98,
-          "sortino": 1.3,
-          "maxdd_pct": -20.69,
-          "calmar": 1.3,
-          "win_rate_pct": 71.7,
-          "worst_month_pct": -16.18,
-          "best_month_pct": 18.94
+        "full_2018_2026": {
+          "months": 103,
+          "total_return_pct": 498.87,
+          "cagr_pct": 23.19,
+          "vol_pct": 20.02,
+          "sharpe": 0.83,
+          "sortino": 1.08,
+          "maxdd_pct": -24.4,
+          "calmar": 0.95,
+          "win_rate_pct": 68.9,
+          "worst_month_pct": -15.83,
+          "best_month_pct": 19.27
         },
         "long_2008_2026": {
-          "months": 224,
-          "total_return_pct": 18401.09,
-          "cagr_pct": 32.27,
-          "vol_pct": 74.57,
-          "sharpe": 0.46,
-          "sortino": 1.34,
-          "maxdd_pct": -59.91,
-          "calmar": 0.54,
-          "win_rate_pct": 70.1,
-          "worst_month_pct": -58.69,
-          "best_month_pct": 307.91
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "gfc_2008": {
-          "months": 12,
-          "total_return_pct": -15.39,
-          "cagr_pct": -15.39,
-          "vol_pct": 11.95,
-          "sharpe": -1.88,
-          "sortino": -1.82,
-          "maxdd_pct": -17.46,
-          "calmar": -0.88,
-          "win_rate_pct": 33.3,
-          "worst_month_pct": -9.98,
-          "best_month_pct": 1.97
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "euro_2011": {
-          "months": 12,
-          "total_return_pct": -17.99,
-          "cagr_pct": -17.99,
-          "vol_pct": 17.72,
-          "sharpe": -1.39,
-          "sortino": -2.17,
-          "maxdd_pct": -17.99,
-          "calmar": -1.0,
-          "win_rate_pct": 41.7,
-          "worst_month_pct": -11.05,
-          "best_month_pct": 6.07
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "midcap_2018": {
-          "months": 12,
-          "total_return_pct": -14.98,
-          "cagr_pct": -14.98,
-          "vol_pct": 18.48,
-          "sharpe": -1.14,
-          "sortino": -1.4,
-          "maxdd_pct": -18.04,
-          "calmar": -0.83,
-          "win_rate_pct": 41.7,
-          "worst_month_pct": -13.72,
-          "best_month_pct": 5.91
+          "months": 10,
+          "total_return_pct": -15.99,
+          "cagr_pct": -18.87,
+          "vol_pct": 22.15,
+          "sharpe": -1.12,
+          "sortino": -1.27,
+          "maxdd_pct": -18.86,
+          "calmar": -1.0,
+          "win_rate_pct": 40.0,
+          "worst_month_pct": -15.83,
+          "best_month_pct": 4.53
         },
         "covid_2020": {
           "months": 5,
-          "total_return_pct": -5.3,
-          "cagr_pct": -12.25,
-          "vol_pct": 32.09,
-          "sharpe": -0.47,
-          "sortino": -0.47,
-          "maxdd_pct": -16.18,
-          "calmar": -0.76,
+          "total_return_pct": -0.57,
+          "cagr_pct": -1.35,
+          "vol_pct": 30.57,
+          "sharpe": -0.13,
+          "sortino": -0.13,
+          "maxdd_pct": -15.07,
+          "calmar": -0.09,
           "win_rate_pct": 80.0,
-          "worst_month_pct": -16.18,
-          "best_month_pct": 8.91
+          "worst_month_pct": -15.07,
+          "best_month_pct": 6.81
         }
       },
       "alignment": {
-        "is_2016_2021": {
-          "strategy_months": 71,
-          "benchmark_months": 71,
-          "strategy_first": "2016-01-29",
+        "is_2018_2021": {
+          "strategy_months": 46,
+          "benchmark_months": 46,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "oos_2022_2026": {
-          "strategy_months": 56,
-          "benchmark_months": 56,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 57,
+          "benchmark_months": 57,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
-        "full_2016_2026": {
-          "strategy_months": 127,
-          "benchmark_months": 127,
-          "strategy_first": "2016-01-29",
+        "full_2018_2026": {
+          "strategy_months": 103,
+          "benchmark_months": 103,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "long_2008_2026": {
-          "strategy_months": 224,
-          "benchmark_months": 224,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "gfc_2008": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "euro_2011": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "midcap_2018": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 10,
+          "benchmark_months": 10,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "covid_2020": {
           "strategy_months": 5,
           "benchmark_months": 5,
-          "strategy_first": "2016-01-29",
+          "strategy_first": "2018-02-01",
           "aligned": true
         }
       },
       "cost_30_10bps": {
-        "months": 127,
-        "total_return_pct": 1020.18,
-        "cagr_pct": 25.64,
-        "vol_pct": 19.8,
-        "sharpe": 0.93,
-        "sortino": 1.24,
-        "maxdd_pct": -21.96,
-        "calmar": 1.17,
-        "win_rate_pct": 71.7,
-        "worst_month_pct": -16.14,
-        "best_month_pct": 19.02
+        "months": 103,
+        "total_return_pct": 445.84,
+        "cagr_pct": 21.86,
+        "vol_pct": 20.08,
+        "sharpe": 0.77,
+        "sortino": 1.01,
+        "maxdd_pct": -26.03,
+        "calmar": 0.84,
+        "win_rate_pct": 68.0,
+        "worst_month_pct": -15.9,
+        "best_month_pct": 19.33
       },
       "statistics": {
-        "n_months": 127,
-        "psr_excess": 0.9983,
-        "dsr_k5": 0.9581,
-        "dsr_k8000": 0.1882,
-        "t_stat_vs_zero": 4.27,
-        "p_value_vs_zero": 1.9e-05,
-        "t_stat_vs_benchmark": 2.65,
-        "p_value_vs_benchmark": 0.004596,
-        "beta_vs_nifty500": 0.8,
-        "alpha_annual_pct": 14.84
+        "n_months": 103,
+        "psr_excess": 0.9883,
+        "dsr_k5": 0.8585,
+        "dsr_k8000": 0.0618,
+        "t_stat_vs_zero": 3.37,
+        "p_value_vs_zero": 0.000534,
+        "t_stat_vs_benchmark": 2.11,
+        "p_value_vs_benchmark": 0.018764,
+        "beta_vs_nifty500": 0.76,
+        "alpha_annual_pct": 13.87
       },
       "bootstrap": {
         "cagr_ci95": [
-          12.71,
-          42.56
+          7.1,
+          40.66
         ],
         "sharpe_ci95": [
-          0.37,
-          1.7
+          0.12,
+          1.58
         ],
-        "prob_positive_cagr": 1.0
+        "prob_positive_cagr": 0.9982
       },
-      "full_2016_2026": {
-        "months": 127,
-        "total_return_pct": 1135.42,
-        "cagr_pct": 26.81,
-        "vol_pct": 19.77,
-        "sharpe": 0.98,
-        "sortino": 1.3,
-        "maxdd_pct": -20.69,
-        "calmar": 1.3,
-        "win_rate_pct": 71.7,
-        "worst_month_pct": -16.18,
-        "best_month_pct": 18.94
+      "full_2018_2026": {
+        "months": 103,
+        "total_return_pct": 498.87,
+        "cagr_pct": 23.19,
+        "vol_pct": 20.02,
+        "sharpe": 0.83,
+        "sortino": 1.08,
+        "maxdd_pct": -24.4,
+        "calmar": 0.95,
+        "win_rate_pct": 68.9,
+        "worst_month_pct": -15.83,
+        "best_month_pct": 19.27
       },
       "benchmark_full": {
-        "months": 127,
-        "total_return_pct": 269.91,
-        "cagr_pct": 13.16,
-        "vol_pct": 17.01,
-        "sharpe": 0.44,
-        "sortino": 0.54,
-        "maxdd_pct": -29.98,
-        "calmar": 0.44,
-        "win_rate_pct": 62.2,
-        "worst_month_pct": -24.25,
-        "best_month_pct": 14.52
+        "months": 103,
+        "total_return_pct": 142.08,
+        "cagr_pct": 10.85,
+        "vol_pct": 17.65,
+        "sharpe": 0.31,
+        "sortino": 0.37,
+        "maxdd_pct": -31.85,
+        "calmar": 0.34,
+        "win_rate_pct": 62.1,
+        "worst_month_pct": -26.33,
+        "best_month_pct": 12.91
       }
     },
     "E_max_robust": {
@@ -1035,236 +915,210 @@
         "regime": true
       },
       "windows": {
-        "is_2016_2021": {
-          "months": 71,
-          "total_return_pct": 538.16,
-          "cagr_pct": 36.79,
-          "vol_pct": 25.55,
-          "sharpe": 1.1,
-          "sortino": 1.73,
-          "maxdd_pct": -23.81,
-          "calmar": 1.54,
-          "win_rate_pct": 74.6,
-          "worst_month_pct": -15.01,
-          "best_month_pct": 43.96
+        "is_2018_2021": {
+          "months": 46,
+          "total_return_pct": 113.81,
+          "cagr_pct": 21.93,
+          "vol_pct": 19.51,
+          "sharpe": 0.79,
+          "sortino": 1.04,
+          "maxdd_pct": -25.28,
+          "calmar": 0.87,
+          "win_rate_pct": 65.2,
+          "worst_month_pct": -13.05,
+          "best_month_pct": 14.69
         },
         "oos_2022_2026": {
-          "months": 56,
-          "total_return_pct": 199.32,
-          "cagr_pct": 26.48,
-          "vol_pct": 17.81,
-          "sharpe": 1.05,
-          "sortino": 2.0,
-          "maxdd_pct": -13.55,
-          "calmar": 1.95,
-          "win_rate_pct": 62.5,
-          "worst_month_pct": -10.53,
-          "best_month_pct": 14.43
+          "months": 57,
+          "total_return_pct": 195.87,
+          "cagr_pct": 25.65,
+          "vol_pct": 17.59,
+          "sharpe": 1.03,
+          "sortino": 1.78,
+          "maxdd_pct": -15.07,
+          "calmar": 1.7,
+          "win_rate_pct": 66.7,
+          "worst_month_pct": -10.69,
+          "best_month_pct": 13.47
         },
-        "full_2016_2026": {
-          "months": 127,
-          "total_return_pct": 1810.12,
-          "cagr_pct": 32.14,
-          "vol_pct": 22.43,
-          "sharpe": 1.07,
-          "sortino": 1.82,
-          "maxdd_pct": -23.81,
-          "calmar": 1.35,
-          "win_rate_pct": 69.3,
-          "worst_month_pct": -15.01,
-          "best_month_pct": 43.96
+        "full_2018_2026": {
+          "months": 103,
+          "total_return_pct": 532.6,
+          "cagr_pct": 23.98,
+          "vol_pct": 18.39,
+          "sharpe": 0.92,
+          "sortino": 1.36,
+          "maxdd_pct": -25.28,
+          "calmar": 0.95,
+          "win_rate_pct": 66.0,
+          "worst_month_pct": -13.05,
+          "best_month_pct": 14.69
         },
         "long_2008_2026": {
-          "months": 224,
-          "total_return_pct": 30569.07,
-          "cagr_pct": 35.9,
-          "vol_pct": 73.34,
-          "sharpe": 0.49,
-          "sortino": 1.73,
-          "maxdd_pct": -54.39,
-          "calmar": 0.66,
-          "win_rate_pct": 68.3,
-          "worst_month_pct": -52.17,
-          "best_month_pct": 302.74
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "gfc_2008": {
-          "months": 12,
-          "total_return_pct": -4.43,
-          "cagr_pct": -4.43,
-          "vol_pct": 2.92,
-          "sharpe": -3.77,
-          "sortino": -3.77,
-          "maxdd_pct": -4.94,
-          "calmar": -0.9,
-          "win_rate_pct": 33.3,
-          "worst_month_pct": -2.23,
-          "best_month_pct": 0.46
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "euro_2011": {
-          "months": 12,
-          "total_return_pct": -9.42,
-          "cagr_pct": -9.42,
-          "vol_pct": 16.59,
-          "sharpe": -0.91,
-          "sortino": -1.07,
-          "maxdd_pct": -14.43,
-          "calmar": -0.65,
-          "win_rate_pct": 50.0,
-          "worst_month_pct": -11.66,
-          "best_month_pct": 6.53
+          "status": "REFUSED",
+          "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+          "eligible_symbols": 0,
+          "min_eligible_symbols": 100
         },
         "midcap_2018": {
-          "months": 12,
-          "total_return_pct": 19.98,
-          "cagr_pct": 19.98,
-          "vol_pct": 49.03,
-          "sharpe": 0.43,
-          "sortino": 1.45,
-          "maxdd_pct": -17.01,
-          "calmar": 1.17,
-          "win_rate_pct": 33.3,
-          "worst_month_pct": -13.38,
-          "best_month_pct": 43.96
+          "months": 10,
+          "total_return_pct": -17.03,
+          "cagr_pct": -20.08,
+          "vol_pct": 18.28,
+          "sharpe": -1.48,
+          "sortino": -1.79,
+          "maxdd_pct": -18.31,
+          "calmar": -1.1,
+          "win_rate_pct": 40.0,
+          "worst_month_pct": -13.05,
+          "best_month_pct": 4.81
         },
         "covid_2020": {
           "months": 5,
-          "total_return_pct": -5.63,
-          "cagr_pct": -12.99,
-          "vol_pct": 29.47,
-          "sharpe": -0.56,
-          "sortino": -0.45,
-          "maxdd_pct": -15.01,
-          "calmar": -0.87,
-          "win_rate_pct": 80.0,
-          "worst_month_pct": -15.01,
-          "best_month_pct": 7.97
+          "total_return_pct": -1.23,
+          "cagr_pct": -2.93,
+          "vol_pct": 24.27,
+          "sharpe": -0.29,
+          "sortino": -0.31,
+          "maxdd_pct": -11.68,
+          "calmar": -0.25,
+          "win_rate_pct": 60.0,
+          "worst_month_pct": -11.43,
+          "best_month_pct": 5.95
         }
       },
       "alignment": {
-        "is_2016_2021": {
-          "strategy_months": 71,
-          "benchmark_months": 71,
-          "strategy_first": "2016-01-29",
+        "is_2018_2021": {
+          "strategy_months": 46,
+          "benchmark_months": 46,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "oos_2022_2026": {
-          "strategy_months": 56,
-          "benchmark_months": 56,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 57,
+          "benchmark_months": 57,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
-        "full_2016_2026": {
-          "strategy_months": 127,
-          "benchmark_months": 127,
-          "strategy_first": "2016-01-29",
+        "full_2018_2026": {
+          "strategy_months": 103,
+          "benchmark_months": 103,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "long_2008_2026": {
-          "strategy_months": 224,
-          "benchmark_months": 224,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "gfc_2008": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "euro_2011": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2007-01-31",
-          "aligned": true
+          "aligned": false,
+          "refused": true,
+          "eligible_symbols": 0
         },
         "midcap_2018": {
-          "strategy_months": 12,
-          "benchmark_months": 12,
-          "strategy_first": "2016-01-29",
+          "strategy_months": 10,
+          "benchmark_months": 10,
+          "strategy_first": "2018-02-01",
           "aligned": true
         },
         "covid_2020": {
           "strategy_months": 5,
           "benchmark_months": 5,
-          "strategy_first": "2016-01-29",
+          "strategy_first": "2018-02-01",
           "aligned": true
         }
       },
       "cost_30_10bps": {
-        "months": 127,
-        "total_return_pct": 1520.16,
-        "cagr_pct": 30.1,
-        "vol_pct": 22.34,
-        "sharpe": 1.0,
-        "sortino": 1.71,
-        "maxdd_pct": -25.48,
-        "calmar": 1.18,
-        "win_rate_pct": 68.5,
-        "worst_month_pct": -14.96,
-        "best_month_pct": 43.51
+        "months": 103,
+        "total_return_pct": 457.15,
+        "cagr_pct": 22.15,
+        "vol_pct": 18.36,
+        "sharpe": 0.84,
+        "sortino": 1.24,
+        "maxdd_pct": -27.3,
+        "calmar": 0.81,
+        "win_rate_pct": 64.1,
+        "worst_month_pct": -13.17,
+        "best_month_pct": 14.73
       },
       "statistics": {
-        "n_months": 127,
-        "psr_excess": 0.9999,
-        "dsr_k5": 0.9961,
-        "dsr_k8000": 0.5181,
-        "t_stat_vs_zero": 4.43,
-        "p_value_vs_zero": 1e-05,
-        "t_stat_vs_benchmark": 2.8,
-        "p_value_vs_benchmark": 0.002989,
-        "beta_vs_nifty500": 0.72,
-        "alpha_annual_pct": 20.45
+        "n_months": 103,
+        "psr_excess": 0.9946,
+        "dsr_k5": 0.9123,
+        "dsr_k8000": 0.1042,
+        "t_stat_vs_zero": 3.72,
+        "p_value_vs_zero": 0.000163,
+        "t_stat_vs_benchmark": 2.08,
+        "p_value_vs_benchmark": 0.019818,
+        "beta_vs_nifty500": 0.63,
+        "alpha_annual_pct": 15.79
       },
       "bootstrap": {
         "cagr_ci95": [
-          16.83,
-          50.42
+          9.36,
+          40.04
         ],
         "sharpe_ci95": [
-          0.55,
-          1.71
+          0.23,
+          1.67
         ],
-        "prob_positive_cagr": 1.0
+        "prob_positive_cagr": 0.9995
       },
-      "full_2016_2026": {
-        "months": 127,
-        "total_return_pct": 1810.12,
-        "cagr_pct": 32.14,
-        "vol_pct": 22.43,
-        "sharpe": 1.07,
-        "sortino": 1.82,
-        "maxdd_pct": -23.81,
-        "calmar": 1.35,
-        "win_rate_pct": 69.3,
-        "worst_month_pct": -15.01,
-        "best_month_pct": 43.96
+      "full_2018_2026": {
+        "months": 103,
+        "total_return_pct": 532.6,
+        "cagr_pct": 23.98,
+        "vol_pct": 18.39,
+        "sharpe": 0.92,
+        "sortino": 1.36,
+        "maxdd_pct": -25.28,
+        "calmar": 0.95,
+        "win_rate_pct": 66.0,
+        "worst_month_pct": -13.05,
+        "best_month_pct": 14.69
       },
       "benchmark_full": {
-        "months": 127,
-        "total_return_pct": 269.91,
-        "cagr_pct": 13.16,
-        "vol_pct": 17.01,
-        "sharpe": 0.44,
-        "sortino": 0.54,
-        "maxdd_pct": -29.98,
-        "calmar": 0.44,
-        "win_rate_pct": 62.2,
-        "worst_month_pct": -24.25,
-        "best_month_pct": 14.52
+        "months": 103,
+        "total_return_pct": 142.08,
+        "cagr_pct": 10.85,
+        "vol_pct": 17.65,
+        "sharpe": 0.31,
+        "sortino": 0.37,
+        "maxdd_pct": -31.85,
+        "calmar": 0.34,
+        "win_rate_pct": 62.1,
+        "worst_month_pct": -26.33,
+        "best_month_pct": 12.91
       }
     }
   },
   "balanced_yearly_returns_pct": {
-    "2016": 4.34,
-    "2017": 83.55,
-    "2018": -2.88,
-    "2019": 8.76,
-    "2020": 27.21,
-    "2021": 132.93,
-    "2022": 21.74,
-    "2023": 67.71,
-    "2024": 55.57,
-    "2025": -3.09,
-    "2026": 5.7
+    "2018": -19.68,
+    "2019": -0.59,
+    "2020": 34.32,
+    "2021": 112.08,
+    "2022": 29.24,
+    "2023": 46.85,
+    "2024": 57.68,
+    "2025": -6.44,
+    "2026": 6.38
   }
 }

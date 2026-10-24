@@ -1,13 +1,13 @@
 # Quantitative Scanner Quality & Lineage Report
 
-**Scan ID:** `SCAN_2026-10-19_1792789370`  
-**Execution Timestamp:** 2026-10-23 21:02:50  
+**Scan ID:** `SCAN_2026-10-19_1792847644`  
+**Execution Timestamp:** 2026-10-24 13:14:04  
 **As-Of Market Date:** 2026-10-19  
 **Reference Benchmark:** `NIFTY500`  
 **Strategy Version:** `MIP-Scanner-1.0`  
 **Scanner Version:** `2.0.0-institutional`  
 **Configuration Hash:** `6c8981f97b010ad4...`  
-**Execution Runtime:** 19.37s  
+**Execution Runtime:** 2.5s  
 
 ---
 

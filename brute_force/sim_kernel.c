@@ -75,7 +75,7 @@ typedef struct {
     float    risk_per_trade_pct; // 60: Risk per trade % (1.0)
 } SimParams;
 
-// In-Memory Tensor Cube Definition (192 bytes, 8-byte aligned)
+// In-Memory Tensor Cube Definition (200 bytes, 8-byte aligned)
 typedef struct {
     uint32_t num_dates;                      // 0
     uint32_t num_symbols;                    // 4
@@ -99,6 +99,7 @@ typedef struct {
     const uint8_t* rs_pass_cubes;            // 168
     const float*   vol_target_scalar;        // 176
     const uint8_t* delivery_veto_plane;      // 184
+    const uint8_t* universe_membership_mask; // 192: [T,N] PIT index membership (NULL = no filter)
 } TensorCube;
 
 typedef struct {
@@ -279,6 +280,12 @@ static inline void simulate_single_config(
                 if (N == 1) nan_bars_count++;
                 continue;
             }
+            // Point-in-time index membership: a symbol can only be selected on a
+            // date on which it is actually a constituent.
+            if (cube->universe_membership_mask &&
+                !cube->universe_membership_mask[(size_t)sig_date * N + s]) {
+                continue;
+            }
             if (isnan(sig_high[s]) || isnan(sig_ema[s])) continue;
 
             // Retrace filter (if bit active)
@@ -317,7 +324,11 @@ static inline void simulate_single_config(
             int r_rank = candidate_rank[s];
 
             bool should_exit = false;
-            if (isnan(c_px) || isinf(c_px) || c_px <= 0.0f || (cube->valid_price_mask && !cube->valid_price_mask[(size_t)sig_date * N + s])) {
+            // A holding removed from the index is exited at this rebalance.
+            if (cube->universe_membership_mask &&
+                !cube->universe_membership_mask[(size_t)sig_date * N + s]) {
+                should_exit = true;
+            } else if (isnan(c_px) || isinf(c_px) || c_px <= 0.0f || (cube->valid_price_mask && !cube->valid_price_mask[(size_t)sig_date * N + s])) {
                 should_exit = true;
             } else if ((filter_flags & FILTER_RETRACE) && (!isnan(h_px)) && (c_px < (retrace_thresh * h_px))) {
                 should_exit = true;

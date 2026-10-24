@@ -6,7 +6,7 @@ Pillar 1: End Goal — Complete, reproducible, rule-based momentum investing eng
 Pillar 2: Universe Integrity — No survivorship bias, delisted company accounting, PIT history.
 Pillar 3: Data Integrity — Raw market data immutability, analytical-price layer, corporate actions hash.
 Pillar 4: Strategy Integrity — Frozen strategy fingerprint, 9 scalar parameters, Volar formula.
-Pillar 5: Future-Proof Architecture — Decoupled 5-layer architecture, 25 core modules, zero-compiler.
+Pillar 5: Future-Proof Architecture — Decoupled 5-layer architecture, 27 core modules, zero-compiler.
 Pillar 6: Operational Safety — Fail-closed boundaries (bear regime firewall, Gate 8 anti-IPO, stale data).
 Pillar 7: Truth & Auditability — Denominator accounting, production readiness withheld, E1 evidence.
 """
@@ -195,9 +195,9 @@ class TestPillar5FutureProofArchitecture(unittest.TestCase):
     """Pillar 5: Verify decoupled architecture, pure-Python modules, and core integrity."""
 
     def test_core_modules_count(self):
-        """Verify core architecture consists strictly of 25 decoupled modules."""
+        """Verify core architecture consists strictly of 27 decoupled modules."""
         core_files = list((PROJECT_ROOT / "core").glob("*.py"))
-        self.assertEqual(len(core_files), 25, f"Expected exactly 25 core modules, found {len(core_files)}")
+        self.assertEqual(len(core_files), 27, f"Expected exactly 27 core modules, found {len(core_files)}")
 
     def test_zero_compiler_pure_python(self):
         """Verify core modules run without requiring C/C++ compilation."""

@@ -1,0 +1,17 @@
+{
+  "purpose": "Probe proving a 2017-01-01 PIT NIFTY500 run is not refused (only 2016-01-01 is).",
+  "config": "D: lookback 252, EMA 200, top20, buffer40, cap2, ATR risk parity, regime on",
+  "period": "2017-01-01..2017-12-31",
+  "cagr_pct": 46.25,
+  "sharpe_ratio": 2.86,
+  "max_drawdown_pct": -1.12,
+  "daily_max_drawdown_pct": -10.08,
+  "total_trades": 46,
+  "universe_size": 382,
+  "eligible_symbols": 305,
+  "universe_source": "PIT_SNAPSHOT",
+  "universe_point_in_time": true,
+  "pit_members_start": 366,
+  "survivorship_bias_risk": false,
+  "final_equity": 1462475.64
+}

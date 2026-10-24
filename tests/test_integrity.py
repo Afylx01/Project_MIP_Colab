@@ -45,7 +45,7 @@ class TestStrategyFingerprintIntegrity(unittest.TestCase):
 
 
 class TestCoreModulePresence(unittest.TestCase):
-    """Verify all 25 expected core modules exist."""
+    """Verify all expected core modules exist."""
 
     EXPECTED_MODULES = [
         "__init__.py",
@@ -62,6 +62,7 @@ class TestCoreModulePresence(unittest.TestCase):
         "excel_generator.py",
         "health.py",
         "identity.py",
+        "pit_membership.py",
         "portfolio.py",
         "reason_codes.py",
         "rrg.py",
@@ -71,6 +72,7 @@ class TestCoreModulePresence(unittest.TestCase):
         "settings.py",
         "sync_sectors.py",
         "telegram_sender.py",
+        "universe_policy.py",
         "validation.py",
         "visuals.py",
     ]

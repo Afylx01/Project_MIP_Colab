@@ -45,11 +45,14 @@ class TestMultiScheduleBruteForce(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.so_path = compile_native_kernel(force_recompile=True)
-        # Build tensor cube once for testing
+        # Explicit small universe: fast and independent of index membership.
+        from core.data_engine import load_universe_constituents
+        cls.symbols = sorted(load_universe_constituents("NIFTY500"))[:60]
         cls.cube = build_tensor_cube(
             start_date="2016-01-01",
             end_date="2026-08-31",
-            universe_name="NIFTY500",
+            universe_name="TEST_SUBSET",
+            symbols=cls.symbols,
         )
         cls.runner = BruteForceCampaignRunner(cube=cls.cube)
 
@@ -57,7 +60,7 @@ class TestMultiScheduleBruteForce(unittest.TestCase):
         import ctypes
         self.assertEqual(ctypes.sizeof(CSimulationSummary), 48)
         self.assertEqual(ctypes.sizeof(CSimParams), 64)
-        self.assertEqual(ctypes.sizeof(CTensorCube), 192)
+        self.assertEqual(ctypes.sizeof(CTensorCube), 200)
 
     def test_02_cube_schedules_generated(self):
         self.assertEqual(self.cube.num_schedules, 5)
@@ -158,7 +161,7 @@ class TestMultiScheduleBruteForce(unittest.TestCase):
         res = self.runner.run_custom_backtest(
             start_date="2020-01-01",
             end_date="2024-12-31",
-            universe_name="NIFTY500",
+            universe_name="TEST_SUBSET",
             schedule="monthly",
             lookback=252,
             ema_trend=200,
@@ -187,7 +190,7 @@ class TestMultiScheduleBruteForce(unittest.TestCase):
             schedules=["monthly"],
             start_date="2020-01-01",
             end_date="2024-12-31",
-            universe_name="NIFTY500",
+            universe_name="TEST_SUBSET",
             num_threads=2,
         )
         self.assertEqual(len(df), 4)

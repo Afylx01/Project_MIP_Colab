@@ -52,7 +52,7 @@ def run_calmar_optimization():
 
     runner = BruteForceCampaignRunner()
     print("[1/4] Ensuring 3D Tensor Cube (NIFTY500)...")
-    cube = runner.ensure_cube(universe_name="NIFTY500", benchmark="NIFTY500")
+    cube = runner.ensure_cube(universe_name="ALL", benchmark="NIFTY500")
 
     output_dir = PROJECT_ROOT / "reports" / "full_variable_audit"
     output_dir.mkdir(parents=True, exist_ok=True)

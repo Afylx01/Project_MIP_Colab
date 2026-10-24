@@ -19,6 +19,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from core.data_engine import get_base_dir, get_db_path, load_universe_constituents, load_symbol_sector_map
 from core.portfolio import normalize_sector
 from core.benchmark_validator import validate_benchmark_dataframe, compute_benchmark_indicators
+from core.universe_policy import resolve_universe
 from nextgen.volatility_targeting import compute_ewma_realized_volatility
 
 # Canonical Lookbacks & EMA Spans
@@ -51,6 +52,7 @@ class TensorCubeContainer:
         sector_names: Optional[List[str]] = None,
         bench_closes: Optional[np.ndarray] = None,
         benchmark_name: str = "NIFTY500",
+        universe_membership_mask: Optional[np.ndarray] = None,
         **kwargs,
     ):
         self.dates = dates
@@ -115,6 +117,12 @@ class TensorCubeContainer:
         else:
             self.bench_closes = np.ones(self.num_dates, dtype=np.float32)
 
+        if universe_membership_mask is not None:
+            self.universe_membership_mask = np.ascontiguousarray(
+                universe_membership_mask, dtype=np.uint8)
+        else:
+            self.universe_membership_mask = None
+
         self.lookback_values = lookback_values or kwargs.get("lookback_values", [252])
         self.ema_span_values = ema_span_values or kwargs.get("ema_span_values", [200])
         self.sector_names = sector_names or kwargs.get("sector_names", ["GENERAL"])
@@ -129,6 +137,7 @@ class TensorCubeContainer:
             + self.benchmark_regime.nbytes
             + self.sector_ids.nbytes
             + (self.bench_closes.nbytes if hasattr(self, "bench_closes") else 0)
+            + (self.universe_membership_mask.nbytes if getattr(self, "universe_membership_mask", None) is not None else 0)
             + self.open_px.nbytes
             + self.close_px.nbytes
             + self.atr_14.nbytes
@@ -224,45 +233,34 @@ def build_tensor_cube(
         end_date = get_latest_date(db_path=db_path)
 
     as_of_date = kwargs.get("as_of_date", start_date)
-    point_in_time = kwargs.get("point_in_time", False)
-    allow_fallback = kwargs.get("allow_constituent_fallback", not point_in_time)
 
-    used_pit_constituents = False
-    if symbols is not None:
-        all_symbols = sorted(list(set(symbols)))
-        N = len(all_symbols)
-        print(f"\n[CubeBuilder] Using {N} explicit symbols for universe '{universe_name}'.")
+    # Universe policy (see core/universe_policy.py):
+    #   explicit symbols -> deliberate research universe
+    #   ALL              -> full DB cross-section, delisted names included
+    #   named index      -> refused (no historical PIT snapshots; no silent fallback)
+    policy = resolve_universe(
+        universe_name, as_of_date, base_path, explicit_symbols=symbols,
+        allow_current_constituents=bool(kwargs.get("allow_current_constituents", False)),
+        end_date=end_date,
+    )
+    universe_source = str(policy["source"])
+    pit_index = policy.get("pit_index")
+    data_completeness_risk = bool(policy["data_completeness_risk"])
+    survivorship_bias_risk = bool(policy["survivorship_bias_risk"])
+    resolved_symbols = policy["symbols"]
+
+    if resolved_symbols is not None:
+        all_symbols = list(resolved_symbols)
+        print(f"\n[CubeBuilder] Using {len(all_symbols)} explicit symbols for universe '{universe_name}'.")
     else:
-        print(f"\n[CubeBuilder] Loading constituents for universe '{universe_name}'...")
-        sym_set = None
-        if point_in_time:
-            sym_set = load_point_in_time_constituents(universe_name, as_of_date=as_of_date, base_dir=base_path)
-            if sym_set:
-                used_pit_constituents = True
-                print(f"[CubeBuilder] Loaded {len(sym_set)} point-in-time constituents from snapshots (as of {as_of_date}).")
-        if not sym_set:
-            if allow_fallback or not point_in_time:
-                sym_set = load_universe_constituents(universe_name)
-                print(f"[CubeBuilder] Loaded {len(sym_set)} constituents from {universe_name}.")
-                if universe_name.upper() not in ("ALL", "MASTER", "PIT"):
-                    print(
-                        f"[CubeBuilder] WARNING: no point-in-time snapshot for {universe_name} as of {as_of_date}; "
-                        "current constituents used. Survivorship bias risk flagged on the cube."
-                    )
-            else:
-                raise ValueError(
-                    f"No point-in-time snapshot for {universe_name} as of {as_of_date}. "
-                    f"Set allow_constituent_fallback=True to override."
-                )
-        all_symbols = sorted(list(sym_set))
-        if not all_symbols and universe_name.upper() in ("ALL", "MASTER", "PIT"):
-            # "ALL" means no symbol filter: enumerate every symbol in the DB.
-            _conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-            all_symbols = sorted({r[0] for r in _conn.execute("SELECT DISTINCT symbol FROM prices")})
-            _conn.close()
-            print(f"[CubeBuilder] Universe ALL resolved to every DB symbol: {len(all_symbols)}.")
-        N = len(all_symbols)
-        print(f"[CubeBuilder] Final active symbol count: {N}.")
+        _conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        all_symbols = sorted({r[0] for r in _conn.execute("SELECT DISTINCT symbol FROM prices")})
+        _conn.close()
+        print(f"\n[CubeBuilder] Universe ALL resolved to every DB symbol: {len(all_symbols)}.")
+    N = len(all_symbols)
+    if N == 0:
+        raise ValueError("EMPTY_UNIVERSE: resolved universe contains no symbols.")
+    print(f"[CubeBuilder] Final active symbol count: {N}.")
 
     # Sector mapping
     raw_sector_map = load_symbol_sector_map()
@@ -314,6 +312,17 @@ def build_tensor_cube(
     all_dates = sorted(raw_bars["date"].unique().tolist())
     T = len(all_dates)
     print(f"[CubeBuilder] Loaded {len(raw_bars):,} price bars across {T} trading dates.")
+
+    # Point-in-time membership plane: 1 only on dates the symbol was a member.
+    universe_membership_mask = None
+    if pit_index:
+        from core.pit_membership import membership_mask
+        print(f"[CubeBuilder] Building point-in-time membership mask for {pit_index}...")
+        universe_membership_mask = membership_mask(
+            str(pit_index), all_dates, all_symbols, base_path
+        )
+        print(f"[CubeBuilder] Membership mask: {int(universe_membership_mask.sum()):,} member-days "
+              f"across {T} sessions x {len(all_symbols)} symbols.")
 
     # Load and validate benchmark (user-selected)
     print(f"[CubeBuilder] Resolving benchmark series for '{benchmark_name}'...")
@@ -538,15 +547,15 @@ def build_tensor_cube(
         benchmark_name=benchmark_name,
         corporate_actions_bypassed=corporate_actions_bypassed,
         valid_price_mask=valid_price_mask,
+        universe_membership_mask=universe_membership_mask,
     )
 
     container.universe_name = universe_name
-    container.universe_point_in_time = used_pit_constituents
-    container.survivorship_bias_risk = (
-        not used_pit_constituents
-        and symbols is None
-        and universe_name.upper() not in ("ALL", "MASTER", "PIT")
-    )
+    container.universe_source = universe_source
+    container.universe_point_in_time = bool(pit_index)
+    container.pit_index = pit_index
+    container.survivorship_bias_risk = survivorship_bias_risk
+    container.data_completeness_risk = data_completeness_risk
     container.constituent_as_of = as_of_date
 
     print(f"\n[CubeBuilder] Tensor Cube created: {container.memory_footprint_mb:.2f} MB RAM footprint.")

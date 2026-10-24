@@ -62,7 +62,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
             interactive=False,
             mode="baseline",
             schedule="monthly",
-            universe_mode="NIFTY500",
+            universe_mode="NIFTY50",
             start_date="2020-01-01",
             end_date="2021-12-31",
         )
@@ -81,7 +81,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
             interactive=False,
             mode="baseline",
             schedule="weekly",
-            universe_mode="NIFTY500",
+            universe_mode="NIFTY50",
             start_date="2020-01-01",
             end_date="2020-12-31",
         )
@@ -95,7 +95,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
         df = main.run_brute_force_flow(
             interactive=False,
             mode="tier1",
-            universe_mode="NIFTY500",
+            universe_mode="NIFTY50",
         )
         import pandas as pd
         self.assertIsInstance(df, pd.DataFrame, "Tier 1 matrix must return a pandas DataFrame")
@@ -111,7 +111,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
             interactive=False,
             mode="baseline",
             schedule="monthly",
-            universe_mode="NIFTY500",
+            universe_mode="NIFTY50",
             start_date="2020-01-01",
             end_date="2021-12-31",
             use_residual_momentum=True,
@@ -134,7 +134,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
             schedules=["monthly"],
             start_date="2020-01-01",
             end_date="2020-12-31",
-            universe_name="NIFTY500",
+            universe_name="NIFTY50",
             num_threads=2,
             use_residual_mom=True,
             use_vol_targeting=True,
@@ -151,7 +151,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
         from brute_force.grid import generate_tier3_hyperparameter_grid
         from brute_force.runner import BruteForceCampaignRunner
         runner = BruteForceCampaignRunner()
-        cube = runner.ensure_cube(universe_name="NIFTY500")
+        cube = runner.ensure_cube(universe_name="NIFTY50")
 
         # Test classic 30,720 matrix
         grid_classic = generate_tier3_hyperparameter_grid(cube, sample_size=30720, expanded_grid=False)
@@ -174,7 +174,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
         from brute_force.grid import generate_random_time_duration_windows
         from brute_force.runner import BruteForceCampaignRunner
         runner = BruteForceCampaignRunner()
-        cube = runner.ensure_cube(universe_name="NIFTY500")
+        cube = runner.ensure_cube(universe_name="NIFTY50")
 
         windows = generate_random_time_duration_windows(cube, num_durations=6, seed=42)
         self.assertEqual(len(windows), 6)
@@ -193,7 +193,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
         from brute_force.grid import generate_tier3_hyperparameter_grid
         from brute_force.runner import BruteForceCampaignRunner
         runner = BruteForceCampaignRunner()
-        cube = runner.ensure_cube(universe_name="NIFTY500")
+        cube = runner.ensure_cube(universe_name="NIFTY50")
 
         # Sample 50 configurations with random time durations enabled
         grid = generate_tier3_hyperparameter_grid(
@@ -216,7 +216,7 @@ class TestMainBruteForceIntegration(unittest.TestCase):
         from brute_force.runner import BruteForceCampaignRunner
         from brute_force.grid import generate_tier3_hyperparameter_grid
         runner = BruteForceCampaignRunner()
-        cube = runner.ensure_cube(universe_name="NIFTY500")
+        cube = runner.ensure_cube(universe_name="NIFTY50")
 
         grid = generate_tier3_hyperparameter_grid(
             cube,

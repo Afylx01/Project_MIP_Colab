@@ -12,6 +12,7 @@ from brute_force.grid import (FILTER_RETRACE, FILTER_TREND, FILTER_RS,
                               LOOKBACK_VALUES, EMA_SPAN_VALUES)
 from nextgen.risk_statistics import (compute_probabilistic_sharpe_ratio,
                                      compute_deflated_sharpe_ratio)
+from core.universe_policy import MIN_ELIGIBLE_SYMBOLS
 
 OUT = ROOT / "reports" / "analysis_evidence"
 RF = 0.065
@@ -57,6 +58,11 @@ def idx_for(start, end):
     e = max(cube.date_to_idx[d] for d in cube.dates if d <= end)
     return s, e
 
+def window_eligible(start):
+    """PIT NIFTY500 members with the 252-bar history the strategy needs."""
+    from core.pit_membership import coverage_stats
+    return int(coverage_stats("NIFTY500", start, base_dir=ROOT)["eligible_symbols"])
+
 def rebalance_indices(start, end):
     s, e = idx_for(start, end)
     off = int(cube.schedule_offsets[1]); ln = int(cube.schedule_lengths[1])
@@ -68,10 +74,13 @@ def exact_curve(c, start, end, friction=15.0, slippage=5.0):
     p = base_param(c, s, e, friction, slippage)
     dates, eq = [], []
     for i in idx:
-        q = dict(p); q["end_date_idx"] = i
+        # The kernel executes and marks period NAV at sig_date+1 (T+1). Ending a
+        # monthly run at the signal date would skip index-removal exits.
+        j = min(i + 1, e)
+        q = dict(p); q["end_date_idx"] = j
         arr = runner.engine.execute_sweep([q], cube, num_threads=1)
         v = float(arr[0]["ending_equity"])
-        dates.append(cube.dates[i]); eq.append(v)
+        dates.append(cube.dates[j]); eq.append(v)
     return dates, np.array(eq, dtype=float)
 
 def metrics_from_equity(eq, dates, start, end):
@@ -110,22 +119,24 @@ def metrics_from_equity(eq, dates, start, end):
 
 def bench_curve(base_start, end="2026-08-31"):
     s, e, idx = rebalance_indices(base_start, end)
-    return [cube.dates[i] for i in idx], np.array([float(cube.bench_closes[i]) for i in idx], dtype=float)
+    # Match the strategy's T+1 period ends so both series cover the same months.
+    js = [min(i + 1, e) for i in idx]
+    return [cube.dates[j] for j in js], np.array([float(cube.bench_closes[j]) for j in js], dtype=float)
 
 # Strategy and benchmark curves must share the same base rebalance so that
 # metrics_from_equity applies the identical prepend rule to both. Otherwise a
 # window compares e.g. 5 strategy months against 4 benchmark months.
-BENCH_16 = bench_curve("2016-01-01")
-BENCH_F = bench_curve("2007-01-02")
+BENCH_16 = bench_curve("2018-01-01")
+BENCH_F = bench_curve("2018-01-01")
 
 def bench_metrics(start, end):
-    bd, be = BENCH_16 if start >= "2016-01-01" else BENCH_F
+    bd, be = BENCH_16
     return metrics_from_equity(be, bd, start, end)
 
 WINDOWS = {
-    "is_2016_2021": ("2016-01-01", "2021-12-31"),
+    "is_2018_2021": ("2018-01-01", "2021-12-31"),
     "oos_2022_2026": ("2022-01-01", "2026-08-31"),
-    "full_2016_2026": ("2016-01-01", "2026-08-31"),
+    "full_2018_2026": ("2018-01-01", "2026-08-31"),
     "long_2008_2026": ("2008-01-01", "2026-08-31"),
     "gfc_2008": ("2008-01-01", "2008-12-31"),
     "euro_2011": ("2011-01-01", "2011-12-31"),
@@ -140,13 +151,22 @@ results = {"generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
 for name, c in CANDIDATES.items():
     print("==>", name)
     c_res = {"settings": c, "windows": {}, "alignment": {}}
-    dates_f, eq_f = exact_curve(c, "2007-01-02", "2026-08-31")
-    dates_16, eq_16 = exact_curve(c, "2016-01-01", "2026-08-31")
+    # Pre-2018 windows are refused by the PIT breadth gate. Only the 2018+ curve
+    # is computed.
+    dates_f, eq_f = None, None
+    dates_16, eq_16 = exact_curve(c, "2018-01-01", "2026-08-31")
     for wname, (ws, we) in WINDOWS.items():
-        if ws >= "2016-01-01":
-            d, e, bd, be = dates_16, eq_16, BENCH_16[0], BENCH_16[1]
-        else:
-            d, e, bd, be = dates_f, eq_f, BENCH_F[0], BENCH_F[1]
+        elig = window_eligible(ws)
+        if elig is not None and elig < MIN_ELIGIBLE_SYMBOLS:
+            c_res["windows"][wname] = {
+                "status": "REFUSED",
+                "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+                "eligible_symbols": elig,
+                "min_eligible_symbols": MIN_ELIGIBLE_SYMBOLS,
+            }
+            c_res["alignment"][wname] = {"aligned": False, "refused": True, "eligible_symbols": elig}
+            continue
+        d, e, bd, be = dates_16, eq_16, BENCH_16[0], BENCH_16[1]
         m = metrics_from_equity(e, d, ws, we)
         bm = metrics_from_equity(be, bd, ws, we)
         if m is None:
@@ -158,18 +178,18 @@ for name, c in CANDIDATES.items():
         c_res["alignment"][wname] = {
             "strategy_months": m["months"],
             "benchmark_months": None if bm is None else bm["months"],
-            "strategy_first": d[0] if ws < "2016-01-01" else dates_16[0],
+            "strategy_first": dates_16[0],
             "aligned": bm is not None and m["months"] == bm["months"],
         }
     # cost sensitivity on full window
-    d2, e2 = exact_curve(c, "2016-01-01", "2026-08-31", friction=30.0, slippage=10.0)
-    cm = metrics_from_equity(e2, d2, "2016-01-01", "2026-08-31")
+    d2, e2 = exact_curve(c, "2018-01-01", "2026-08-31", friction=30.0, slippage=10.0)
+    cm = metrics_from_equity(e2, d2, "2018-01-01", "2026-08-31")
     cm.pop("_rets"); cm.pop("_equity")
     c_res["cost_30_10bps"] = cm
     # statistics on full monthly returns
-    m = metrics_from_equity(eq_16, dates_16, "2016-01-01", "2026-08-31")
+    m = metrics_from_equity(eq_16, dates_16, "2018-01-01", "2026-08-31")
     r = m.pop("_rets"); m.pop("_equity")
-    rb = bench_metrics("2016-01-01", "2026-08-31")
+    rb = bench_metrics("2018-01-01", "2026-08-31")
     br = rb.pop("_rets"); rb.pop("_equity")
     n = min(len(r), len(br)); r = r[:n]; br = br[:n]
     excess = r - RF / 12
@@ -200,13 +220,21 @@ for name, c in CANDIDATES.items():
         "sharpe_ci95": [round(float(np.percentile(shs, 2.5)), 2), round(float(np.percentile(shs, 97.5)), 2)],
         "prob_positive_cagr": round(float((cagrs > 0).mean()), 4),
     }
-    c_res["full_2016_2026"] = m
+    c_res["full_2018_2026"] = m
     c_res["benchmark_full"] = rb
     results["candidates"][name] = c_res
     print("   full:", m, "| OOS:", c_res["windows"]["oos_2022_2026"])
 
 # benchmark windows (same effective window as the strategy)
 for wname, (ws, we) in WINDOWS.items():
+    elig = window_eligible(ws)
+    if elig is not None and elig < MIN_ELIGIBLE_SYMBOLS:
+        results["benchmark"][wname] = {
+            "status": "REFUSED",
+            "reason": "INSUFFICIENT_UNIVERSE_BREADTH",
+            "eligible_symbols": elig,
+        }
+        continue
     b = bench_metrics(ws, we)
     if b is None:
         results["benchmark"][wname] = None
@@ -224,8 +252,8 @@ def yearly_table(eq, dates, start, end):
     rets = ye.pct_change().dropna() * 100
     return {str(k.year): round(float(v), 2) for k, v in rets.items()}
 
-d, e = exact_curve(CANDIDATES["A_balanced"], "2016-01-01", "2026-08-31")
-results["balanced_yearly_returns_pct"] = yearly_table(e, d, "2016-01-01", "2026-08-31")
+d, e = exact_curve(CANDIDATES["A_balanced"], "2018-01-01", "2026-08-31")
+results["balanced_yearly_returns_pct"] = yearly_table(e, d, "2018-01-01", "2026-08-31")
 
 print(json.dumps({k: v for k, v in results.items() if k not in ("candidates", "benchmark")}, indent=2))
 (OUT / "21_strategy_validation.json").write_text(json.dumps(results, indent=2, default=str))

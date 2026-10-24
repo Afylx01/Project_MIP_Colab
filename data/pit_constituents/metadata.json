@@ -1,0 +1,13 @@
+{
+  "source_repo": "https://github.com/aditya-jha/nse-historical-membership",
+  "source_commit": "cc6f89fd6699a92afa8d398896d0aac385eb9e8c",
+  "source_file": "index_history/data/index_membership_history.csv",
+  "license": "CC BY 4.0 (data), MIT (code)",
+  "built_at": "2026-10-24T06:15:33.398815+00:00",
+  "rows": 6525,
+  "nifty500_rows": 1123,
+  "nifty500_symbols": 951,
+  "nifty500_min_valid_from": "2014-01-01",
+  "nifty500_max_valid_from": "2026-03-31",
+  "notes": "Half-open intervals [valid_from, valid_to). NULL valid_to = current member."
+}

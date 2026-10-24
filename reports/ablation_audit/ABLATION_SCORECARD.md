@@ -1,4 +1,11 @@
 # Institutional Empirical Feature Audit & Ablation Scorecard
+
+> **RETRACTED AS A PERFORMANCE CLAIM (2026-10-24).** The ablation matrix was produced with the
+> 2026 NIFTY500 constituent list applied backwards over 2016–2026 (survivorship/look-ahead bias).
+> Its CAGR / Sharpe / PSR / DSR / drawdown figures are **not reproducible** under the point-in-time
+> `v2.4.2-pit-membership` contract and are withdrawn. Retained only as the record of which feature
+> variants were tested. Canonical PIT results: `reports/STRATEGY_PROOF_AND_BEST_SETTINGS.md`.
+
 **Execution Timestamp:** 2026-10-23 06:36:53 UTC
 **Data Source:** Real Historical SQLite Database (`data/universe.db`), 1,083 Indian Equities, 2.17M OHLCV bars
 **Reference Benchmark:** NIFTY 500 Index (Real Daily Close)

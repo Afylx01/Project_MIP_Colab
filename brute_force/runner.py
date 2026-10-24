@@ -12,6 +12,7 @@ import pandas as pd
 
 from .cube_builder import TensorCubeContainer, build_tensor_cube
 from .bridge import NativeBruteForceEngine
+from core.universe_policy import MIN_ELIGIBLE_SYMBOLS, check_breadth, min_pit_eligible
 from .grid import (
     get_canonical_baseline_param,
     generate_tier1_baseline_matrix,
@@ -39,21 +40,55 @@ class BruteForceCampaignRunner:
         self.base_dir = Path(base_dir) if base_dir else None
         self._cube_universe = kwargs.get("universe_name", kwargs.get("universe", getattr(cube, "universe_name", None) if cube else None))
         self._cube_benchmark = kwargs.get("benchmark_name", kwargs.get("benchmark", getattr(cube, "benchmark_name", None) if cube else None))
+        self._cube_symbols = None
         self.extra_kwargs = kwargs
+
+    @staticmethod
+    def _assert_breadth(cube: TensorCubeContainer, start_idx: int) -> None:
+        """Refuse a cross-sectional run when too few eligible symbols/members."""
+        source = getattr(cube, "universe_source", "FULL_CROSS_SECTION")
+        mask = getattr(cube, "valid_price_mask", None)
+        if mask is None:
+            return
+        valid = np.asarray(mask[: int(start_idx) + 1])
+        if source == "PIT_SNAPSHOT":
+            membership = getattr(cube, "universe_membership_mask", None)
+            if membership is None:
+                raise ValueError("PIT_SNAPSHOT universe is missing its membership mask.")
+            combined = valid & np.asarray(membership[: int(start_idx) + 1])
+            eligible = int((combined.sum(axis=0) >= 252).sum())
+            member_count = int(np.asarray(membership[start_idx]).sum())
+            floor = min_pit_eligible(member_count)
+            if eligible < floor:
+                raise ValueError(
+                    f"INSUFFICIENT_PIT_BREADTH: only {eligible} point-in-time members have the "
+                    f"required 252-bar history at index {start_idx}; minimum is {floor} "
+                    f"(members on date: {member_count})."
+                )
+            return
+        if source != "FULL_CROSS_SECTION":
+            return
+        counts = valid.sum(axis=0)
+        eligible = int((counts >= 252).sum())
+        check_breadth(eligible, "FULL_CROSS_SECTION")
 
     def ensure_cube(
         self,
         start_date: str = "2007-01-02",
         end_date: Optional[str] = None,
-        universe_name: str = "NIFTY750",
+        universe_name: str = "ALL",
         benchmark: str = "NIFTY500",
+        symbols: Optional[List[str]] = None,
+        allow_current_constituents: bool = False,
     ) -> TensorCubeContainer:
         from core.benchmark_validator import normalize_benchmark_name
         benchmark_name = normalize_benchmark_name(benchmark)
+        symbols_key = tuple(symbols) if symbols is not None else None
         if (
             self.cube is None
             or (self._cube_universe is not None and self._cube_universe != universe_name)
             or (self._cube_benchmark is not None and self._cube_benchmark != benchmark_name)
+            or (symbols_key is not None and symbols_key != self._cube_symbols)
         ):
             t0 = time.perf_counter()
             self.cube = build_tensor_cube(
@@ -61,11 +96,14 @@ class BruteForceCampaignRunner:
                 end_date=end_date,
                 universe_name=universe_name,
                 benchmark_name=benchmark_name,
+                symbols=symbols,
+                allow_current_constituents=allow_current_constituents,
                 lookback_values=LOOKBACK_VALUES,
                 ema_span_values=EMA_SPAN_VALUES,
             )
             self._cube_universe = universe_name
             self._cube_benchmark = benchmark_name
+            self._cube_symbols = symbols_key
             self.cube.universe_name = universe_name
             self.cube.benchmark_name = benchmark_name
             print(f"[Runner] In-memory Tensor Cube [{universe_name} | Benchmark: {benchmark_name}] generated in {time.perf_counter() - t0:.2f}s")
@@ -80,15 +118,17 @@ class BruteForceCampaignRunner:
         use_residual_mom: bool = False,
         use_vol_targeting: bool = False,
         use_delivery_veto: bool = False,
-        universe_name: str = "NIFTY750",
+        universe_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Runs the single canonical baseline configuration with optional alpha overlays."""
+        universe_name = universe_name or self._cube_universe or "ALL"
         cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
         param = get_canonical_baseline_param()
 
         # Date indexing
         s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_date], default=0)
         e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= end_date], default=cube.num_dates - 1)
+        self._assert_breadth(cube, s_idx)
 
         flags = CANONICAL_FILTER_FLAGS
         if use_residual_mom:
@@ -177,9 +217,12 @@ class BruteForceCampaignRunner:
 
         result = {
             "config_type": "CANONICAL_BASELINE",
-            "universe": getattr(self, "_cube_universe", getattr(cube, "universe_name", "NIFTY750")),
+            "universe": getattr(self, "_cube_universe", getattr(cube, "universe_name", "ALL")),
+            "universe_source": getattr(cube, "universe_source", None),
             "universe_point_in_time": bool(getattr(cube, "universe_point_in_time", False)),
+            "pit_index": getattr(cube, "pit_index", None),
             "survivorship_bias_risk": bool(getattr(cube, "survivorship_bias_risk", False)),
+            "data_completeness_risk": bool(getattr(cube, "data_completeness_risk", False)),
             "benchmark": getattr(cube, "benchmark_name", benchmark),
             "schedule": schedule,
             "start_date": start_date,
@@ -214,7 +257,7 @@ class BruteForceCampaignRunner:
         self,
         start_date: str = "2016-01-01",
         end_date: Optional[str] = None,
-        universe_name: str = "NIFTY750",
+        universe_name: Optional[str] = None,
         benchmark: str = "NIFTY500",
         schedule: str = "monthly",
         lookback: int = 252,
@@ -237,12 +280,14 @@ class BruteForceCampaignRunner:
         Executes a single simulation configuration over custom dates, universe, and parameters.
         Reconstructs the full periodic equity curve trajectory for visualization.
         """
+        universe_name = universe_name or self._cube_universe or "ALL"
         cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
         actual_end_date = end_date or cube.dates[-1]
 
         # Date indexing
         s_idx = min([cube.date_to_idx[d] for d in cube.dates if d >= start_date], default=0)
         e_idx = max([cube.date_to_idx[d] for d in cube.dates if d <= actual_end_date], default=cube.num_dates - 1)
+        self._assert_breadth(cube, s_idx)
 
         # Nearest lookback and EMA index
         l_idx = int(np.argmin([abs(v - lookback) for v in cube.lookback_values]))
@@ -353,8 +398,11 @@ class BruteForceCampaignRunner:
         return {
             "config_type": "CUSTOM_BACKTEST",
             "universe": universe_name,
+            "universe_source": getattr(cube, "universe_source", None),
             "universe_point_in_time": bool(getattr(cube, "universe_point_in_time", False)),
+            "pit_index": getattr(cube, "pit_index", None),
             "survivorship_bias_risk": bool(getattr(cube, "survivorship_bias_risk", False)),
+            "data_completeness_risk": bool(getattr(cube, "data_completeness_risk", False)),
             "benchmark": getattr(cube, "benchmark_name", benchmark),
             "schedule": schedule,
             "start_date": start_date,
@@ -396,7 +444,7 @@ class BruteForceCampaignRunner:
         sizing_modes: Optional[List[str]] = None,
         start_date: str = "2016-01-01",
         end_date: Optional[str] = None,
-        universe_name: str = "NIFTY750",
+        universe_name: Optional[str] = None,
         benchmark: str = "NIFTY500",
         num_threads: int = 8,
         filter_flags: Optional[int] = None,
@@ -412,6 +460,7 @@ class BruteForceCampaignRunner:
         Executes a multi-threaded parallel parameter optimization sweep across all custom combinations.
         Returns a pandas DataFrame sorted by Sharpe Ratio descending.
         """
+        universe_name = universe_name or self._cube_universe or "ALL"
         cube = self.ensure_cube(universe_name=universe_name, benchmark=benchmark)
         params_list = generate_custom_parameter_grid(
             cube=cube,
@@ -440,7 +489,7 @@ class BruteForceCampaignRunner:
     def run_grid_preset(
         self,
         preset: Optional[str] = None,
-        universe_name: str = "NIFTY750",
+        universe_name: Optional[str] = None,
         benchmark: str = "NIFTY500",
         num_threads: int = 8,
         use_residual_mom: bool = False,
@@ -556,15 +605,44 @@ class BruteForceCampaignRunner:
         with real-time throughput telemetry (sims/sec) and ETA reporting so the UI never hangs.
         """
         cube = self.cube if self.cube is not None else self.ensure_cube()
+
+        # Breadth gate per configuration: under-covered windows (e.g. 2008/2011)
+        # are labelled REFUSED and excluded from execution. They are not allowed
+        # to abort an otherwise valid multi-era sweep.
+        runnable, refused = [], []
+        for p in params_list:
+            try:
+                self._assert_breadth(cube, int(p.get("start_date_idx", 0)))
+            except ValueError as exc:
+                refused.append((p, str(exc)))
+            else:
+                runnable.append(p)
+        params_list = runnable
         total_tasks = len(params_list)
 
+        def _refused_frame():
+            if not refused:
+                return pd.DataFrame()
+            rows = []
+            for p, reason in refused:
+                row = dict(p)
+                row.update({
+                    "cagr": np.nan, "sharpe": np.nan, "sortino": np.nan,
+                    "max_drawdown": np.nan, "calmar": np.nan, "win_rate": np.nan,
+                    "profit_factor": np.nan, "ending_equity": np.nan,
+                    "total_trades": 0, "winning_trades": 0, "turnover_annual": np.nan,
+                    "status": "REFUSED", "reason": reason,
+                })
+                rows.append(row)
+            return pd.DataFrame(rows)
+
         print(f"\n============================================================")
-        print(f"[Runner] DISPATCHING BLAZING BRUTE FORCE SWEEP ({total_tasks:,} configurations)")
+        print(f"[Runner] DISPATCHING BLAZING BRUTE FORCE SWEEP ({total_tasks:,} runnable, {len(refused):,} refused)")
         print(f"[Runner] Threads: {num_threads} (SIMD Parallel Kernel) | Benchmark: {getattr(cube, 'benchmark_name', 'NIFTY500')}")
         print(f"============================================================", flush=True)
 
         if total_tasks == 0:
-            return pd.DataFrame()
+            return _refused_frame()
 
         t0 = time.perf_counter()
 
@@ -582,6 +660,8 @@ class BruteForceCampaignRunner:
             df_params = pd.DataFrame(params_list)
             df_res = pd.DataFrame(raw_res)
             df_merged = pd.concat([df_params, df_res.drop(columns=["param_id"], errors="ignore")], axis=1)
+            if refused:
+                df_merged = pd.concat([df_merged, _refused_frame()], ignore_index=True)
             return df_merged
 
         # Chunked streaming execution for massive sweeps (> 5,000)
@@ -628,6 +708,8 @@ class BruteForceCampaignRunner:
         df_params = pd.DataFrame(params_list)
         df_res = pd.DataFrame(raw_res)
         df_merged = pd.concat([df_params, df_res.drop(columns=["param_id"], errors="ignore")], axis=1)
+        if refused:
+            df_merged = pd.concat([df_merged, _refused_frame()], ignore_index=True)
         return df_merged
 
 

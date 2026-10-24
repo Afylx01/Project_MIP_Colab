@@ -70,3 +70,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Vendored upstream dataset clones (provenance + license recorded in
+# data/pit_constituents/metadata.json; derived tables are committed there)
+data/external/

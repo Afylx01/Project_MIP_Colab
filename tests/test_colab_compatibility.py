@@ -77,9 +77,11 @@ class TestColabCompatibilityAndSecurity(unittest.TestCase):
             "RELEASE_DISTRIBUTION_MANIFEST.json",
             "cache_manifest.json",
         }
+        skip_parts = {"reports", ".pytest_cache", ".cache", "logs", ".git",
+                      "pit_constituents", "external"}
         for jf in json_files:
-            # Skip reports, cache, logs, or tests fixtures if any
-            if "reports" in jf.parts or ".pytest_cache" in jf.parts or ".cache" in jf.parts or "logs" in jf.parts:
+            # Skip generated evidence, caches, logs, and vendored data artifacts.
+            if skip_parts.intersection(jf.parts):
                 continue
             self.assertIn(jf.name, allowed_json_basenames, f"Forbidden JSON artifact detected in repository: {jf}")
 

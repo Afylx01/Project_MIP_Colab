@@ -90,11 +90,16 @@ class TestSurvivorshipBias(unittest.TestCase):
             self.assertIn(sym, found, f"Delisted symbol {sym} missing from universe.db (survivorship bias violation)")
 
     def test_point_in_time_fallback_requires_explicit_opt_in(self):
-        """With point_in_time=True and missing snapshot, must NOT silently load current universe without override."""
+        """A window before the PIT table starts must be refused, never silently current-listed."""
         with patch("brute_force.cube_builder.load_point_in_time_constituents", return_value=None):
             with self.assertRaises(ValueError) as cm:
-                build_tensor_cube(universe_name="NIFTY500", start_date="2010-01-01", point_in_time=True)
-            self.assertIn("no point-in-time snapshot", str(cm.exception).lower())
+                build_tensor_cube(
+                    universe_name="NIFTY500",
+                    start_date="2010-01-01",
+                    end_date="2013-12-31",
+                    point_in_time=True,
+                )
+            self.assertIn("point-in-time", str(cm.exception).lower())
 
 
 if __name__ == "__main__":

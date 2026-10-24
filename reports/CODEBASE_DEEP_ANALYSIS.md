@@ -1,20 +1,20 @@
 # Project MIP — Deep Codebase Analysis & Empirical Verification
 
 **Subject:** `/mnt/sdcard/Subtitles/Project/Project_MIP_Colab`
-**Version:** 2.4.0 · **HEAD:** `85c78e2` · **Analysis date:** 2026-10-23
+**Version:** 2.4.2 · **HEAD:** `v2.4.2-pit-membership` · **Analysis date:** 2026-10-24
 **Method:** static reading, independent recomputation from SQLite, full test run, end-to-end pipeline execution, native-kernel benchmark, ledger reconciliation. Every number below was produced in this session; nothing is copied from the README unless explicitly labelled "claimed".
 
 ---
 
 ## 0. Verdict first
 
-**The core engine works and is reproducible.** 565 of 571 tests passed on the original audit (6 environment-gated skips, 0 failures in 850s). The scanner, the Python backtester, the C99 kernel, the compliance engine and the report generators all execute successfully on real data. Accounting identities reconcile to the paisa, results are bit-deterministic across runs, and the ablation scorecard reproduces exactly.
+**The core engine works and is reproducible.** 565 of 571 tests passed on the original audit (6 environment-gated skips, 0 failures in 850s). The scanner, the Python backtester, the C99 kernel, the compliance engine and the report generators all execute successfully on real data. Accounting identities reconcile to the paisa and results are bit-deterministic across runs. (The old ablation scorecard reproduces as a config run, but it is retracted as a performance claim: it used today's constituents backwards.)
 
-**The audit findings have since been remediated.** The original audit identified a series of concrete defects the test suite did not catch: a silently broken pick-history writer, no historical point-in-time index constituents, an inconsistent delisting flag, calendar/data disagreements that leak into fills, a backtester that ignores the selected universe, a non-functional standalone RRG flow, a Telegram chunker that cannot split long lines, and tests that overwrite production deliverables. All were fixed in the 2026-10-23 remediation pass (§11), with regression tests and a full-suite rerun. Post-fix measurements: **574 passed, 5 skipped, 0 failed**.
+**The audit findings have since been remediated.** The original audit identified a series of concrete defects the test suite did not catch: a silently broken pick-history writer, no historical point-in-time index constituents, an inconsistent delisting flag, calendar/data disagreements that leak into fills, a backtester that ignores the selected universe, a non-functional standalone RRG flow, a Telegram chunker that cannot split long lines, and tests that overwrite production deliverables. All were fixed in the 2026-10-23/24 remediation passes (§11), with regression tests and a full-suite rerun. Post-fix measurements: **630 passed, 5 skipped, 0 failed** (2026-10-24, at the `v2.4.2-pit-membership` tag).
 
-The **canonical production backtest now runs on NIFTY500**, not the full database: **CAGR 30.01%, Sharpe 1.13, MaxDD −20.47% monthly / −27.70% daily, 604 trades**, all 604 entries on real exchange sessions. The ALL-symbol reference (including delisted names) is 29.59% / 1.06 / −23.65% / 703 trades. Same-engine survivorship measurement (all DB symbols vs survivors only) is **1.51 pp of CAGR** — see `reports/ENGINE_RECONCILIATION.md`.
+The **canonical production backtest now uses NIFTY500 point-in-time membership** (2018-01-01 → 2026-08-31): **CAGR 22.94%, Sharpe 0.82, MaxDD −23.66% monthly / −27.68% daily, 492 trades**, all 492 entries on real exchange sessions. Membership is resolved on each rebalance from 50 full NIFTY500 snapshots (niftyhistory.in, 2016-01-18 → 2026-09-30), cross-checked against the CC BY 4.0 `nse-historical-membership` interval table. A run starting 2016-01-01 is refused because no snapshot exists on or before that date. The canonical window starts in 2018, the first year with ≥70% tradable coverage (377 mapped / 356 eligible); 2017 is runnable (305 eligible, verified by an actual run; `37_pit_2017_probe.json`) but is outside the pre-registered window. The ALL-symbol reference is 24.70% CAGR (C kernel) / 23.70% for config D; the old canonical 30.01% (NIFTY500 current-list, 2016 start), the legacy 29.59% ALL figure, and the 29.28% current-list NIFTY750 figure are retired. In 2018, 377 of 501 members map to a DB price series and 356 have the required 252 bars — a data-completeness limitation, not a membership-selection bias. Full provenance and verification: `reports/ENGINE_RECONCILIATION.md`, `reports/PIT_MEMBERSHIP_VERIFICATION.md`.
 
-The remaining limitation is data, not code: no historical index-constituent snapshots exist before October 2026, so historical index backtests are still survivorship-biased. The engine now refuses to hide that (`strict_point_in_time=True` raises; default runs set `survivorship_bias_risk=True` and log a warning).
+The remaining limitation is **price-history completeness**, not membership bias. Point-in-time membership now exists, but in 2018 only 377 of 501 members map to a DB price series and 356 have the required 252 bars (453/434 by 2024; 496 mapped by 2026). Historical index runs without enough PIT members are refused by the engine (`INSUFFICIENT_PIT_BREADTH`); a 2016-01-01 start fails the snapshot gate. The live scanner is the only component that uses the latest constituents.
 
 ---
 
@@ -129,9 +129,11 @@ Monthly (or month-start) rebalance; signal at session close, **fill at next sess
 ## 4. Test suite — measured
 
 ```
-571 collected
-565 passed, 6 skipped, 0 failed, 1 warning — 850.28s (14m10s)
+635 collected
+630 passed, 5 skipped, 0 failed, 3 warnings — 868.76s (14m29s)
 ```
+
+Measured at the `v2.4.2-pit-membership` tree (`reports/analysis_evidence/36_pytest_full.log`). The pre-PIT audit run collected 571 and passed 565; the difference is the regression tests added by the 2026-10-23/24 remediation and PIT work.
 
 Skips are environment-gated: optional `plotly`, `curl_cffi`, `numba` are absent, plus artifact-conditional skips. Coverage includes 44 forensic-integrity tests, 29 ledger↔engine equivalence tests, 24 scanner-hardening tests, 19 adversarial-ranking tests, and defect regressions for three remediation loops.
 
@@ -174,68 +176,71 @@ EMA-200 also matches to 4 decimals once the same 550-day warmup window and `min_
 
 **Determinism:** two independent full scans produced byte-identical pick tables, SHA-256 `88b7148351…021be`.
 
-### 5.2 Canonical backtest (2016-01-01 → 2026-08-31, production contract)
+### 5.2 Canonical backtest (2018-01-01 → 2026-08-31, PIT NIFTY500)
 
-The canonical run now uses the **NIFTY500 universe** — the same universe as the strategy proof — not the full database. The ALL-symbol run is retained as a reference because it includes delisted names.
+The canonical run uses **NIFTY500 point-in-time membership**, resolved on each rebalance from full snapshots. A 2016-01-01 start is refused (no snapshot); 2017 is runnable but outside the pre-registered window, so the canonical period starts in 2018. The ALL-symbol run is retained as a reference.
 
 Top-20, buffer-40, sector-cap-2, ATR risk parity, 1% risk, 20 bps round-trip:
 
-| Metric | ALL reference | **Canonical NIFTY500** |
+| Metric | ALL reference (C kernel) | **Canonical PIT NIFTY500 (Python)** |
 |---|---:|---:|
-| Universe size | 1,039 | **487** |
-| Survivorship-bias flag | false | **true** |
-| Final equity (₹10L start) | ₹1,58,67,075.04 | **₹1,64,23,508.95** |
-| Total return | +1,486.71% | **+1,542.35%** |
-| CAGR | +29.59% | **+30.01%** |
-| Benchmark CAGR (NIFTY500) | +12.38% | +12.38% |
-| Excess CAGR | +17.21% | **+17.63%** |
-| Sharpe (Rf 6.5%) | 1.06 | **1.13** |
-| Sortino | 1.41 | 1.49 |
-| Calmar | 1.25 | **1.47** |
-| Max drawdown (monthly) | −23.65% | **−20.47%** |
-| Max drawdown (daily) | −34.80% | **−27.70%** (2020-03-23) |
-| Closed trades | 703 | **604** |
-| Win rate | 45.5% | 45.9% |
-| Avg hold | 90.5 days | **106.5 days** |
-| Deferred placeholder fills | 5 | **1** |
-| Non-session dates filtered | 1 | **1** |
-| Runtime | 136.5s | ~79s |
+| Universe at start | 1,083 DB symbols | **377 mapped members / 356 eligible** |
+| Membership source | no index filter | **PIT snapshots, per-rebalance** |
+| Final equity (₹10L start) | ₹64,11,449 | **₹59,82,487** |
+| Total return | +541.14% | **+498.25%** |
+| CAGR | +24.70% | **+22.94%** |
+| Benchmark CAGR (NIFTY500) | +11.08% | +11.08% |
+| Excess CAGR | +13.62% | **+11.85%** |
+| Sharpe (Rf 6.5%) | 0.80 | **0.82** |
+| Sortino | — | 1.09 |
+| Calmar | 0.81 (daily DD) | **0.97** |
+| Max drawdown (monthly) | — | **−23.66%** |
+| Max drawdown (daily) | −30.38% | −27.68% |
+| Closed trades | 551 | **492** |
+| Win rate | — | 42.1% |
+| Avg hold | — | **103.5 days** |
+| Deferred placeholder fills | — | **3** |
+| Non-session dates filtered | — | **1** |
 
-The canonical run differs from the ALL reference because index membership is ~half the breadth; per-symbol execution rules are unchanged. Both runs skip the 2026-05-01 non-session date and defer zero-volume fills to the next traded session.
+The PIT and ALL runs are different universes; their drawdowns are on different sampling bases and must not be compared as if they were one series. Both skip the 2026-05-01 non-session date and defer zero-volume fills to the next traded session.
 
-**Strategy proof:** the random-test evidence, out-of-sample validation and optimal/low-drawdown settings are in `reports/STRATEGY_PROOF_AND_BEST_SETTINGS.md`. Cross-engine and cross-universe reconciliation is in `reports/ENGINE_RECONCILIATION.md`.
+**Current-list control (same engine, config and dates):** today's 2026 NIFTY500 list returns **25.75% CAGR / 0.93 Sharpe / −20.96% monthly MaxDD / 495 trades**, i.e. **+2.81 pp** over PIT. That is the measured current-list look-ahead/survivorship overstatement; it is a biased control, not a candidate. Artifact: `reports/analysis_evidence/35_current_list_control.json`.
 
-**Ablation cross-check (ALL, pre-fix):** the “Legacy MIP Baseline” row reran to CAGR 36.80%, Sharpe 1.03, MaxDD −49.74%, daily −57.04%, win 46.3%, final ₹28,264,374.69 — matching the published ₹28,264,375 to the rupee. The ablation scorecard must be regenerated against the fixed engine before quoting these rows again.
+**Strategy proof:** the random-test evidence, out-of-sample validation and optimal/low-drawdown settings are in `reports/STRATEGY_PROOF_AND_BEST_SETTINGS.md`. Cross-engine reconciliation is in `reports/ENGINE_RECONCILIATION.md`; membership verification is in `reports/PIT_MEMBERSHIP_VERIFICATION.md`.
+
+**Ablation cross-check (ALL, legacy engine):** the “Legacy MIP Baseline” row reran to CAGR 36.80%, Sharpe 1.03, MaxDD −49.74%, daily −57.04%, win 46.3%, final ₹28,264,374.69 — matching the published ₹28,264,375 to the rupee. These are ALL-universe, pre-remediation numbers and are not the canonical PIT baseline.
 
 ### 5.3 Ledger audit — accounting closes
 
-From the canonical 604-trade NIFTY500 log, independently re-derived (`target_dates` = 2016-01-01 → 2026-08-31):
+From the canonical 492-trade PIT NIFTY500 log, independently re-derived (`target_dates` = 2018-01-01 → 2026-08-31):
 
 | Invariant | Result |
 |---|---|
-| Whole-share quantities | 604/604 integer, all > 0 |
-| Positive entry/exit prices | 604/604 |
-| Entry before exit, exit ≤ end date | 604/604 |
+| Whole-share quantities | 492/492 integer, all > 0 |
+| Positive entry/exit prices | 492/492 |
+| Entry before exit, exit ≤ end date | 492/492 |
 | `net_proceeds − cost_basis = net_pnl` | max error **₹0.01** |
 | `return_pct` identity | max error **0.005 pp** |
 | Friction + slippage recomputation | max error **₹0.005** |
 | Compounded monthly returns vs equity ratio | **0.000000** error |
-| CAGR identity | 0.013 pp error (rounding) |
-| MaxDD identity | 0.004 pp error |
-| Sharpe identity | 0.004 error |
-| Win-rate identity | 45.86% vs 45.9% |
-| Entries on authoritative calendar | **604 / 604** |
+| CAGR identity | 0.005 pp error (rounding) |
+| MaxDD identity | 0.003 pp error |
+| Sharpe identity | 0.007 error |
+| Win-rate identity | 42.07% vs 42.1% |
+| Entries on authoritative calendar | **492 / 492** |
 | Entries on zero-volume bars | **0** |
+| Missing entry bars | **0** |
+| Avg hold | 103.5 days |
 
-The ALL reference ledger (703 trades) closes the same way: PnL max error ₹0.01, return identity 0.005 pp, friction ₹0.005, compounding 0.000000, 703/703 calendar entries. Exit reasons on NIFTY500: 252 retracement stops, 20 EMA breaks, 41 no-data/rank-999999, remainder rank-buffer dropouts. No delisted-flagged symbol was ever held.
+Exit reasons: 205 retracement stops, 23 EMA breaks, 40 no-data/rank-999999, remainder rank-buffer dropouts. No delisted-flagged symbol was ever held.
 
 ### 5.4 T+1 execution proof
 
 Joined every fill to the raw bar for that symbol/date after the fix:
 
-- Entries matching the **session open**: 604/604 (100%); zero-volume entries: **0**.
-- Exits matching the session open: 602/602 joined rows (100%); zero-volume exits: **0**.
-- All 604 entry dates lie on the authoritative trading calendar.
+- Entries matching the **session open**: 492/492 (100%); zero-volume entries: **0**.
+- Exits matching the session open: 492/492 joined rows (100%); zero-volume exits: **0**; missing exit bars: **0**.
+- All 492 entry and 492 exit dates lie on the authoritative trading calendar.
 - Median relative difference from the open: **0.00e+00**.
 
 The engine fills at the next traded session's open, not the signal close. Placeholder/holiday bars are no longer executable in either engine.
@@ -255,9 +260,9 @@ Cube: 501 symbols × 4,890 dates, 200.98 MB, built in 8.4–41.8s. One canonical
 
 `948 / 960` configurations produced distinct `(CAGR, MaxDD, trades)` signatures; 12 are genuine duplicates from equivalent parameter combinations. Zero NaN results. Host is a 3-core ARM64 device, so 8 threads oversubscribe — the 2.77× is memory-bandwidth-bound, not a kernel defect.
 
-C engine metrics differ from the Python engine even on the same universe because execution/exit accounting differs: post-fix C/NIFTY500 2016-2026 = **27.39% CAGR / 38.32% daily MaxDD / 595 trades**; C/NIFTY750 = **28.13% / 34.63% / 639**; Python/NIFTY500 (canonical production) = **30.01% / 20.47% monthly (−27.70% daily) / 604**; Python/ALL = **29.59% / 23.65% / 703**. The full matrix is in `reports/ENGINE_RECONCILIATION.md`.
+C engine metrics differ slightly from the Python engine even on the same PIT universe because execution/exit accounting differs: PIT NIFTY500 2018–2026 C/D = **23.70% continuous / 23.19% monthly / 26.44% daily MaxDD / 484 trades**; C/A = **25.52% / 24.97% / 27.86% / 534**; Python PIT NIFTY500/D = **22.94% / 23.66% monthly (−27.68% daily) / 492**; C/ALL reference = **24.70% / 30.38% daily / 551**. The full matrix is in `reports/ENGINE_RECONCILIATION.md`.
 
-**§5.5 vs §9 D reconciliation (2026-10-23).** Both numbers are the same config, engine and universe, but they were produced by different harness paths. The previously published §9 D value of 28.69% was **equal-weight**, not ATR: the validation harness passed integer sizing code `0`, and `bridge.py:431` treated any non-string code as equal-weight. After the fix, the monthly-sampled ATR value is **26.81%** and the continuous ATR value is **27.39%**; they share the same ending equity (₹1,23,54,160) and the same 595 trades. The residual CAGR difference is annualization (`months/12` vs `(end_session−start_session)/252`); the drawdown difference is daily intra-period (38.32%) vs monthly rebalance sampling (20.69%). The Sharpe sub-gap is marked **INCOMPLETE** in the reconciliation artifact: T+1 period valuation moves 0.98 → 0.93, but the kernel does not expose its internal periodic return array, leaving ~0.02 unexplained rather than smoothed over.
+**§5.5 vs §9 D reconciliation (2026-10-24, PIT).** Both rows are NIFTY500 PIT, config D, 2018–2026: the continuous kernel gives **23.70%** and the monthly-sampled curve gives **23.19%**, with the same ending equity (₹59,88,673) and the same **484 trades**. The residual CAGR difference is annualization (`months/12` vs `(end_session−start_session)/252`); the drawdown difference is daily intra-period (26.44%) vs monthly rebalance sampling (24.40%). The Sharpe sub-gap is **INCOMPLETE**: 0.80 continuous vs 0.83 monthly (0.82 T+1), because the kernel does not expose its internal periodic return array. The historical 28.69% equal-weight bug was fixed in `bridge.py`; the current monthly 23.19% is genuine ATR sizing. The old current-constituent 27.39/26.81/28.69 NIFTY500 figures are retired with the biased universe.
 
 The kernel also had a latent fail-closed bug: any session on which *all* holdings were masked (a market-wide holiday row) invalidated the entire multi-year simulation, and a rebalance with every entry masked did the same. Both are now local, non-fatal conditions — the engine forwards valuation from the prior finite close and skips the masked rebalance. The cube's `valid_price_mask` now also masks zero-volume placeholder bars (previously only genuinely missing bars).
 
@@ -330,10 +335,10 @@ Risk-suite values on the post-fix canonical return stream: CAGR 29.85%, annualiz
 ### 7.1 Pick-history writer is silently broken — FIXED
 `core/scanner.py:156-186` does `CREATE TABLE IF NOT EXISTS` then inserts `ret_since`. `data/operational.db` already contains an incompatible `picks_history` (`ret_3m`, `ret_6m`, `ret_1y`, `exit_date`…, no `ret_since`). The insert raises, is swallowed by a broad `except`, and only logs `Failed to record picks history (table picks_history has no column named ret_since)`. Measured: operational table has **0 rows** after multiple scans. The “Pick Performance” workbook sheet therefore has no live source. Fix: migrate the table or align the DDL/columns.
 
-### 7.2 No historical point-in-time index constituents — MITIGATED (data limitation)
-`load_universe_constituents()` reads the *current* CSV with a 30-day TTL. `load_point_in_time_constituents()` works, but every snapshot in `data/constituent_snapshots.json` is dated **2026-10-12…2026-10-17**. For any historical `as_of_date`, it returns `None`, and `cube_builder` falls back to current membership. Consequence: historical simulations select from today's index, i.e. survivorship bias at the universe level. The code's own `point_in_time=True` path raises rather than silently degrading — the default path does not. This is open owner decision DECISION-02 in the audit notes.
+### 7.2 Historical point-in-time constituents — RESOLVED (PIT snapshots); price-history gap remains
+The current-constituent fallback is gone. `data/pit_constituents/nifty500_snapshots.csv` contains **50 full NIFTY500 snapshots** (2016-01-18 → 2026-09-30), sourced from niftyhistory.in and cross-checked against the CC BY 4.0 `nse-historical-membership` interval table. Membership is resolved on each rebalance date; a holding removed from the index is exited at the next rebalance. The live scanner is the only component that uses the latest constituents. Named historical indices without a PIT table (e.g. NIFTY750) are refused.
 
-**Measured consequence (2026-10-23).** The 2008 caveat ("~75 symbols, 7% coverage") is correct against the full database: 76 symbols have any 2008 bar (76/1,083 = 7.0%). Against the declared 501-symbol universe, only 74 have the required 252-bar history (14.8%); both denominators fail the 50% rule. The same measurement gives: **2008: 74/501 (14.8%) — DATA_INSUFFICIENT**; **2011: 81/501 (16.2%) — DATA_INSUFFICIENT**; **2018: 344/501 (68.7%) — VALID**; **2020: 362/501 (72.3%) — VALID**; **2016–2026: 471/501 (94.0%) — VALID**. The 2008 and 2011 stress rows therefore cannot support headline claims. A same-engine run (all DB symbols vs survivors only, config D) measures **1.51 pp of CAGR survivorship overstatement**; NIFTY500-vs-ALL (index membership plus breadth, not survivorship alone) is +0.39 pp. Full labels and the survivor/all run are in `reports/ENGINE_RECONCILIATION.md`.
+**Measured consequence (2026-10-24).** A 2016-01-01 start is refused because no snapshot covers it. The canonical window starts in 2018, the first year with ≥70% tradable coverage; 2017 is runnable (305 eligible, verified by an actual run; `37_pit_2017_probe.json`) but is outside the pre-registered window. Usable coverage improves with price history: **2018: 377 mapped members / 356 eligible**; **2020: 401 / 378**; **2024: 453 / 434**; **2026: 496 mapped**. The residual limitation is **price-history completeness**, not membership bias. The same production engine, config and dates on today's 2026 list returns **25.75% CAGR** vs **22.94%** on PIT membership, a **+2.81 pp** current-list look-ahead overstatement. `reports/PIT_MEMBERSHIP_VERIFICATION.md` records the snapshot mapping and the interval-table cross-check; `reports/ENGINE_RECONCILIATION.md` records the per-window labels, the control run and the engine matrix.
 
 ### 7.3 Delisting flag is inconsistent — FIXED (code), DATA LEFT IMMUTABLE
 67 symbols carry `is_delisted=1`, but the marker is not a delisting date:
@@ -355,7 +360,7 @@ Authoritative calendar: 4,889 sessions ending 2026-10-16. Database: 4,890 sessio
 The Python backtester derives execution dates from `sorted(bars["date"].unique())`, not the calendar, so **11 entries executed on 2026-05-01** at the previous close. Across the full run, **12 entries and 2 exits** priced on zero-volume bars (DIACABS, 11 names on 2026-05-01, GVT&D). The C kernel has `valid_price_mask` and refuses to trade halted bars; `core/backtest.py` has no equivalent mask. Impact is small (1.7% of entries) but it contradicts the “T+1 open” guarantee and the “authoritative calendar” claim.
 
 ### 7.5 Research backtester ignores universe selection — FIXED
-`LightweightBacktester.run()` now accepts `universe_mode` and filters to the selected index. The **canonical run uses NIFTY500** (487 resolved symbols, 604 trades, `survivorship_bias_risk=True`); the ALL-symbol run remains available as a reference (1,039 symbols, 703 trades). The earlier mismatch — 120 of 362 traded symbols (33%) and 223 of 703 trades (32%) outside the current NIFTY500 — was measured before the fix. The C engine also filters (NIFTY500 = 501 symbols); C/NIFTY500 27.39% vs Python/NIFTY500 30.01% is now an **engine** difference (execution/exit accounting), not a universe difference, and both rows are labelled in `reports/ENGINE_RECONCILIATION.md`.
+`LightweightBacktester.run()` now accepts `universe_mode` and filters to the selected index. The **canonical run uses NIFTY500 point-in-time membership** (377 mapped members at the 2018 start, 492 trades, `universe_point_in_time=True`); named historical indices without a PIT table are refused, and the ALL-symbol run remains a reference. The earlier mismatch — 120 of 362 traded symbols (33%) and 223 of 703 trades (32%) outside the current NIFTY500 — was measured before the fix. C/PIT-NIFTY500 D 23.70% vs Python/PIT-NIFTY500 D 22.94% is now a small **engine** difference (execution/exit accounting), not a universe difference; both rows are labelled in `reports/ENGINE_RECONCILIATION.md`.
 
 ### 7.6 Tests mutate production deliverables — FIXED
 `tests/test_backtest_monthly_returns.py` instantiates `LightweightBacktester(base_dir=PROJECT_ROOT)` and runs a 2023–2024 simulation, which **overwrites** `reports/backtest_results.json` and `reports/trade_log.csv`. I observed this live: a test run replaced the then-canonical ledger with a 38-trade test ledger. Anyone running `pytest` after a production run silently loses the production artifacts. Earlier isolation work covered only `scan_quality.md` and `constituent_snapshots.json`.
@@ -411,7 +416,7 @@ A single long line or `<pre>` block is passed through unsplit and would be rejec
 ```bash
 cd /mnt/sdcard/Subtitles/Project/Project_MIP_Colab
 
-# 1. Full contract suite (expect 574 passed, 5 skipped, 0 failed)
+# 1. Full contract suite (expect 630 passed, 5 skipped, 0 failed)
 python3 -m pytest -q
 
 # 2. Live scan (NIFTY500, 2026-10-19)
@@ -431,7 +436,7 @@ python3 - <<'PY'
 from core.backtest import LightweightBacktester
 from pathlib import Path
 r = LightweightBacktester(Path('.').resolve()).run(
-    start_date="2016-01-01", end_date="2026-08-31", top_n=20, exit_buffer=40,
+    start_date="2018-01-01", end_date="2026-08-31", top_n=20, exit_buffer=40,
     use_regime_filter=True, max_per_sector=2, sizing_mode="atr_risk_parity",
     risk_per_trade_pct=1.0, universe_mode="NIFTY500")
 print(r["cagr_pct"], r["sharpe_ratio"], r["max_drawdown_pct"], r["total_trades"])
@@ -444,7 +449,9 @@ python3 scripts/dispatch_institutional_pipeline.py \
 # 5. Native kernel smoke test + sweep
 python3 scripts/run_blazing_brute_force.py
 
-# 6. Cross-engine reconciliation + canonical artifacts
+# 6. PIT membership, canonical artifacts, reconciliation
+python3 scripts/build_pit_constituents.py
+python3 scripts/verify_pit_against_niftyhistory.py
 python3 reports/analysis_evidence/canonical_backtest.py
 python3 reports/analysis_evidence/summarize_candidates.py
 python3 reports/analysis_evidence/reconcile_engines.py
@@ -457,7 +464,7 @@ python3 reports/analysis_evidence/label_random_windows.py
 
 The engineering core is real: the data, factors, ledger, C kernel, compliance and reporting all do what the code says, and the numbers reproduce. The project is a credible research workstation.
 
-The 2026-10-23 remediation pass fixed every code-level defect in §7 and added regression coverage. The canonical production backtest is now NIFTY500 (30.01% CAGR, 604 trades). The remaining material limitation is data: historical index-constituent snapshots do not exist before October 2026, so historical index backtests remain survivorship-biased — now explicitly flagged, enforceable via `strict_point_in_time=True`, and **measured at 1.51 pp of CAGR** in a same-engine survivor/all run. Stress windows are labelled: 2008 and 2011 are DATA_INSUFFICIENT and excluded from headline claims; 2018 and 2020 are VALID with matched strategy/benchmark windows. The tree is committed and tagged `v2.4.1-audit-reconciled`.
+The 2026-10-23/24 remediation passes fixed every code-level defect in §7 and added regression coverage. The canonical production backtest now uses **NIFTY500 point-in-time membership** (2018–2026): **22.94% CAGR, Sharpe 0.82, MaxDD −23.66% monthly / −27.68% daily, 492 trades**. The old canonical 30.01% (NIFTY500 current list, 2016 start) is retired, as are the legacy 29.59% ALL and 29.28% NIFTY750 current-list figures. The remaining material limitation is **price-history completeness**: 2018 has 377 of 501 members mapped to DB prices and 356 eligible. A 2016-01-01 start is refused (no snapshot); 2017 is runnable (305 eligible) but excluded from the pre-registered canonical window. The same-engine current-list control overstates CAGR by **+2.81 pp** (25.75% vs 22.94%). Stress windows are breadth-gated: 2008/2011 have no PIT snapshots and are DATA_INSUFFICIENT (94/1,083 and 106/1,083 DB symbols have 252 bars); 2018 and 2020 are VALID with matched strategy/benchmark windows. Membership verification is in `reports/PIT_MEMBERSHIP_VERIFICATION.md`. The tree is committed and tagged `v2.4.2-pit-membership`.
 
 ---
 
@@ -478,13 +485,17 @@ The 2026-10-23 remediation pass fixed every code-level defect in §7 and added r
 | 7.13 Telegram chunker | Rewrote chunking with preserved line endings, hard-splitting of long lines, and balanced `<pre>` across chunks | `core/telegram_sender.py` | 9,500-char line → 3 chunks, max 3,986; `<pre>` block → 3 chunks, max 3,997; lossless for plain text |
 | 7.14 §5.5 vs §9 D divergence | `bridge.py` now accepts integer sizing codes (0=ATR, 1=equal weight) as well as strings; evidence harnesses pass the real sizing name | `brute_force/bridge.py`, `reports/analysis_evidence/validate_candidates.py`, `validate_low_dd.py`, `random_robustness.py` | Old 28.69% row was equal-weight; corrected ATR monthly 26.81%, continuous 27.39%, same ending equity and 595 trades |
 | 7.15 Stress-window comparability | Strategy and benchmark curves share the same base rebalance; each window records `strategy_months == benchmark_months`; every window labelled from measured 252-bar coverage | `reports/analysis_evidence/validate_candidates.py`, `reconcile_engines.py` | COVID 5 vs 5 months (was 5 vs 4); 2018 12 vs 12; all `aligned=True` |
-| 7.16 Canonical universe | Canonical production run now `universe_mode="NIFTY500"`; ALL retained as reference | `reports/analysis_evidence/canonical_backtest.py`, `core/backtest.py` docs | NIFTY500 30.01% / 604 trades; ALL 29.59% / 703 |
+| 7.16 Canonical universe | Canonical production run now `universe_mode="NIFTY500"`; ALL retained as reference | `reports/analysis_evidence/canonical_backtest.py`, `core/backtest.py` docs | PIT NIFTY500 22.94% / 492 trades; ALL reference 24.70% (C) |
 | 7.17 `ALL` tensor cube was empty | `load_universe_constituents("ALL")` intentionally returns an empty set (no filter); `cube_builder` now enumerates every DB symbol and avoids SQLite variable limits | `brute_force/cube_builder.py` | ALL cube: 1,083 symbols, 2.17M bars; survivorship run completes |
 | 7.18 Random-window harness added months to a *daily index* | Window end now uses a calendar month offset, not `s + months`; JSON encoder handles NumPy integers | `reports/analysis_evidence/random_robustness.py` | Windows are 2–5 years; no billion-percent outliers |
-| 7.19 Survivorship bias was a literature range | Measured two same-engine/same-config runs: all DB symbols vs symbols still quoting after 2026-08-31 | `reports/analysis_evidence/reconcile_engines.py` | **1.51 pp CAGR** (27.00% → 28.51%), 50 dead names |
+| 7.19 Survivorship bias was a literature range | Measured two same-engine/same-config runs: all DB symbols vs symbols still quoting after 2026-08-31 | `reports/analysis_evidence/reconcile_engines.py` | **1.51 pp CAGR** (27.00% → 28.51%), 50 dead names — superseded by 7.20 |
+| 7.20 No historical index membership | Acquired 50 full NIFTY500 snapshots (2016-01-18 → 2026-09-30) from niftyhistory.in; mapped API names to DB symbols; kept the CC BY 4.0 interval table as cross-check | `scripts/build_pit_constituents.py`, `core/pit_membership.py`, `data/pit_constituents/` | 501 names per snapshot; 377 mapped in 2018, 496 by 2026; `reports/PIT_MEMBERSHIP_VERIFICATION.md` |
+| 7.21 Backtester/cube could still use current constituents | Historical index runs now resolve per-rebalance PIT membership; a named index without a PIT table is refused; a 2016-01-01 start fails the snapshot gate | `core/backtest.py`, `brute_force/cube_builder.py`, `brute_force/runner.py`, `brute_force/sim_kernel.c`, `brute_force/bridge.py` | 2016 refused (`INSUFFICIENT_PIT_BREADTH`); 2018 runs at 356 eligible; synthetic kernel test proves entry-block and forced removal |
+| 7.22 Membership mask was only in Python | Added `universe_membership_mask` to the C cube/kernel; non-members are never selected and a removed holding is exited | `brute_force/sim_kernel.c`, `bridge.py`, `cube_builder.py` | `tests/test_pit_kernel_membership.py` (4 tests) + `tests/test_universe_bias_policy.py` (13 tests) |
+| 7.23 Survivorship estimate was retired without a replacement | Re-ran the production engine, config and dates on today's 2026 NIFTY500 list as a biased control against PIT membership | `reports/analysis_evidence/reconcile_engines.py`, `35_current_list_control.json` | current list **25.75%** vs PIT **22.94%** = **+2.81 pp CAGR** |
 
 **Regression suite added:** `tests/test_fixes_2026_10_23.py` (8 tests) covering the migration, cache rejection, chunker, calendar/universe/delisting metadata, strict PIT, standalone RRG, and the CLI parser. The ATR-vs-equal-weight contract test was extended in place to assert integer/string sizing equivalence.
 
-**Full suite after fixes:** `574 passed, 5 skipped, 0 failed` in 1,356s. New tests: +8; updated contracts: mask forward-fill behavior (3 tests) and chunker losslessness.
+**Full suite after fixes:** `630 passed, 5 skipped, 0 failed` in 868.76s (`reports/analysis_evidence/36_pytest_full.log`). New tests: +8 in the 2026-10-23 pass, plus the PIT suite (`test_pit_kernel_membership.py`, 4 tests; `test_universe_bias_policy.py`, 13 tests) and updated contracts (mask forward-fill behavior, chunker losslessness, module count 27).
 
-**Post-fix canonical artifacts regenerated:** Python 2016–2026 NIFTY500 run (CAGR 30.01%, Sharpe 1.13, MaxDD −20.47% monthly / −27.70% daily, 604 trades), trade ledger audit (all identities intact, 604/604 calendar entries), `reports/analysis_evidence/04_backtest.json`, `05_ledger_audit.json`, `21_strategy_validation.json` (aligned windows, ATR sizing), `22_candidate_engine_summaries.json`, `33_reconciliation.json`, `33b_random_window_quality.json`, and `34_python_canonical.json`. The ALL reference remains 29.59% / 703 trades in `04b_backtest_all.json`.
+**Post-fix canonical artifacts regenerated:** Python 2018–2026 PIT NIFTY500 run (CAGR 22.94%, Sharpe 0.82, MaxDD −23.66% monthly / −27.68% daily, 492 trades), trade ledger audit (all identities intact, 492/492 calendar entries, zero-volume 0), `reports/analysis_evidence/04_backtest.json`, `05_ledger_audit.json`, `21_strategy_validation.json` (PIT, T+1 aligned windows, ATR sizing), `22_candidate_engine_summaries.json`, `33_reconciliation.json`, `33b_random_window_quality.json`, `34_python_canonical.json`, and `reports/PIT_MEMBERSHIP_VERIFICATION.md`. The ALL reference is 24.70% C-kernel in `33_reconciliation.json`; the old `04b_backtest_all.json` remains a historical reference.

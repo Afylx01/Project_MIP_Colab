@@ -305,14 +305,27 @@ class TestHardenedScannerIntegration(unittest.TestCase):
     def test_hardened_scanner_run(self):
         scanner = HardenedScanner(PROJECT_ROOT)
         latest_d = get_latest_date()
-        top_df, disposition_summary, const_report, data_reconcile = scanner.run_hardened_scan(
-            as_of_date=latest_d,
-            universe_mode="NIFTY500",
-            force_constituent_refresh=False,
-            allow_stale_universe=True,
-            auto_update_universe=False,
-            export_reports=False,
-        )
+        # The scanner refreshes reconciliation metadata and the quality report
+        # even with export_reports=False; preserve the tracked deliverables so a
+        # test run leaves the working tree clean.
+        snap_path = PROJECT_ROOT / "data" / "constituent_snapshots.json"
+        md_path = PROJECT_ROOT / "reports" / "scan_quality.md"
+        snap_backup = snap_path.read_bytes() if snap_path.exists() else None
+        md_backup = md_path.read_bytes() if md_path.exists() else None
+        try:
+            top_df, disposition_summary, const_report, data_reconcile = scanner.run_hardened_scan(
+                as_of_date=latest_d,
+                universe_mode="NIFTY500",
+                force_constituent_refresh=False,
+                allow_stale_universe=True,
+                auto_update_universe=False,
+                export_reports=False,
+            )
+        finally:
+            if snap_backup is not None:
+                snap_path.write_bytes(snap_backup)
+            if md_backup is not None:
+                md_path.write_bytes(md_backup)
 
         self.assertIsNotNone(top_df)
         self.assertIn("total_constituents", disposition_summary)

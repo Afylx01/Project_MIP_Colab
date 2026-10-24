@@ -1,0 +1,43 @@
+{
+  "description": "Same engine, dates and config; current 2026 NIFTY500 list (biased control) vs PIT membership.",
+  "requested_members": 501,
+  "pit_cagr_pct": 22.94,
+  "current_list_cagr_pct": 25.75,
+  "cagr_overstatement_pp": 2.81,
+  "pit": {
+    "cagr_pct": 22.94,
+    "sharpe_ratio": 0.82,
+    "sortino_ratio": 1.09,
+    "calmar_ratio": 0.97,
+    "max_drawdown_pct": -23.66,
+    "daily_max_drawdown_pct": -27.68,
+    "total_trades": 492,
+    "win_rate_pct": 42.1,
+    "final_equity": 5982486.73,
+    "universe_mode": "NIFTY500",
+    "universe_size": 553,
+    "universe_source": "PIT_SNAPSHOT",
+    "universe_point_in_time": true,
+    "pit_index": "NIFTY500",
+    "pit_members_start": 377,
+    "pit_members_end": 496,
+    "eligible_symbols": 356,
+    "survivorship_bias_risk": false,
+    "data_completeness_risk": true
+  },
+  "current_list": {
+    "cagr_pct": 25.75,
+    "sharpe_ratio": 0.93,
+    "sortino_ratio": 1.27,
+    "calmar_ratio": 1.23,
+    "max_drawdown_pct": -20.96,
+    "daily_max_drawdown_pct": -25.76,
+    "total_trades": 495,
+    "win_rate_pct": 41.8,
+    "final_equity": 7275590.11,
+    "universe_size": 487,
+    "universe_mode": "NIFTY500-CURRENT-CONTROL",
+    "universe_source": "EXPLICIT_SYMBOLS",
+    "survivorship_bias_risk": false
+  }
+}

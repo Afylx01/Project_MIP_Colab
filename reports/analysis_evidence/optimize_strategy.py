@@ -13,10 +13,9 @@ from brute_force.grid import (CANONICAL_BASELINE, FILTER_RETRACE, FILTER_TREND,
 OUT = ROOT / "reports" / "analysis_evidence"
 
 WINDOWS = {
-    "is_2016_2021": ("2016-01-01", "2021-12-31"),
+    "is_2018_2021": ("2018-01-01", "2021-12-31"),
     "oos_2022_2026": ("2022-01-01", "2026-08-31"),
-    "full_2016_2026": ("2016-01-01", "2026-08-31"),
-    "long_2008_2026": ("2008-01-01", "2026-08-31"),
+    "full_2018_2026": ("2018-01-01", "2026-08-31"),
 }
 
 t0 = time.time()
@@ -81,7 +80,7 @@ for name in frames:
     frames[name] = frames[name].merge(meta, on="param_id", how="left")
 
 # Join IS and OOS
-isdf = frames["is_2016_2021"][["param_id","cagr","sharpe","sortino","max_drawdown","calmar",
+isdf = frames["is_2018_2021"][["param_id","cagr","sharpe","sortino","max_drawdown","calmar",
                                "win_rate","profit_factor","total_trades","status"]].rename(
     columns={c: f"is_{c}" for c in ("cagr","sharpe","sortino","max_drawdown","calmar",
                                     "win_rate","profit_factor","total_trades","status")})

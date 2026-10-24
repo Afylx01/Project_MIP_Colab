@@ -68,7 +68,14 @@ class TestBugsColabProof(unittest.TestCase):
     def test_04_tensor_cube_benchmark_and_equity_continuity(self):
         """DEF-C04: TensorCube must store bench_closes and runner must not use symbol 0."""
         from brute_force.cube_builder import TensorCubeContainer, build_tensor_cube
-        cube = build_tensor_cube(universe_name="NIFTY 50", lookback_values=[252], ema_span_values=[200])
+        from core.data_engine import load_universe_constituents
+        # Explicit fixture universe: this test checks benchmark continuity, not
+        # index membership. PIT Nifty 50 is too thin in the DB for a 2016 start.
+        _syms = sorted(load_universe_constituents("NIFTY 50"))
+        cube = build_tensor_cube(
+            universe_name="TEST_SUBSET", symbols=_syms,
+            lookback_values=[252], ema_span_values=[200],
+        )
         self.assertTrue(hasattr(cube, "bench_closes"), "TensorCubeContainer must have bench_closes array")
         self.assertIsNotNone(cube.bench_closes)
         self.assertEqual(len(cube.bench_closes), len(cube.dates))

@@ -9,7 +9,7 @@
   "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "canonical_expected_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "fingerprint_verified": true,
-  "total_modules": 25,
+  "total_modules": 27,
   "modules": [
     {
       "filename": "__init__.py",
@@ -42,7 +42,7 @@
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "ea9698a38c3c0e68545d1e5b4879450e6be2619a47d387a0c13218e1ebe267bc",
+      "sha256_migrated": "19c09842e357ff73a3214c8ddfa356524f12a3dad32012cce5dc66c957444dc9",
       "status": "refactored",
       "refactor_notes": "Ablation campaign bar-caching acceleration and research overrides"
     },
@@ -110,6 +110,11 @@
       "refactor_notes": "Identical to Main MIP pydroid_core source"
     },
     {
+      "filename": "pit_membership.py",
+      "sha256_migrated": "7b7eab3f0382753b37a80ae512aa2358a8635615c87b5c00b56da3b8c0d57068",
+      "added_in": "v2.4.2-pit-membership"
+    },
+    {
       "filename": "portfolio.py",
       "sha256_source": "46428dcadbeb13c279372c6e30b6d7266d20306f54e460d09290330c87d9f725",
       "sha256_migrated": "865264647370eb8230cf1f209eab713edcfc12eaecf6878c40c198868f2a69cb",
@@ -173,6 +178,11 @@
       "refactor_notes": "Loop 2 institutional defect remediation"
     },
     {
+      "filename": "universe_policy.py",
+      "sha256_migrated": "8ae151cfcb9f71137b5f29fa6b175ccf445355da1b896cb975998d319e0b32a1",
+      "added_in": "v2.4.2-pit-membership"
+    },
+    {
       "filename": "validation.py",
       "sha256_source": "407b9b577685406cd28be8db6ce970812fa75c97bbfb08aab48d9be50b3ce31e",
       "sha256_migrated": "407b9b577685406cd28be8db6ce970812fa75c97bbfb08aab48d9be50b3ce31e",
@@ -186,5 +196,7 @@
       "status": "refactored",
       "refactor_notes": "Mobile-compatible output paths and formatting"
     }
-  ]
+  ],
+  "manifest_updated_utc": "2026-10-24T13:09:53Z",
+  "manifest_update_note": "PIT membership modules added; backtest.py hash refreshed after PIT remediation."
 }
