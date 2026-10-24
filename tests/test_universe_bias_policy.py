@@ -57,8 +57,8 @@ def test_2017_has_enough_pit_breadth_while_2016_start_has_none():
     from core.pit_membership import coverage_stats
 
     s17 = coverage_stats("NIFTY500", "2017-01-01", base_dir=PROJECT_ROOT)
-    assert s17["db_symbols_mapped"] == 365
-    assert s17["eligible_symbols"] == 305
+    assert s17["db_symbols_mapped"] == 375
+    assert s17["eligible_symbols"] == 306
     assert s17["eligible_symbols"] >= MIN_ELIGIBLE_SYMBOLS
     # No snapshot exists on/before 2016-01-01, so a start there is refused.
     s16 = coverage_stats("NIFTY500", "2016-01-01", base_dir=PROJECT_ROOT)

@@ -3,11 +3,59 @@
   "source_commit": "cc6f89fd6699a92afa8d398896d0aac385eb9e8c",
   "source_file": "index_history/data/index_membership_history.csv",
   "license": "CC BY 4.0 (data), MIT (code)",
-  "built_at": "2026-10-24T06:15:33.398815+00:00",
+  "built_at": "2026-10-24T20:15:00+00:00",
   "rows": 6525,
   "nifty500_rows": 1123,
   "nifty500_symbols": 951,
   "nifty500_min_valid_from": "2014-01-01",
   "nifty500_max_valid_from": "2026-03-31",
-  "notes": "Half-open intervals [valid_from, valid_to). NULL valid_to = current member."
+  "notes": "Half-open intervals [valid_from, valid_to). NULL valid_to = current member.",
+  "provenance_sources": {
+    "primary_nifty500_snapshots": {
+      "source": "https://niftyhistory.in/",
+      "endpoint": "/download?index_type=Nifty 500",
+      "format": "50 exact reconstitution snapshots (2016-01-18 to 2026-09-30)",
+      "target_file": "data/pit_constituents/nifty500_snapshots.csv",
+      "mapped_to_db": 20744,
+      "role": "Primary PIT membership table for NIFTY 500 backtests with comprehensive alias normalization (BBTC, NATIONALUM, FLFL, FCONSUMER, FLUOROCHEM, GVKPIL, JTEKTINDIA, CORPBANK, ORIENTBANK, UNITEDBNK, PURVA, SHK, GEOJITFSL, CENTENKA, TATASTLBSL, TTML, TATVA)"
+    },
+    "secondary_interval_crosscheck": {
+      "source_repo": "https://github.com/aditya-jha/nse-historical-membership",
+      "source_commit": "cc6f89fd6699a92afa8d398896d0aac385eb9e8c",
+      "source_file": "index_history/data/index_membership_history.csv",
+      "license": "CC BY 4.0 (data), MIT (code)",
+      "rows": 6525,
+      "indices_covered": 42,
+      "role": "Secondary cross-check and primary interval table for Sectoral/Factor/Midcap/Smallcap indices. Proves real active member count (~501-504) and eliminates ~75 archaic 1990s ghost tickers retained in raw uncleaned archives"
+    },
+    "tertiary_circular_reconstruction": {
+      "source_repo": "https://github.com/BKKB20/nse-index-history",
+      "source_commit": "208102da76dde2e4f3121cb5fbd26ea7def5a9ca",
+      "indices_covered": 28,
+      "timeline": "2004-2026",
+      "audit_finding": "Accurate for NIFTY 50 (45 snapshots) and NIFTY MIDCAP 50 (50 snapshots); NIFTY 500 has only 4 snapshots and exhibits backward-leakage for 2024/2026 IPOs into 2006 due to unparsed scanned PDFs, confirming niftyhistory.in + aditya-jha must remain primary for NIFTY 500."
+    },
+    "nifty50_20y_weights": {
+      "source": "https://huggingface.co/datasets/AMP4010/Historical_Nifty_50_Constituent_Weights_20Y",
+      "target_file": "data/pit_constituents/nifty50_snapshots.csv",
+      "license": "CC BY-NC-SA 4.0",
+      "timeline": "2008-01-31 to 2025-08-31",
+      "snapshots": 216,
+      "mapped_to_db": 10710,
+      "role": "Survivorship bias-free 20Y monthly weights and snapshots for NIFTY 50 (99.2% mapped to universe.db; 98/100 historical members accounted for)"
+    },
+    "exchange_bhavcopy_archives": {
+      "references": [
+        "nsefeed / dalal (dalalos.in / mcp.dalalos.in)",
+        "aynse / nse-archives",
+        "official NSE MCP (mcp.nseindia.in/bhavcopy/cm/mcp)"
+      ],
+      "role": "Authoritative Bhavcopy verification and daily session ingestion"
+    },
+    "reproducibility_pipeline": {
+      "script": "scripts/reproduce_pit_data.py",
+      "command": "python3 scripts/reproduce_pit_data.py",
+      "role": "Single-entry deterministic reproduction of all PIT constituent tables and database invariant verification"
+    }
+  }
 }

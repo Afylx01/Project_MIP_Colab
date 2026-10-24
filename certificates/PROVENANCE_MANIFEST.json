@@ -197,6 +197,6 @@
       "refactor_notes": "Mobile-compatible output paths and formatting"
     }
   ],
-  "manifest_updated_utc": "2026-10-24T13:09:53Z",
-  "manifest_update_note": "PIT membership modules added; backtest.py hash refreshed after PIT remediation."
+  "manifest_updated_utc": "2026-10-24T20:20:00Z",
+  "manifest_update_note": "True PIT data verified and reproduced across all 7 sources: NIFTY 500 snapshot aliases expanded (20,744 mapped rows), AMP4010 20Y NIFTY 50 snapshots added (216 dates, 99.2% mapped), reproducible pipeline sealed in scripts/reproduce_pit_data.py."
 }
