@@ -54,6 +54,7 @@ logs/*.log.*
 !reports/test_evidence.json
 !reports/verified/
 !reports/verified/**
+!reports/scanner_*.json
 !reports/PIT_VERIFICATION.md
 !reports/PIT_REBUILD_2026-10-25.md
 

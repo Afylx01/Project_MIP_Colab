@@ -1,0 +1,22 @@
+{
+  "ALL": {
+    "start": "2012-01-01",
+    "end": "2026-10-19",
+    "cagr": 36.0910530090332,
+    "sharpe": 1.1497783660888672,
+    "max_drawdown": 42.23794174194336,
+    "total_trades": 351,
+    "ending_equity": 85095728.0,
+    "seconds": 185.5
+  },
+  "NIFTY500": {
+    "start": "2016-01-18",
+    "end": "2026-10-19",
+    "cagr": NaN,
+    "sharpe": NaN,
+    "max_drawdown": NaN,
+    "total_trades": 0,
+    "ending_equity": NaN,
+    "seconds": 86.2
+  }
+}
