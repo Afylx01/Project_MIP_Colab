@@ -2,7 +2,7 @@
   "certificate_type": "DATA_INTEGRITY_AND_PIT_CERTIFICATE",
   "project_name": "Project MIP",
   "version": "2.5.0",
-  "issued_at_utc": "2026-10-25T06:16:25.086414+00:00",
+  "issued_at_utc": "2026-10-25T07:31:14.271662+00:00",
   "governance_mode": "PIT_ANCHOR_VERIFIED__PRICE_DATA_PARTIAL",
   "verdict": "PIT_VERIFIED",
   "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
@@ -42,6 +42,127 @@
     "mean_cross_source_jaccard": 0.9553,
     "stored_in_database": "index_membership"
   },
+  "verified_campaign": {
+    "status": "COMPLETE",
+    "universe": "NIFTY500 (verified PIT membership, 17 NSE anchors)",
+    "window": [
+      "2018-01-01",
+      "2026-08-31"
+    ],
+    "engine": "C99 tensor-cube kernel, PIT membership mask",
+    "runs": {
+      "configs": 5,
+      "grid": 2400,
+      "schedule": 50,
+      "random": 240
+    },
+    "grid_sharpe": {
+      "sharpe_mean": 0.238,
+      "sharpe_std": 0.167,
+      "sharpe_max": 0.778
+    },
+    "deflated_sharpe": {
+      "best_config": 0.7781526,
+      "expected_max_under_null": 0.583,
+      "dsr_best": 0.716
+    },
+    "canonical": {
+      "param_id": 3,
+      "schedule": "monthly",
+      "schedule_idx": 1,
+      "start_date": "2018-01-01",
+      "end_date": "2026-08-31",
+      "start_date_idx": 2714,
+      "end_date_idx": 4856,
+      "lookback": 252,
+      "lookback_idx": 2,
+      "ema_trend": 200,
+      "ema_idx": 3,
+      "retrace_threshold": 0.8,
+      "top_n": 20,
+      "exit_buffer_rank": 40,
+      "max_per_sector": 2,
+      "sizing_mode": "atr_risk_parity",
+      "filter_flags": 31,
+      "initial_capital": 1000000.0,
+      "friction_bps": 15.0,
+      "slippage_bps": 5.0,
+      "risk_per_trade_pct": 1.0,
+      "tier": "C_canonical",
+      "config_name": "C_canonical",
+      "cagr": 16.559303283691406,
+      "sharpe": 0.5389630198478699,
+      "sortino": 0.7904152274131775,
+      "max_drawdown": 29.74864387512207,
+      "calmar": 0.556640625,
+      "win_rate": 43.423797607421875,
+      "profit_factor": 1.8679966926574707,
+      "ending_equity": 3631646.5,
+      "total_trades": 479,
+      "winning_trades": 208,
+      "turnover_annual": 481.5681457519531
+    },
+    "top5": [
+      {
+        "name": "top1_15_315_150_0.85_s2",
+        "py_cagr": 21.76,
+        "py_sharpe": 0.82,
+        "py_dd": -21.31,
+        "trades": 355,
+        "wins": 4
+      },
+      {
+        "name": "top4_10_315_150_0.85_s99",
+        "py_cagr": 21.46,
+        "py_sharpe": 0.72,
+        "py_dd": -25.02,
+        "trades": 212,
+        "wins": 5
+      },
+      {
+        "name": "top2_15_315_250_0.80_s2",
+        "py_cagr": 18.21,
+        "py_sharpe": 0.61,
+        "py_dd": -24.39,
+        "trades": 308,
+        "wins": 10
+      },
+      {
+        "name": "top5_15_315_250_0.75_s2",
+        "py_cagr": 20.76,
+        "py_sharpe": 0.69,
+        "py_dd": -21.35,
+        "trades": 269,
+        "wins": 2
+      },
+      {
+        "name": "top3_20_315_250_0.75_s3",
+        "py_cagr": 18.86,
+        "py_sharpe": 0.63,
+        "py_dd": -21.99,
+        "trades": 376,
+        "wins": 1
+      }
+    ],
+    "current_list_control": {
+      "cagr_pct": 25.75,
+      "sharpe_ratio": 0.93,
+      "max_drawdown_pct": -20.96,
+      "total_trades": 495,
+      "excess_cagr_pct": 14.66,
+      "eligible_symbols": 327,
+      "universe": "current 2026 NIFTY500 list (biased control)"
+    },
+    "python_canonical_cagr": 17.24,
+    "lookahead_overstatement_pp": 8.51,
+    "canonical_windows": {
+      "windows": 24,
+      "median_cagr": 26.12,
+      "worst_cagr": -6.17,
+      "median_excess": 11.41,
+      "beat_benchmark_pct": 95.8
+    }
+  },
   "verification_metrics": {
     "test_suite": {
       "suite": "pytest (headless, -p no:cacheprovider)",
@@ -49,11 +170,11 @@
       "passed": 635,
       "skipped": 5,
       "failed": 0,
-      "duration_seconds": 1349.2,
+      "duration_seconds": 1290.6,
       "exit_code": 0,
-      "recorded_at_utc": "2026-10-25T06:11:49.706867+00:00",
-      "log_tail": "635 passed, 5 skipped, 0 failed in 1349.18s",
-      "notes": "Run after the 2026-10-25 PIT rebuild, DB PIT-table load and certificate refresh."
+      "recorded_at_utc": "2026-10-25T07:22:47.637871+00:00",
+      "log_tail": "635 passed, 5 skipped, 0 failed in 1290.64s",
+      "notes": "Final run of v2.5.0: PIT rebuild, verified campaign, backtester parameterisation."
     },
     "pit_gates": {
       "STRUCTURE": true,
@@ -90,12 +211,13 @@
     "Price series contain vendor-segment discontinuities (see data_quality).",
     "Corporate-action registry covers 6 events; CCAVENUE/HEG breaks are unexplained.",
     "PIT membership before 2018-10-04 is press-release derived (no NSE anchor).",
-    "Backtest results have not yet been re-derived on the rebuilt membership."
+    "Optimised grid settings are in-sample selections (Deflated Sharpe 0.72); no live track record yet."
   ],
   "rebuild_commands": [
     "python3 scripts/build_pit_membership.py",
     "python3 scripts/verify_pit_membership.py --strict",
     "MIP_ALLOW_PROD_MUTATION=1 python3 scripts/load_pit_into_db.py --write",
-    "python3 scripts/refresh_data_certificate.py"
+    "python3 scripts/refresh_data_certificate.py",
+    "python3 scripts/run_verified_campaign.py"
   ]
 }

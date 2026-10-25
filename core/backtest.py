@@ -116,6 +116,9 @@ class LightweightBacktester:
         universe_mode: Optional[str] = None,
         explicit_symbols: Optional[Sequence[str]] = None,
         strict_point_in_time: bool = True,  # deprecated: historical index runs are always strict
+        lookback_bars: int = 252,
+        ema_trend_span: int = 200,
+        retrace_threshold: float = 0.80,
     ) -> Dict:
         """
         Runs historical monthly rebalance backtest with t+1 Open execution,
@@ -132,6 +135,12 @@ class LightweightBacktester:
         """
         if not math.isfinite(initial_capital) or initial_capital <= 0:
             raise ValueError(f"INVALID_CAPITAL: initial_capital must be a positive finite number, got {initial_capital}")
+        lookback_bars = int(lookback_bars)
+        ema_trend_span = int(ema_trend_span)
+        if lookback_bars < 60 or ema_trend_span < 20:
+            raise ValueError("INVALID_FACTOR_WINDOW: lookback_bars>=60 and ema_trend_span>=20 required")
+        if not (0.5 <= float(retrace_threshold) <= 1.0):
+            raise ValueError("INVALID_RETRACE: retrace_threshold must be in [0.5, 1.0]")
 
         from .settings import load_investing_settings
         st = load_investing_settings(self.base_dir)
@@ -179,6 +188,7 @@ class LightweightBacktester:
         cache_key = (
             warmup_str, end_date, getattr(self, "benchmark_name", "NIFTY500"),
             universe_label, tuple(universe_symbols) if universe_symbols else None,
+            lookback_bars, ema_trend_span,
         )
 
         if getattr(self, "_prepared_cache_key", None) == cache_key and hasattr(self, "_prepared_cache"):
@@ -250,18 +260,18 @@ class LightweightBacktester:
                     self.log(f"Warning: Benchmark data invalid ({reason}). Backtester will operate fail-closed.")
 
             self.log("Computing momentum factors across universe...")
-            bars["close_252d"] = bars.groupby("symbol")["close"].shift(252)
+            bars["close_252d"] = bars.groupby("symbol")["close"].shift(lookback_bars)
             bars["ret_1y"] = (bars["close"] / bars["close_252d"] - 1.0)
             bars["daily_ret"] = bars.groupby("symbol")["close"].pct_change()
             bars["vol_252"] = bars.groupby("symbol")["daily_ret"].transform(
-                lambda s: s.rolling(252, min_periods=min(50, len(s))).std() * np.sqrt(252)
+                lambda s: s.rolling(lookback_bars, min_periods=min(50, len(s))).std() * np.sqrt(252)
             )
             bars["volar"] = bars["ret_1y"] / bars["vol_252"].clip(lower=0.05)
             bars["ema_200"] = bars.groupby("symbol")["close"].transform(
-                lambda s: s.ewm(span=200, adjust=True, min_periods=min(50, len(s))).mean()
+                lambda s: s.ewm(span=ema_trend_span, adjust=True, min_periods=min(50, len(s))).mean()
             )
             bars["high_252"] = bars.groupby("symbol")["high"].transform(
-                lambda s: s.rolling(252, min_periods=min(50, len(s))).max()
+                lambda s: s.rolling(lookback_bars, min_periods=min(50, len(s))).max()
             )
             prev_close_bars = bars.groupby("symbol")["close"].shift(1)
             bars["tr"] = np.maximum(
@@ -273,7 +283,7 @@ class LightweightBacktester:
             ).fillna(bars["close"] * 0.03)
 
             # Filters (including Filter 3: RS vs Benchmark > 200 EMA of RS)
-            bars["pass_retrace"] = bars["close"] >= 0.80 * bars["high_252"]
+            bars["pass_retrace"] = bars["close"] >= float(retrace_threshold) * bars["high_252"]
             bars["pass_trend"] = bars["close"] > bars["ema_200"]
             if bench_close_map:
                 bars["bench_close"] = bars["date"].map(bench_close_map)
@@ -488,7 +498,7 @@ class LightweightBacktester:
                         exit_reason = "INDEX_REMOVAL"
                     elif m is None or m["close"] <= 0:
                         exit_reason = "NO_DATA"
-                    elif m["close"] < 0.80 * m["high_252"]:
+                    elif m["close"] < float(retrace_threshold) * m["high_252"]:
                         exit_reason = "STOP_52W_HIGH_RETRACEMENT"
                     elif m["close"] < m["ema_200"]:
                         exit_reason = "STOP_200_EMA_BREAK"

@@ -93,3 +93,24 @@ python3 reports/analysis_evidence/summarize_candidates.py
 python3 reports/analysis_evidence/reconcile_engines.py
 python3 reports/analysis_evidence/label_random_windows.py
 ```
+
+---
+
+## v2.5.0 — verified PIT membership (2026-10-25)
+
+All earlier rows were computed on the retracted niftyhistory membership table.
+Re-run on the rebuilt table (17 NSE anchors + press-release walk):
+
+| Engine | Universe | Config | CAGR % | Sharpe | MaxDD % | Basis | Trades |
+|---|---|---|---:|---:|---:|---|---:|
+| Python `LightweightBacktester` | NIFTY500 PIT | canonical 20/252/200/0.80/2 | **17.24** | 0.62 | −27.14 | monthly rebalance NAV | 510 |
+| C99 tensor kernel | NIFTY500 PIT | canonical 20/252/200/0.80/2 | **16.56** | 0.54 | −29.75 | monthly | 479 |
+| Python | NIFTY500 PIT | best grid 15/315/150/0.85/2 | **21.76** | 0.82 | −21.31 | monthly rebalance NAV | 355 |
+| C99 tensor kernel | NIFTY500 PIT | best grid 15/315/150/0.85/2 | **21.39** | 0.78 | −27.66 | monthly | 327 |
+| NIFTY 500 benchmark | — | — | 11.08 | — | — | price CAGR | — |
+
+Random-window check (24 windows, 2–5 years, 2018+): canonical median CAGR 26.12%, worst −6.17%,
+beats NIFTY 500 in 23/24 windows. Grid statistics: 2,400 runs, Sharpe mean 0.238 / max 0.778;
+Deflated Sharpe of the best config 0.72 (expected max under the null 0.58).
+
+Full evidence: `reports/VERIFIED_STRATEGY_2026-10-25.md`; raw runs: `reports/verified/`.

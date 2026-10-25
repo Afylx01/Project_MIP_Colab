@@ -30,6 +30,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cardinality, backtest-window coverage, certificate green) and corrected 2018 membership
   expectations (ADANIENT was excluded 2018-04-02, re-included 2020-09-25).
 
+### Verified results (same release)
+- Canonical NIFTY500 PIT backtest (2018-01-01 → 2026-08-31, 446 mapped / 439 eligible at start):
+  **CAGR 17.24% / Sharpe 0.62 / MaxDD −27.14% monthly / 510 trades**, vs NIFTY 500 11.08% (+6.16 pp).
+  The prior 22.94% / 0.82 was produced on the retracted membership and is withdrawn.
+- Cross-engine: C99 kernel returns 16.56% / 0.54 / −29.75% for the same configuration.
+- Full grid: 2,400 configurations (2,400 runs in 8.3 s); best 15/315/150/0.85/2 at 21.39% / 0.78.
+- Top-5 optimised settings validated in both engines and across 24 random 2–5-year windows
+  (`reports/VERIFIED_STRATEGY_2026-10-25.md`); Deflated Sharpe 0.72 at best, so they remain
+  research candidates while the canonical configuration stays in production.
+- 24-window robustness: canonical median CAGR 26.12%, worst −6.17%, beats NIFTY 500 in 23/24.
+- Survivorship control on verified membership: current 2026 list 25.75% CAGR / 0.93 Sharpe vs PIT
+  17.24% / 0.62 → **+8.51 pp look-ahead overstatement** (the old +2.81 pp was an artefact of the
+  corrupted membership table).
+- `core/backtest.py` now accepts `lookback_bars`, `ema_trend_span`, `retrace_threshold`
+  (defaults unchanged) so the Python engine can validate grid candidates.
+
 ### Pending
 - Re-run the canonical backtest, survivorship control and the full grid on the verified membership;
   regenerate `reports/ENGINE_RECONCILIATION.md` and the top-5 settings with confidence intervals.

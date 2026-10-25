@@ -4,9 +4,9 @@
   "passed": 635,
   "skipped": 5,
   "failed": 0,
-  "duration_seconds": 1349.2,
+  "duration_seconds": 1290.6,
   "exit_code": 0,
-  "recorded_at_utc": "2026-10-25T06:11:49.706867+00:00",
-  "log_tail": "635 passed, 5 skipped, 0 failed in 1349.18s",
-  "notes": "Run after the 2026-10-25 PIT rebuild, DB PIT-table load and certificate refresh."
+  "recorded_at_utc": "2026-10-25T07:22:47.637871+00:00",
+  "log_tail": "635 passed, 5 skipped, 0 failed in 1290.64s",
+  "notes": "Final run of v2.5.0: PIT rebuild, verified campaign, backtester parameterisation."
 }

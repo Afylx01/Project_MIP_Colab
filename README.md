@@ -510,65 +510,77 @@ The simulation sweep divides parameter combinations across CPU hardware threads 
 
 ---
 
-## 📊 Canonical PIT Backtest Results
+## 📊 Canonical PIT Backtest Results (verified membership, v2.5.0)
 
-> **Measurement note (2026-10-25) — SUPERSEDED:** every number in this section was produced with the **retracted niftyhistory.in membership table** (0.71 Jaccard vs the 17 NSE anchors). The dataset has been rebuilt from exact NSE anchors (`reports/PIT_VERIFICATION.md`, `certificates/PIT_UNIVERSE_CERTIFICATE.json`). Coverage at the 2018 start is now **446 mapped / 439 eligible**, up from 377/356. The results below are kept only as a pre-rebuild record and **must not be cited**; the verified re-run and top-5 grid are being produced next.
+> **Status 2026-10-25:** recomputed on the **verified NIFTY 500 PIT table** (17 exact NSE anchors,
+> `certificates/PIT_UNIVERSE_CERTIFICATE.json`). Every number below is reproducible with
+> `scripts/run_verified_campaign.py`; full evidence in `reports/VERIFIED_STRATEGY_2026-10-25.md`.
+> The old 22.94% / 0.82 result used the retracted niftyhistory table and is withdrawn.
 
 ### 1. Canonical PIT NIFTY500 baseline (2018-01 → 2026-08, monthly)
 
-* **Universe:** NIFTY500 point-in-time membership — **pre-rebuild table (377 mapped / 356 eligible); superseded by the verified 446/439 rebuild**
-* **Initial capital:** ₹10,00,000
-* **Costs:** 15 bps statutory frictions + 5 bps slippage
+* **Universe:** NIFTY500 point-in-time membership — **446 mapped / 439 eligible at the 2018 start** (end 500)
+* **Initial capital:** ₹10,00,000 · **Costs:** 15 bps friction + 5 bps slippage · **Engine:** Python `LightweightBacktester`
 
 | Metric | Value |
 | :--- | ---: |
-| Final equity | **₹59,82,486.73** |
-| Total return | **+498.25%** |
-| CAGR | **22.94%** |
-| NIFTY500 CAGR | +11.08% |
-| Excess CAGR | +11.85% |
-| Sharpe (Rf 6.5%) | **0.82** |
-| Sortino | 1.09 |
-| Calmar | 0.97 |
-| Max drawdown (monthly) | **−23.66%** |
-| Max drawdown (daily) | −27.68% |
-| Closed trades | 492 |
-| Win rate | 42.1% |
-| Profit factor | 2.16 |
-| Annual turnover | 471.3% |
-| Deferred fills / non-session dates | 3 / 1 |
-| Current-list control overstatement | **+2.81 pp CAGR** (25.75% vs 22.94%) |
+| Final equity | **₹39,67,433.45** |
+| Total return | **+296.74%** |
+| CAGR | **17.24%** |
+| NIFTY500 CAGR | 11.08% |
+| Excess CAGR | **+6.16 pp** |
+| Sharpe (Rf 6.5%) | **0.62** (90% bootstrap CI 0.07–1.25) |
+| Sortino | 0.86 |
+| Calmar | 0.64 |
+| Max drawdown (monthly) | **−27.14%** |
+| Max drawdown (daily) | −28.94% |
+| Closed trades | 510 |
+| Win rate | 43.7% |
+| PIT members at start / end | 446 / 500 |
 
-### 2. Recommended profile A vs NIFTY 500 (2018-01 → 2026-08)
+Cross-engine check (C99 tensor kernel, same parameters): **16.56% CAGR / 0.54 Sharpe / −29.75% MaxDD /
+479 trades** — a +0.68 pp difference from execution/exit accounting, not a data difference.
 
-| Metric | A · Balanced | NIFTY 500 |
+### 2. Random-window robustness (canonical, unselected)
+
+24 random 2–5-year windows inside 2018–2026 (seed 20261025), benchmark NIFTY 500:
+
+| Metric | Canonical | Best optimised variant |
 | :--- | ---: | ---: |
-| CAGR | **24.97%** | 10.85% |
-| Sharpe | **0.92** | 0.31 |
-| Max drawdown (monthly) | **−27.10%** | −31.85% |
-| Calmar | **0.92** | 0.34 |
-| OOS CAGR (2022–2026) | **25.83%** | 10.20% |
-| OOS Sharpe | **1.00** | 0.30 |
+| Median CAGR | **26.12%** | 31.73% |
+| Worst window | −6.17% | −0.98% |
+| Median excess vs NIFTY500 | **+11.41 pp** | +15.54 pp |
+| Windows beating NIFTY500 | **23 / 24 (96%)** | 23 / 24 (96%) |
+| Median Sharpe | 1.04 | 1.18 |
 
-> Sampling basis: table 1 is session-based CAGR from the production engine (benchmark 11.08%); table 2 uses
-> monthly rebalance NAVs, the same basis as the C-kernel monthly rows (benchmark 10.85%). The gap is annualization
-> sampling, not a different data source — see `reports/ENGINE_RECONCILIATION.md`.
+### 3. Top-5 optimised settings (research candidates, not production)
 
-### 3. Survivorship / look-ahead control (measured)
+Selected from a 2,400-config grid over top-n, lookback, EMA, retrace and sector cap; validated on
+two independent engines and 24 random windows. Full table with confidence intervals:
+`reports/VERIFIED_STRATEGY_2026-10-25.md`.
 
-Same Python engine, config D, dates and costs; only the membership source changes.
+| Setting (top_n / lookback / EMA / retrace / sector) | CAGR | Sharpe | MaxDD | Trades |
+| :--- | ---: | ---: | ---: | ---: |
+| 15 / 315 / 150 / 0.85 / 2 | 21.76% | 0.82 | −21.31% | 355 |
+| 10 / 315 / 150 / 0.85 / off | 21.46% | 0.72 | −25.02% | 212 |
+| 15 / 315 / 250 / 0.80 / 2 | 18.21% | 0.61 | −24.39% | 308 |
+| 15 / 315 / 250 / 0.75 / 2 | 20.76% | 0.69 | −21.35% | 269 |
+| 20 / 315 / 250 / 0.75 / 3 | 18.86% | 0.63 | −21.99% | 376 |
 
-| Run | Universe | CAGR | Sharpe | MaxDD (monthly) | Trades |
-| :--- | :--- | ---: | ---: | ---: | ---: |
-| **PIT (canonical)** | NIFTY500 per-rebalance snapshots | **22.94%** | 0.82 | −23.66% | 492 |
-| Current 2026 list (biased control) | today’s NIFTY500, applied backwards | 25.75% | 0.93 | −20.96% | 495 |
-
-**Current-list look-ahead overstatement: +2.81 pp CAGR.** This is the one-number survivorship estimate; the
-artifact is `reports/analysis_evidence/35_current_list_control.json`.
+**Statistical caveat:** with 2,400 trials, the expected maximum Sharpe under the null is 0.58
+annualised. The best variant's Deflated Sharpe is **0.72**, so it is not yet statistically
+decisive; the canonical configuration remains the production setting and the top-5 are recorded
+for forward paper validation only.
 
 ### 4. Retired legacy tables
 
-The previous 2016–2026 canonical table, the 2008–2026 multi-schedule matrix, the macro-era stress table, and the next-gen comparison table were produced from current constituents or a non-PIT full cross-section, and from an older engine build. They are **not reproducible under the PIT tag** and are withdrawn from this README. The authoritative numbers are in `reports/STRATEGY_PROOF_AND_BEST_SETTINGS.md`, `reports/CODEBASE_DEEP_ANALYSIS.md`, and `reports/ENGINE_RECONCILIATION.md`.
+The 2016–2026 canonical table, the 2008–2026 multi-schedule matrix, the macro-era stress table,
+the next-gen comparison table and the current-list survivorship control from before 2026-10-25 are
+**withdrawn**: they were produced on the retracted niftyhistory membership. The survivorship
+control has been re-derived on the verified table: the same engine on today's 2026 list returns
+**25.75% CAGR / 0.93 Sharpe** versus **17.24% / 0.62** on PIT membership — a **+8.51 pp**
+current-list look-ahead overstatement (the old +2.81 pp figure was an artefact of the corrupted
+membership table).
 
 ---
 

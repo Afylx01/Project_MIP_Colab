@@ -164,5 +164,5 @@ and the 2017 mapped count moved from 375 to 428.
 - Price-series discontinuities (1,325 events / 342 symbols) — membership is now true, prices are not.
 - Corporate-action registry covers 6 events; CCAVENUE (+840% on 2026-10-19) and HEG (-62.6%) unexplained.
 - Pre-2018-10-04 membership has no NSE anchor (tier C).
-- Canonical backtest, survivorship control and the grid have **not yet been re-run** on the rebuilt
-  membership; all previously published performance numbers are marked retracted in the README.
+- The canonical backtest **has now been re-run** on the rebuilt membership (17.24% CAGR / 0.62 Sharpe,
+  see `reports/VERIFIED_STRATEGY_2026-10-25.md`); the survivorship control is the remaining follow-up.

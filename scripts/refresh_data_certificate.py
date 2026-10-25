@@ -31,6 +31,7 @@ DB = ROOT / "data" / "universe.db"
 PIT_CERT = ROOT / "certificates" / "PIT_UNIVERSE_CERTIFICATE.json"
 OUT = ROOT / "certificates" / "PRODUCTION_READINESS_CERTIFICATE.json"
 TESTS = ROOT / "reports" / "test_evidence.json"
+VERIFIED = ROOT / "reports" / "verified"
 
 sys.path.insert(0, str(ROOT))
 from scripts.scanner_hardening import get_canonical_strategy_fingerprint  # noqa: E402
@@ -92,6 +93,65 @@ def discontinuity_census() -> dict:
     }
 
 
+def verified_campaign() -> dict:
+    """Summarise the verified strategy campaign if present."""
+    summary_p = VERIFIED / "campaign_summary.json"
+    stats_p = VERIFIED / "statistics.json"
+    top5_p = VERIFIED / "top5_final.csv"
+    windows_p = VERIFIED / "window_robustness.csv"
+    if not summary_p.exists():
+        return {"status": "not_run"}
+    summary = json.loads(summary_p.read_text())
+    stats = json.loads(stats_p.read_text()) if stats_p.exists() else {}
+    out = {
+        "status": "COMPLETE",
+        "universe": summary.get("universe"),
+        "window": summary.get("window"),
+        "engine": summary.get("engine"),
+        "runs": summary.get("runs"),
+        "grid_sharpe": {k: stats.get(k) for k in ("sharpe_mean", "sharpe_std", "sharpe_max")},
+        "deflated_sharpe": {
+            "best_config": stats.get("top", {}).get("sr_annual"),
+            "expected_max_under_null": stats.get("top", {}).get("sr0_annual"),
+            "dsr_best": stats.get("top", {}).get("dsr"),
+        },
+        "canonical": next((c for c in summary.get("config_matrix", [])
+                           if str(c.get("config_name", "")).startswith("C_")), None),
+    }
+    if top5_p.exists():
+        top5 = pd.read_csv(top5_p)
+        top5 = top5[~top5["name"].astype(str).str.startswith("canonical")]
+        out["top5"] = top5[["name", "py_cagr", "py_sharpe", "py_dd", "trades", "wins"]].to_dict("records")
+    control_p = VERIFIED / "current_list_control.json"
+    if control_p.exists():
+        control = json.loads(control_p.read_text())
+        out["current_list_control"] = control
+        # The control runs on the Python engine, so compare with the Python
+        # canonical run (not the C-kernel value in campaign_summary).
+        py_p = VERIFIED / "python_validation.json"
+        can_cagr = None
+        if py_p.exists():
+            for row in json.loads(py_p.read_text()):
+                if str(row.get("name", "")).startswith("canonical"):
+                    can_cagr = row.get("cagr_pct")
+                    break
+        if can_cagr is not None:
+            out["python_canonical_cagr"] = round(float(can_cagr), 2)
+            out["lookahead_overstatement_pp"] = round(float(control["cagr_pct"]) - float(can_cagr), 2)
+    if windows_p.exists():
+        w = pd.read_csv(windows_p)
+        can = w[w["top_n"] == 20]
+        if len(can):
+            out["canonical_windows"] = {
+                "windows": int(len(can)),
+                "median_cagr": round(float(can["cagr"].median()), 2),
+                "worst_cagr": round(float(can["cagr"].min()), 2),
+                "median_excess": round(float(can["excess"].median()), 2),
+                "beat_benchmark_pct": round(float((can["excess"] > 0).mean() * 100), 1),
+            }
+    return out
+
+
 def main() -> int:
     stats = db_stats()
     pit = json.loads(PIT_CERT.read_text()) if PIT_CERT.exists() else {}
@@ -118,6 +178,7 @@ def main() -> int:
             "mean_cross_source_jaccard": pit.get("mean_cross_source_jaccard"),
             "stored_in_database": "index_membership",
         },
+        "verified_campaign": verified_campaign(),
         "verification_metrics": {
             "test_suite": tests or "not recorded for this run",
             "pit_gates": {g["check"]: g["passed"] for g in pit.get("gates", [])},
@@ -132,13 +193,14 @@ def main() -> int:
             "Price series contain vendor-segment discontinuities (see data_quality).",
             "Corporate-action registry covers 6 events; CCAVENUE/HEG breaks are unexplained.",
             "PIT membership before 2018-10-04 is press-release derived (no NSE anchor).",
-            "Backtest results have not yet been re-derived on the rebuilt membership.",
+            "Optimised grid settings are in-sample selections (Deflated Sharpe 0.72); no live track record yet.",
         ],
         "rebuild_commands": [
             "python3 scripts/build_pit_membership.py",
             "python3 scripts/verify_pit_membership.py --strict",
             "MIP_ALLOW_PROD_MUTATION=1 python3 scripts/load_pit_into_db.py --write",
             "python3 scripts/refresh_data_certificate.py",
+            "python3 scripts/run_verified_campaign.py",
         ],
     }
     OUT.write_text(json.dumps(cert, indent=2), encoding="utf-8")

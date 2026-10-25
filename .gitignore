@@ -50,6 +50,8 @@ logs/*.log
 logs/*.log.*
 !reports/.gitkeep
 !reports/test_evidence.json
+!reports/verified/
+!reports/verified/**
 !reports/PIT_VERIFICATION.md
 !reports/PIT_REBUILD_2026-10-25.md
 
