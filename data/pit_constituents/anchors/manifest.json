@@ -1,0 +1,141 @@
+{
+  "anchors": {
+    "2018-10-04": {
+      "file": "ind_nifty500list_20181004.csv",
+      "sha256": "3de9fd8823bbb27357e441deeac1e5493b4a58345e0db54366578bcaaee458fe",
+      "bytes": 30860,
+      "wayback_timestamp": "20181004105632",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20181004105632id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2019-02-01": {
+      "file": "ind_nifty500list_20190201.csv",
+      "sha256": "7aacc85a6ca563021f92e045c74597b2b6d74b96f268e2a031ffd8d59b201d58",
+      "bytes": 30810,
+      "wayback_timestamp": "20190201175107",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20190201175107id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2020-07-25": {
+      "file": "ind_nifty500list_20200725.csv",
+      "sha256": "2fa31bea7006761d61a3a22c1114f752157cfeeef82de3b669d21ae12a11b524",
+      "bytes": 31291,
+      "wayback_timestamp": "20200725142023",
+      "original_url": "https://www1.nseindia.com/content/indices/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20200725142023id_/https://www1.nseindia.com/content/indices/ind_nifty500list.csv"
+    },
+    "2022-05-04": {
+      "file": "ind_nifty500list_20220504.csv",
+      "sha256": "0aef47e9f02528b439bfc3e150fa7c3b5bbd32be527b8217c15f8c5aac615c42",
+      "bytes": 32590,
+      "wayback_timestamp": "20220504103923",
+      "original_url": "https://archives.nseindia.com/content/indices/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20220504103923id_/https://archives.nseindia.com/content/indices/ind_nifty500list.csv"
+    },
+    "2022-10-09": {
+      "file": "ind_nifty500list_20221009.csv",
+      "sha256": "b65254f8c187eb15c4e60f6e8dfdc3a9ba22ba419a828ffdbc7b1ab352663d16",
+      "bytes": 32664,
+      "wayback_timestamp": "20221009160959",
+      "original_url": "https://archives.nseindia.com/content/indices/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20221009160959id_/https://archives.nseindia.com/content/indices/ind_nifty500list.csv"
+    },
+    "2023-04-04": {
+      "file": "ind_nifty500list_20230404.csv",
+      "sha256": "0bf9136a59cdb0ad87c7a1b5ff568ed47ffc792bf14027206c778baad7fec9e3",
+      "bytes": 32585,
+      "wayback_timestamp": "20230404164710",
+      "original_url": "https://archives.nseindia.com/content/indices/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20230404164710id_/https://archives.nseindia.com/content/indices/ind_nifty500list.csv"
+    },
+    "2024-02-07": {
+      "file": "ind_nifty500list_20240207.csv",
+      "sha256": "0189acf6590bc224688c1e74bdc249fe867efd159791b01a86477c048a2e5e71",
+      "bytes": 32626,
+      "wayback_timestamp": "20240207233933",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20240207233933id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2024-02-26": {
+      "file": "ind_nifty500list_20240226.csv",
+      "sha256": "c5f542379945f52ddf36e17ba38260691f909818386e2ed94a02999890d890a8",
+      "bytes": 32626,
+      "wayback_timestamp": "20240226224931",
+      "original_url": "https://archives.nseindia.com/content/indices/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20240226224931id_/https://archives.nseindia.com/content/indices/ind_nifty500list.csv"
+    },
+    "2025-06-16": {
+      "file": "ind_nifty500list_20250616.csv",
+      "sha256": "72368471eae3c86cfc4832f997f4d2ffecf696969afd3f11adfa2894cbc3ccde",
+      "bytes": 32928,
+      "wayback_timestamp": "20250616113621",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20250616113621id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2025-08-15": {
+      "file": "ind_nifty500list_20250815.csv",
+      "sha256": "678d2a0f07836814619482ffb4067a344e37f8068a4d068b5c09728dfbe6f764",
+      "bytes": 32791,
+      "wayback_timestamp": "20250815235304",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20250815235304id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2025-08-21": {
+      "file": "ind_nifty500list_20250821.csv",
+      "sha256": "678d2a0f07836814619482ffb4067a344e37f8068a4d068b5c09728dfbe6f764",
+      "bytes": 32791,
+      "wayback_timestamp": "20250821044405",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20250821044405id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2026-01-07": {
+      "file": "ind_nifty500list_20260107.csv",
+      "sha256": "da6c7949e6ff1659748f99dbc08a9ab61c5ed2d924c71e06dde4d0391189700c",
+      "bytes": 32894,
+      "wayback_timestamp": "20260107050129",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20260107050129id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2026-05-02": {
+      "file": "ind_nifty500list_20260502.csv",
+      "sha256": "42a846c927e952460d1a0f4514be1d1b923294141647e57e060c7c2332576fca",
+      "bytes": 33026,
+      "wayback_timestamp": "20260502114023",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20260502114023id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2026-08-27": {
+      "file": "ind_nifty500list_20260827.csv",
+      "sha256": "637b99dc20a36a994b8dd43ae8449781258a9c94fab20ca3b87741fb39bd67db",
+      "bytes": 32766,
+      "wayback_timestamp": "20260827161651",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20260827161651id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2026-09-21": {
+      "file": "ind_nifty500list_20260921.csv",
+      "sha256": "7b90cc2fbfc268cae8eeb95cf1bd80218a0a41f81f0fd1b0ff1ebf64f4dd8bfa",
+      "bytes": 32819,
+      "wayback_timestamp": "20260921150535",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20260921150535id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2026-10-09": {
+      "file": "ind_nifty500list_20261009.csv",
+      "sha256": "2959bf206239284e145f7aecc65095b18d11556d2642323a70f2d26efe0f5cb3",
+      "bytes": 32785,
+      "wayback_timestamp": "20261009150703",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20261009150703id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    },
+    "2026-10-22": {
+      "file": "ind_nifty500list_20261022.csv",
+      "sha256": "c263cbf8e8e51b4a167a34b65ed4890e750b85ba7e012dd18e870bb7ad46f906",
+      "bytes": 32785,
+      "wayback_timestamp": "20261022150913",
+      "original_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+      "wayback_url": "https://web.archive.org/web/20261022150913id_/https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"
+    }
+  },
+  "count": 17
+}

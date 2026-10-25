@@ -1,0 +1,395 @@
+{
+  "certificate_type": "PIT_UNIVERSE_CERTIFICATE",
+  "index": "NIFTY 500",
+  "table": "data/pit_constituents/nifty500_snapshots.csv",
+  "table_sha256": "5368c7822755ce81293c69a998a66a698be9c0601fdb6d225f46f2271a26d471",
+  "snapshots": 180,
+  "date_range": [
+    "2016-01-18",
+    "2026-10-22"
+  ],
+  "anchors": [
+    "2018-10-04",
+    "2019-02-01",
+    "2020-07-25",
+    "2022-05-04",
+    "2022-10-09",
+    "2023-04-04",
+    "2024-02-07",
+    "2024-02-26",
+    "2025-06-16",
+    "2025-08-15",
+    "2025-08-21",
+    "2026-01-07",
+    "2026-05-02",
+    "2026-08-27",
+    "2026-09-21",
+    "2026-10-09",
+    "2026-10-22"
+  ],
+  "anchor_count": 17,
+  "coverage_ratio": 0.9189,
+  "mean_cross_source_jaccard": 0.9553,
+  "coverage_by_year": {
+    "2016": 0.8491,
+    "2017": 0.8726,
+    "2018": 0.8929,
+    "2019": 0.9203,
+    "2020": 0.9295,
+    "2021": 0.8923,
+    "2022": 0.9096,
+    "2023": 0.9292,
+    "2024": 0.9555,
+    "2025": 0.982,
+    "2026": 0.9952
+  },
+  "gates": [
+    {
+      "check": "STRUCTURE",
+      "passed": true,
+      "duplicates": 0,
+      "cardinality_violations": {},
+      "snapshots": 180,
+      "min": "2016-01-18",
+      "max": "2026-10-22"
+    },
+    {
+      "check": "ANCHORS_EXACT",
+      "passed": true,
+      "per_anchor": {
+        "2018-10-04": {
+          "anchor_members": 501,
+          "table_members": 501,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2019-02-01": {
+          "anchor_members": 501,
+          "table_members": 501,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2020-07-25": {
+          "anchor_members": 501,
+          "table_members": 501,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2022-05-04": {
+          "anchor_members": 501,
+          "table_members": 501,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2022-10-09": {
+          "anchor_members": 501,
+          "table_members": 501,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2023-04-04": {
+          "anchor_members": 501,
+          "table_members": 501,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2024-02-07": {
+          "anchor_members": 501,
+          "table_members": 501,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2024-02-26": {
+          "anchor_members": 501,
+          "table_members": 501,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2025-06-16": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2025-08-15": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2025-08-21": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2026-01-07": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2026-05-02": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2026-08-27": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2026-09-21": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2026-10-09": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        },
+        "2026-10-22": {
+          "anchor_members": 500,
+          "table_members": 500,
+          "exact": true,
+          "missing": [],
+          "extra": []
+        }
+      }
+    },
+    {
+      "check": "CROSS_SOURCE",
+      "passed": true,
+      "mean_jaccard": 0.9553,
+      "per_anchor": {
+        "2018-10-04": {
+          "jaccard": 0.9086,
+          "anchor_only": 23,
+          "interval_only": 25
+        },
+        "2019-02-01": {
+          "jaccard": 0.9122,
+          "anchor_only": 22,
+          "interval_only": 24
+        },
+        "2020-07-25": {
+          "jaccard": 0.9271,
+          "anchor_only": 17,
+          "interval_only": 21
+        },
+        "2022-05-04": {
+          "jaccard": 0.9455,
+          "anchor_only": 14,
+          "interval_only": 14
+        },
+        "2022-10-09": {
+          "jaccard": 0.9493,
+          "anchor_only": 13,
+          "interval_only": 13
+        },
+        "2023-04-04": {
+          "jaccard": 0.9532,
+          "anchor_only": 11,
+          "interval_only": 13
+        },
+        "2024-02-07": {
+          "jaccard": 0.9705,
+          "anchor_only": 7,
+          "interval_only": 8
+        },
+        "2024-02-26": {
+          "jaccard": 0.9705,
+          "anchor_only": 7,
+          "interval_only": 8
+        },
+        "2025-06-16": {
+          "jaccard": 0.9861,
+          "anchor_only": 5,
+          "interval_only": 2
+        },
+        "2025-08-15": {
+          "jaccard": 0.99,
+          "anchor_only": 3,
+          "interval_only": 2
+        },
+        "2025-08-21": {
+          "jaccard": 0.99,
+          "anchor_only": 3,
+          "interval_only": 2
+        },
+        "2026-01-07": {
+          "jaccard": 0.994,
+          "anchor_only": 2,
+          "interval_only": 1
+        },
+        "2026-05-02": {
+          "jaccard": 0.992,
+          "anchor_only": 4,
+          "interval_only": 0
+        },
+        "2026-08-27": {
+          "jaccard": 0.992,
+          "anchor_only": 2,
+          "interval_only": 2
+        },
+        "2026-09-21": {
+          "jaccard": 0.99,
+          "anchor_only": 3,
+          "interval_only": 2
+        },
+        "2026-10-09": {
+          "jaccard": 0.8849,
+          "anchor_only": 31,
+          "interval_only": 30
+        },
+        "2026-10-22": {
+          "jaccard": 0.8849,
+          "anchor_only": 31,
+          "interval_only": 30
+        }
+      }
+    },
+    {
+      "check": "LISTING_CONSTRAINT",
+      "passed": true,
+      "violations": [],
+      "count": 0
+    },
+    {
+      "check": "COVERAGE",
+      "passed": true,
+      "mapped": 83028,
+      "rows": 90355,
+      "ratio": 0.9189
+    },
+    {
+      "check": "CHURN",
+      "passed": true,
+      "worst_date": "2024-03-31",
+      "worst_change": 68
+    },
+    {
+      "check": "IMPROVEMENT",
+      "passed": true,
+      "old_table_vs_anchors": {
+        "anchors_compared": 17,
+        "old_mean_jaccard": 0.709,
+        "old_mean_recall": 0.8157,
+        "detail": [
+          {
+            "date": "2018-10-04",
+            "jaccard": 0.4549,
+            "recall": 0.626
+          },
+          {
+            "date": "2019-02-01",
+            "jaccard": 0.4571,
+            "recall": 0.628
+          },
+          {
+            "date": "2020-07-25",
+            "jaccard": 0.4721,
+            "recall": 0.642
+          },
+          {
+            "date": "2022-05-04",
+            "jaccard": 0.5267,
+            "recall": 0.69
+          },
+          {
+            "date": "2022-10-09",
+            "jaccard": 0.5408,
+            "recall": 0.702
+          },
+          {
+            "date": "2023-04-04",
+            "jaccard": 0.5674,
+            "recall": 0.724
+          },
+          {
+            "date": "2024-02-07",
+            "jaccard": 0.6051,
+            "recall": 0.754
+          },
+          {
+            "date": "2024-02-26",
+            "jaccard": 0.6051,
+            "recall": 0.754
+          },
+          {
+            "date": "2025-06-16",
+            "jaccard": 0.7703,
+            "recall": 0.8685
+          },
+          {
+            "date": "2025-08-15",
+            "jaccard": 0.773,
+            "recall": 0.872
+          },
+          {
+            "date": "2025-08-21",
+            "jaccard": 0.773,
+            "recall": 0.872
+          },
+          {
+            "date": "2026-01-07",
+            "jaccard": 0.8116,
+            "recall": 0.896
+          },
+          {
+            "date": "2026-05-02",
+            "jaccard": 0.8889,
+            "recall": 0.9384
+          },
+          {
+            "date": "2026-08-27",
+            "jaccard": 0.9029,
+            "recall": 0.9499
+          },
+          {
+            "date": "2026-09-21",
+            "jaccard": 0.9048,
+            "recall": 0.95
+          },
+          {
+            "date": "2026-10-09",
+            "jaccard": 1.0,
+            "recall": 1.0
+          },
+          {
+            "date": "2026-10-22",
+            "jaccard": 1.0,
+            "recall": 1.0
+          }
+        ]
+      }
+    }
+  ],
+  "verdict": "PASS",
+  "verified_at_utc": "2026-10-25T04:43:20.428064+00:00",
+  "sources": {
+    "nse_anchors": "Internet Archive captures of niftyindices.com/IndexConstituent/ind_nifty500list.csv",
+    "press_release_intervals": "aditya-jha/nse-historical-membership (CC BY 4.0)"
+  }
+}

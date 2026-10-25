@@ -1,4 +1,6 @@
-"""Cross-check the PIT interval table against niftyhistory.in full snapshots.
+"""DEPRECATED (2026-10-25): niftyhistory.in NIFTY 500 lists were measured at 0.71 Jaccard / 0.82 recall against 17 exact NSE anchors and must not be used. The active builder is scripts/build_pit_membership.py; the active verifier is scripts/verify_pit_membership.py.
+
+Cross-check the PIT interval table against niftyhistory.in full snapshots.
 
 The API responses are cached under data/pit_constituents/verification/ so the
 check is reproducible offline. Matching tolerates NSE 10-character truncation,

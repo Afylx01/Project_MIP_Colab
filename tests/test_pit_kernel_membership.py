@@ -71,8 +71,15 @@ def test_kernel_blocks_non_members_and_forces_index_removal():
 def test_snapshot_pit_includes_long_tenured_members():
     from core.pit_membership import members_db_as_of
     m = members_db_as_of("NIFTY500", "2018-12-28", PROJECT_ROOT)
+    # NSE's 2018-10-04 published list (Internet Archive anchor) contains ABB,
+    # RELIANCE and HDFCBANK. ADANIENT was excluded on 2018-04-02 and only
+    # re-included on 2020-09-25 per the NSE press releases, so it must NOT be
+    # a NIFTY 500 member at the end of 2018 — the old niftyhistory table had
+    # this backwards.
     assert "ABB" in m
-    assert "ADANIENT" in m
+    assert "RELIANCE" in m
+    assert "HDFCBANK" in m
+    assert "ADANIENT" not in m
 
 
 def test_snapshot_pit_is_empty_before_first_snapshot():

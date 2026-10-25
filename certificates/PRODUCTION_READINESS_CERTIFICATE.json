@@ -1,69 +1,101 @@
 {
-  "certificate_type": "PRODUCTION_READINESS_SIGN_OFF",
-  "project_name": "Project MIP (Momentum Investing System)",
-  "version": "1.0.0-sealed",
-  "timestamp_utc": "2026-10-13T18:15:00Z",
-  "governance_mode": "STRICT_TDD_INVARIANT_FIREWALL_HEADLESS_PRODUCTION_READY",
-  "target_environment": {
-    "os": "Linux Ubuntu 26.04 LTS",
-    "architecture": "ARM64 (aarch64)",
-    "runtime": "Python 3.14.0",
-    "storage_backend": "SQLite3 WAL Mode (Local Filesystem)"
-  },
-  "cryptographic_provenance": {
-    "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
-    "strategy_parameters": {
-      "momentum_lookback_bars": 252,
-      "retrace_threshold": 0.80,
-      "ema_trend_span": 200,
-      "ema_rs_span": 200,
-      "ema_regime_span": 20,
-      "top_n_candidates": 20,
-      "exit_buffer_rank": 40,
-      "max_per_sector": 2,
-      "volatility_floor": 0.05
-    },
-    "database": {
-      "relative_path": "data/universe.db",
-      "row_count": 2164420,
-      "file_size_bytes": 351744000,
-      "max_date": "2026-10-09",
-      "sha256": "0077ea77bfabf6cc5e0d12e3096e632878d1a28d02eed097c45f491ea0633f64",
-      "integrity_check": "ok"
-    },
-    "corporate_actions_registry": {
-      "relative_path": "data/corporate_actions_registry.json",
-      "sha256": "9e492f94e0e108fc968414e903cc730beda528379efee74594c6e521b1f6d2b9"
-    },
-    "trading_calendar": {
-      "relative_path": "data/trading_calendar.txt",
-      "session_count": 4888,
-      "date_range": "2007-01-02 to 2026-10-02",
-      "sha256": "42e40e9ab665cfb7ba0850f414485eda9dc4f418c782cbb38107d1fd4b1986ef"
-    },
-    "core_architecture": {
-      "module_count": 25,
-      "manifest_path": "certificates/PROVENANCE_MANIFEST.json",
-      "status": "FROZEN_AND_SEALED"
+  "certificate_type": "DATA_INTEGRITY_AND_PIT_CERTIFICATE",
+  "project_name": "Project MIP",
+  "version": "2.5.0",
+  "issued_at_utc": "2026-10-25T06:16:25.086414+00:00",
+  "governance_mode": "PIT_ANCHOR_VERIFIED__PRICE_DATA_PARTIAL",
+  "verdict": "PIT_VERIFIED",
+  "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
+  "database": {
+    "path": "data/universe.db",
+    "bytes": 352485376,
+    "sha256": "26df1c076d02728c6d72ffaf41e0b8c2c559ea7cff001612eea073e1bb383090",
+    "row_count": 2170608,
+    "symbol_count": 1083,
+    "min_date": "2007-01-02",
+    "max_date": "2026-10-19",
+    "integrity_check": "ok",
+    "index_membership_rows": 1218,
+    "pit_manifest": {
+      "index_membership.nifty500.intervals": "1218",
+      "index_membership.nifty500.symbols": "948",
+      "pit.snapshots": "180",
+      "pit.anchor_count": "17",
+      "pit.verdict": "PASS",
+      "pit.certificate_sha256": "871aac9123494b3e09ef8fbb376194f7099c5d818165d2b6197405bb5e6c8c75",
+      "pit.table_sha256": "5368c7822755ce81293c69a998a66a698be9c0601fdb6d225f46f2271a26d471",
+      "pit.loaded_at_utc": "2026-10-25T04:47:14.461909+00:00"
     }
   },
+  "pit_membership": {
+    "certificate": "certificates/PIT_UNIVERSE_CERTIFICATE.json",
+    "certificate_sha256": "871aac9123494b3e09ef8fbb376194f7099c5d818165d2b6197405bb5e6c8c75",
+    "verdict": "PASS",
+    "table_sha256": "5368c7822755ce81293c69a998a66a698be9c0601fdb6d225f46f2271a26d471",
+    "snapshots": 180,
+    "date_range": [
+      "2016-01-18",
+      "2026-10-22"
+    ],
+    "anchors": 17,
+    "coverage_ratio": 0.9189,
+    "mean_cross_source_jaccard": 0.9553,
+    "stored_in_database": "index_membership"
+  },
   "verification_metrics": {
-    "total_discovered_tests": 243,
-    "tests_passed": 240,
-    "tests_skipped": 3,
-    "tests_failed": 0,
-    "tests_errors": 0,
-    "regression_exit_code": 0,
-    "readiness_smoke_status": "PRODUCTION_READY: TRUE"
+    "test_suite": {
+      "suite": "pytest (headless, -p no:cacheprovider)",
+      "command": "PYTHONDONTWRITEBYTECODE=1 MIP_ALLOW_PROD_MUTATION=0 python3 -m pytest -q -p no:cacheprovider",
+      "passed": 635,
+      "skipped": 5,
+      "failed": 0,
+      "duration_seconds": 1349.2,
+      "exit_code": 0,
+      "recorded_at_utc": "2026-10-25T06:11:49.706867+00:00",
+      "log_tail": "635 passed, 5 skipped, 0 failed in 1349.18s",
+      "notes": "Run after the 2026-10-25 PIT rebuild, DB PIT-table load and certificate refresh."
+    },
+    "pit_gates": {
+      "STRUCTURE": true,
+      "ANCHORS_EXACT": true,
+      "CROSS_SOURCE": true,
+      "LISTING_CONSTRAINT": true,
+      "COVERAGE": true,
+      "CHURN": true,
+      "IMPROVEMENT": true
+    }
   },
-  "operational_safeguards": {
-    "concurrency_locking": "POSIX Atomic File Locking (.scanner.lock) with Dead-PID Recovery and 1800s Timeout",
-    "log_rotation": "Bounded RotatingFileHandler (10MB max, 5 backups, 50MB hard cap)",
-    "market_hours_guard": "Trading calendar holiday awareness; non-trading days cleanly exit IDLE",
-    "emergency_notifications": "Pre-flight health failure alert dispatch via Telegram Bot API",
-    "production_immutability_firewall": "ACTIVE (MIP_ALLOW_PROD_MUTATION=1 required for database writes)",
-    "staging_status": "BLOCKED",
-    "live_broker_order_routing": "DISABLED"
+  "data_quality": {
+    "price_discontinuities": {
+      "events": 1325,
+      "symbols": 342,
+      "top_dates": {
+        "2026-09-01": 177,
+        "2016-01-04": 110,
+        "2019-01-02": 110,
+        "2016-08-16": 110,
+        "2019-01-01": 109,
+        "2018-01-02": 108,
+        "2016-08-12": 108,
+        "2019-10-29": 107
+      },
+      "status": "OPEN",
+      "note": "Vendor-segment discontinuities not covered by the corporate-action registry; the live scanner fail-closes on them, the research backtester does not. Repair before citing any price-driven performance number."
+    },
+    "corporate_actions_registered": 6,
+    "calendar_horizon": "data/trading_calendar.txt ends 2026-10-16; DB extends to 2026-10-19",
+    "unmapped_pit_members": "8.1% of member-dates have no price series in universe.db"
   },
-  "certification_disposition": "CERTIFIED_FOR_UNATTENDED_PRODUCTION_READINESS"
+  "known_limitations": [
+    "Price series contain vendor-segment discontinuities (see data_quality).",
+    "Corporate-action registry covers 6 events; CCAVENUE/HEG breaks are unexplained.",
+    "PIT membership before 2018-10-04 is press-release derived (no NSE anchor).",
+    "Backtest results have not yet been re-derived on the rebuilt membership."
+  ],
+  "rebuild_commands": [
+    "python3 scripts/build_pit_membership.py",
+    "python3 scripts/verify_pit_membership.py --strict",
+    "MIP_ALLOW_PROD_MUTATION=1 python3 scripts/load_pit_into_db.py --write",
+    "python3 scripts/refresh_data_certificate.py"
+  ]
 }

@@ -1,5 +1,7 @@
 # Engine reconciliation — PIT membership
 
+> **SUPERSEDED 2026-10-25 — the membership source described here was wrong.** niftyhistory.in scored 0.71 Jaccard / 0.82 recall against 17 exact NSE anchors; the table has been rebuilt from those anchors (see `reports/PIT_REBUILD_2026-10-25.md`, `certificates/PIT_UNIVERSE_CERTIFICATE.json`). Numbers below are kept as a historical record and must not be cited as PIT-verified.
+
 Generated 2026-10-24T20:25:58Z. Period 2018-01-01..2026-08-31; costs 15 bps friction + 5 bps slippage.
 
 ## Policy

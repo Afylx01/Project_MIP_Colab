@@ -1,7 +1,7 @@
 {
   "manifest_schema_version": "1.1.0",
   "migration_phase": "Phase 11: Android Productization, Parity Hardening & Long-Run Validation",
-  "timestamp_utc": "2026-10-07T20:49:40.874212+00:00",
+  "timestamp_utc": "2026-10-25T06:20:00+00:00",
   "source_project": "Project_MIP_Pydroid3",
   "destination_project": "MIP_Android",
   "source_scanner_sha256": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
@@ -14,9 +14,9 @@
     {
       "filename": "__init__.py",
       "sha256_source": "f2c326444ac617e9a79f507cc2fb6273074bcb7e75c227fb614b4dc964081cfe",
-      "sha256_migrated": "20f461c03f4e9e54f45dc8db8dc7077a9771a5a2fdf9482e669cb9477e205e7b",
+      "sha256_migrated": "344b798def3877dea34e933b29e03ea312d5fcdcae6450211e359cd198728dce",
       "status": "refactored",
-      "refactor_notes": "Version bump to 2.4.0"
+      "refactor_notes": "Version bump to 2.5.0 (PIT rebuild)"
     },
     {
       "filename": "analytical_price.py",
@@ -111,8 +111,10 @@
     },
     {
       "filename": "pit_membership.py",
-      "sha256_migrated": "7b7eab3f0382753b37a80ae512aa2358a8635615c87b5c00b56da3b8c0d57068",
-      "added_in": "v2.4.2-pit-membership"
+      "sha256_migrated": "2af4d8012c71a58a58dc8b4fcde28f8271ca90c71f93c33830b76a6d05ee2d87",
+      "added_in": "v2.4.2-pit-membership",
+      "status": "refactored",
+      "refactor_notes": "2026-10-25: load NSE-anchor-verified PIT table (docstring/provenance only)"
     },
     {
       "filename": "portfolio.py",
@@ -198,5 +200,6 @@
     }
   ],
   "manifest_updated_utc": "2026-10-24T20:20:00Z",
-  "manifest_update_note": "True PIT data verified and reproduced across all 7 sources: NIFTY 500 snapshot aliases expanded (20,744 mapped rows), AMP4010 20Y NIFTY 50 snapshots added (216 dates, 99.2% mapped), reproducible pipeline sealed in scripts/reproduce_pit_data.py."
+  "manifest_update_note": "True PIT data verified and reproduced across all 7 sources: NIFTY 500 snapshot aliases expanded (20,744 mapped rows), AMP4010 20Y NIFTY 50 snapshots added (216 dates, 99.2% mapped), reproducible pipeline sealed in scripts/reproduce_pit_data.py.",
+  "notes": "Module hashes refreshed after the 2026-10-25 PIT rebuild (core/pit_membership.py docstring only)."
 }

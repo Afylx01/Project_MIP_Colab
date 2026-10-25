@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.0] - 2026-10-25
+
+### Fixed — the point-in-time universe was not actually point-in-time
+- **Retracted the niftyhistory.in NIFTY 500 membership table.** Measured against **17 exact NSE
+  constituent files recovered from the Internet Archive** (2018-10-04 → 2026-10-22) it scored
+  **0.71 mean Jaccard / 0.82 recall** — at the 2018 anchors only 45% Jaccard (63% of real members
+  present). Its walk-back had leaked 2025-26 DUMMY/demerged tickers (VAML, VEDPOWER, DUMMYHEG)
+  into every snapshot back to 2016. No result computed on it may be cited.
+- **Rebuilt the table** (`scripts/build_pit_membership.py`): 17 NSE anchors + the CC BY 4.0
+  `nse-historical-membership` press-release event log (86 events), dated ticker renames, forward
+  walk between anchors with a snap at every anchor, DUMMY scrips excluded. 180 snapshots
+  (2016-01-18 → 2026-10-22), 90,355 rows, 83,028 mapped to a DB series (91.9%).
+- **Verification gate** (`scripts/verify_pit_membership.py`): structure, exact anchor reproduction,
+  cross-source Jaccard, listing-date constraint, coverage, churn. Emits
+  `reports/PIT_VERIFICATION.md` and `certificates/PIT_UNIVERSE_CERTIFICATE.json` (verdict PASS).
+- **Coverage improved**: 2018 start 446 mapped / 439 eligible (was 377 / 356); 2017 428 / 323
+  (was 375 / 306); 2024 470 / 466.
+- `core/pit_membership.py` docstring, `README` PIT sections, `data/pit_constituents/metadata.json`
+  and `scripts/reproduce_pit_data.py` now describe and use the anchor-based pipeline.
+- New regression tests: `tests/test_pit_source_integrity.py` (anchor exactness, no DUMMY scrips,
+  cardinality, backtest-window coverage, certificate green) and corrected 2018 membership
+  expectations (ADANIENT was excluded 2018-04-02, re-included 2020-09-25).
+
+### Pending
+- Re-run the canonical backtest, survivorship control and the full grid on the verified membership;
+  regenerate `reports/ENGINE_RECONCILIATION.md` and the top-5 settings with confidence intervals.
+
 ## [2.4.2] - 2026-10-24
 
 ### Added

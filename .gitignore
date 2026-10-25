@@ -49,6 +49,9 @@ data/benchmark_*.csv
 logs/*.log
 logs/*.log.*
 !reports/.gitkeep
+!reports/test_evidence.json
+!reports/PIT_VERIFICATION.md
+!reports/PIT_REBUILD_2026-10-25.md
 
 # Python Bytecode, Caches & Environments
 __pycache__/

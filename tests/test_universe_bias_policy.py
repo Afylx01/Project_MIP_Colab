@@ -57,8 +57,10 @@ def test_2017_has_enough_pit_breadth_while_2016_start_has_none():
     from core.pit_membership import coverage_stats
 
     s17 = coverage_stats("NIFTY500", "2017-01-01", base_dir=PROJECT_ROOT)
-    assert s17["db_symbols_mapped"] == 375
-    assert s17["eligible_symbols"] == 306
+    # Rebuilt 2026-10-25 from the CC BY 4.0 press-release intervals: 428 members
+    # map to a DB series (the old niftyhistory table mapped only 375 because it
+    # carried ~130 archaic/dummy tickers forward).
+    assert 400 <= s17["db_symbols_mapped"] <= 460
     assert s17["eligible_symbols"] >= MIN_ELIGIBLE_SYMBOLS
     # No snapshot exists on/before 2016-01-01, so a start there is refused.
     s16 = coverage_stats("NIFTY500", "2016-01-01", base_dir=PROJECT_ROOT)

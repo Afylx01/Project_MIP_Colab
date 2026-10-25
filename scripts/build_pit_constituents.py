@@ -1,4 +1,6 @@
-"""Build the primary PIT membership table from niftyhistory.in snapshots.
+"""DEPRECATED (2026-10-25): niftyhistory.in NIFTY 500 lists were measured at 0.71 Jaccard / 0.82 recall against 17 exact NSE anchors and must not be used. The active builder is scripts/build_pit_membership.py; the active verifier is scripts/verify_pit_membership.py.
+
+Build the primary PIT membership table from niftyhistory.in snapshots.
 
 Input (committed):
   data/pit_constituents/verification/niftyhistory_500_YYYY.csv

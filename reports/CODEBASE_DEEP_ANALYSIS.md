@@ -1,5 +1,7 @@
 # Project MIP — Deep Codebase Analysis & Empirical Verification
 
+> **SUPERSEDED 2026-10-25 — the membership source described here was wrong.** niftyhistory.in scored 0.71 Jaccard / 0.82 recall against 17 exact NSE anchors; the table has been rebuilt from those anchors (see `reports/PIT_REBUILD_2026-10-25.md`, `certificates/PIT_UNIVERSE_CERTIFICATE.json`). Numbers below are kept as a historical record and must not be cited as PIT-verified.
+
 **Subject:** `/mnt/sdcard/Subtitles/Project/Project_MIP_Colab`
 **Version:** 2.4.2 · **HEAD:** `v2.4.2-pit-membership` · **Analysis date:** 2026-10-24
 **Method:** static reading, independent recomputation from SQLite, full test run, end-to-end pipeline execution, native-kernel benchmark, ledger reconciliation. Every number below was produced in this session; nothing is copied from the README unless explicitly labelled "claimed".

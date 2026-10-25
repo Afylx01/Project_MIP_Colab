@@ -1,0 +1,12 @@
+{
+  "suite": "pytest (headless, -p no:cacheprovider)",
+  "command": "PYTHONDONTWRITEBYTECODE=1 MIP_ALLOW_PROD_MUTATION=0 python3 -m pytest -q -p no:cacheprovider",
+  "passed": 635,
+  "skipped": 5,
+  "failed": 0,
+  "duration_seconds": 1349.2,
+  "exit_code": 0,
+  "recorded_at_utc": "2026-10-25T06:11:49.706867+00:00",
+  "log_tail": "635 passed, 5 skipped, 0 failed in 1349.18s",
+  "notes": "Run after the 2026-10-25 PIT rebuild, DB PIT-table load and certificate refresh."
+}

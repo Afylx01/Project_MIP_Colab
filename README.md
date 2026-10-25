@@ -403,13 +403,13 @@ If the total cost of calculated buy tickets exceeds available cash, an automated
 * **Primary Key:** `PRIMARY KEY (symbol, date)`
 * **Cryptographic SHA-256 Fingerprint:**
   ```
-  2cea970063a65c0ca129ac459467f6b3de466e05be456b50cc63ff1651e8b6ef
+  26df1c076d02728c6d72ffaf41e0b8c2c559ea7cff001612eea073e1bb383090
   ```
 
 ### Survivorship Bias Elimination
-Historical index backtests now use **point-in-time membership**, not the current list. `data/pit_constituents/nifty500_snapshots.csv` contains 50 full NIFTY500 snapshots (2016-01-18 → 2026-09-30) from niftyhistory.in, cross-checked against the CC BY 4.0 `nse-historical-membership` interval table. Membership is resolved on every rebalance; a holding removed from the index is exited. **2016-01-01 is refused** because no snapshot exists on or before that date. The canonical window starts in 2018 — the first year with at least 70% tradable coverage (377 mapped / 356 eligible). 2017 is runnable (305 eligible) but is outside the pre-registered canonical window. The live scanner is the only component that uses the latest constituents.
+Historical index backtests use **point-in-time membership**, not the current list. `data/pit_constituents/nifty500_snapshots.csv` is rebuilt from **17 exact NSE constituent files recovered from the Internet Archive** (2018-10-04 → 2026-10-22) plus the CC BY 4.0 `nse-historical-membership` press-release event log (86 inclusion/exclusion events). Dates between anchors are walked forward from the previous anchor, with dated ticker renames and each later anchor snapping the walk; dates before the first anchor fall back to the interval table. Membership is resolved on every rebalance; a holding removed from the index is exited. **2016-01-01 is refused** because no anchor exists on or before it. Coverage improved materially: at 2018-01-01, **446 members map to a DB series and 439 have 252 bars** (previously 377/356); 2017 maps 428/323. The prior niftyhistory.in table scored only **0.71 Jaccard / 0.82 recall against the 17 NSE anchors** and is **retracted**. Verification: `reports/PIT_VERIFICATION.md` and `certificates/PIT_UNIVERSE_CERTIFICATE.json`.
 
-The residual limitation is **price-history completeness**, not membership selection: in 2018, 377 of 501 members map to a DB price series and 356 have the required 252 bars (453/434 by 2024; 496 mapped by 2026). The measured current-list control — same engine, config and dates on today's 2026 list — overstates CAGR by **+2.81 pp** (25.75% vs 22.94%); that is the one-number survivorship/look-ahead estimate under this tag. The old "4–8% annually" range and the ALL-vs-survivors 1.51 pp diagnostic are retired. Verification: `reports/PIT_MEMBERSHIP_VERIFICATION.md`; engine matrix and control: `reports/ENGINE_RECONCILIATION.md`.
+The residual limitation is **price-history completeness**, not membership selection: in 2018, 446 of the 501 verified members map to a DB price series and 439 have the required 252 bars (470/466 by 2024; 497 mapped by 2026). **Performance numbers elsewhere in this README were computed on the retracted niftyhistory table and are being re-derived on the verified table — do not cite them until the re-run is published.** The survivorship control and engine matrix will be regenerated with the rebuilt membership (`reports/PIT_VERIFICATION.md`, `reports/ENGINE_RECONCILIATION.md`).
 
 Project MIP maintains complete historical records of **delisted, merged, and suspended scrips**:
 * Tickers such as `DHFL`, `ABAN`, `CORPBANK`, `RCOM`, `SUZLON` (historical distressed era), `UNITECH`, and `YESBANK` are fully preserved in the database during their active trading years. `JETAIRWAYS` has no price history in the current database.
@@ -512,11 +512,11 @@ The simulation sweep divides parameter combinations across CPU hardware threads 
 
 ## 📊 Canonical PIT Backtest Results
 
-> **Measurement note (2026-10-24):** the canonical backtest uses **NIFTY500 point-in-time membership** — 50 full snapshots from 2016-01-18 to 2026-09-30 (niftyhistory.in; cross-checked against the CC BY 4.0 `nse-historical-membership` interval table). Membership is resolved on every rebalance. **2016-01-01 is refused** (no snapshot on or before that date). The canonical window starts in 2018, the first year with ≥70% tradable coverage (377 mapped / 356 eligible); 2017 is runnable (305 eligible) but is outside the pre-registered window. The old 2016–2026 / 2008–2026 tables used the 2026 constituent list and are **retracted**.
+> **Measurement note (2026-10-25) — SUPERSEDED:** every number in this section was produced with the **retracted niftyhistory.in membership table** (0.71 Jaccard vs the 17 NSE anchors). The dataset has been rebuilt from exact NSE anchors (`reports/PIT_VERIFICATION.md`, `certificates/PIT_UNIVERSE_CERTIFICATE.json`). Coverage at the 2018 start is now **446 mapped / 439 eligible**, up from 377/356. The results below are kept only as a pre-rebuild record and **must not be cited**; the verified re-run and top-5 grid are being produced next.
 
 ### 1. Canonical PIT NIFTY500 baseline (2018-01 → 2026-08, monthly)
 
-* **Universe:** NIFTY500 point-in-time membership (377 mapped members at the 2018 start; 356 with 252 bars)
+* **Universe:** NIFTY500 point-in-time membership — **pre-rebuild table (377 mapped / 356 eligible); superseded by the verified 446/439 rebuild**
 * **Initial capital:** ₹10,00,000
 * **Costs:** 15 bps statutory frictions + 5 bps slippage
 

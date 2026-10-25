@@ -4,11 +4,16 @@ Usage:
   python3 scripts/reproduce_pit_data.py
 
 This script:
-  1. Rebuilds NIFTY 500 point-in-time constituent snapshots from verified source files.
-  2. Rebuilds NIFTY 50 point-in-time constituent snapshots from AMP4010 20Y weights dataset.
-  3. Executes cross-source validation against aditya-jha, BKKB20, and niftyhistory.in.
-  4. Verifies database integrity, foreign keys, geometric invariants, and baseline checksums.
+  1. Rebuilds NIFTY 500 point-in-time membership from NSE Internet Archive anchors
+     + the CC BY 4.0 press-release event log (scripts/build_pit_membership.py).
+  2. Rebuilds NIFTY 50 point-in-time constituent snapshots from AMP4010 20Y weights.
+  3. Verifies the rebuilt table against all 17 NSE anchors and issues
+     certificates/PIT_UNIVERSE_CERTIFICATE.json (scripts/verify_pit_membership.py).
+  4. Verifies database integrity, foreign keys, geometric invariants, and checksums.
   5. Produces an audit summary for compliance and future-proofing.
+
+The niftyhistory.in table is deprecated: it scored 0.71 Jaccard / 0.82 recall
+against the NSE anchors and must not be used for research.
 """
 import hashlib
 import json
@@ -82,10 +87,10 @@ def main():
     print(f"Execution Timestamp (UTC): {datetime.now(timezone.utc).isoformat()}")
     print("=" * 70)
 
-    # 1. Build NIFTY 500 PIT
+    # 1. Build NIFTY 500 PIT from NSE anchors + press releases
     run_step(
-        "Build NIFTY 500 PIT Snapshots",
-        [sys.executable, str(ROOT / "scripts" / "build_pit_constituents.py")]
+        "Build NIFTY 500 PIT (NSE anchors + press releases)",
+        [sys.executable, str(ROOT / "scripts" / "build_pit_membership.py")]
     )
 
     # 2. Build NIFTY 50 PIT
@@ -94,10 +99,10 @@ def main():
         [sys.executable, str(ROOT / "scripts" / "build_nifty50_pit_from_weights.py")]
     )
 
-    # 3. Cross-validate against interval dataset
+    # 3. Verify against NSE anchors and issue the PIT certificate
     run_step(
-        "Cross-validate PIT against niftyhistory and aditya-jha",
-        [sys.executable, str(ROOT / "scripts" / "verify_pit_against_niftyhistory.py")]
+        "Verify PIT against NSE anchors",
+        [sys.executable, str(ROOT / "scripts" / "verify_pit_membership.py"), "--strict"]
     )
 
     # 4. Invariant audit

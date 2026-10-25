@@ -1,325 +1,1146 @@
 {
-  "source": "https://niftyhistory.in/",
-  "source_endpoint": "/download?index_type=Nifty 500",
-  "retrieved_at": "2026-10-24T20:41:30.138712+00:00",
-  "files": [
-    "niftyhistory_500_2016.csv",
-    "niftyhistory_500_2017.csv",
-    "niftyhistory_500_2018.csv",
-    "niftyhistory_500_2019.csv",
-    "niftyhistory_500_2020.csv",
-    "niftyhistory_500_2021.csv",
-    "niftyhistory_500_2022.csv",
-    "niftyhistory_500_2023.csv",
-    "niftyhistory_500_2024.csv",
-    "niftyhistory_500_2025.csv",
-    "niftyhistory_500_2026.csv"
+  "source": "NSE Internet Archive anchors + aditya-jha/nse-historical-membership PR intervals",
+  "index": "Nifty 500",
+  "schema": [
+    "snapshot_date",
+    "api_symbol",
+    "db_symbol"
   ],
-  "snapshots": 50,
-  "api_symbols": 782,
-  "mapped_to_db": 20744,
-  "unmapped": 4305,
-  "per_date": [
-    {
-      "snapshot_date": "2016-01-18",
-      "api_symbols": 500,
-      "mapped": 371,
-      "unique_db": 364
+  "built_at_utc": "2026-10-25T04:43:03.050199+00:00",
+  "start": "2016-01-01",
+  "end": "2026-10-25",
+  "snapshots": 180,
+  "rows": 90355,
+  "anchors": [
+    "2018-10-04",
+    "2019-02-01",
+    "2020-07-25",
+    "2022-05-04",
+    "2022-10-09",
+    "2023-04-04",
+    "2024-02-07",
+    "2024-02-26",
+    "2025-06-16",
+    "2025-08-15",
+    "2025-08-21",
+    "2026-01-07",
+    "2026-05-02",
+    "2026-08-27",
+    "2026-09-21",
+    "2026-10-09",
+    "2026-10-22"
+  ],
+  "anchor_count": 17,
+  "mapped_rows": 83028,
+  "unmapped_rows": 7327,
+  "interval_table_sha256": "9c7ba8f1efbc61feb07e75712a54dd370ebbb5f24dbf218015824570280cae57",
+  "events_table_sha256": "1db3fce383c6c6dc95ededd0f74170b60d56ebf75f28bc4bced1bdff02f080ae",
+  "method": "canonical tickers; anchor dates exact; dates after the first anchor walk forward from the previous anchor through NSE press-release events; dates before the first anchor fall back to the CC BY 4.0 interval table.",
+  "renames_sha256": "252733666ad10b6fa122dd9ad51402cce6856e6201bf152414a9dc5d1390d99c",
+  "anchor_files": {
+    "ind_nifty500list_20181004.csv": "3de9fd8823bbb27357e441deeac1e5493b4a58345e0db54366578bcaaee458fe",
+    "ind_nifty500list_20190201.csv": "7aacc85a6ca563021f92e045c74597b2b6d74b96f268e2a031ffd8d59b201d58",
+    "ind_nifty500list_20200725.csv": "2fa31bea7006761d61a3a22c1114f752157cfeeef82de3b669d21ae12a11b524",
+    "ind_nifty500list_20220504.csv": "0aef47e9f02528b439bfc3e150fa7c3b5bbd32be527b8217c15f8c5aac615c42",
+    "ind_nifty500list_20221009.csv": "b65254f8c187eb15c4e60f6e8dfdc3a9ba22ba419a828ffdbc7b1ab352663d16",
+    "ind_nifty500list_20230404.csv": "0bf9136a59cdb0ad87c7a1b5ff568ed47ffc792bf14027206c778baad7fec9e3",
+    "ind_nifty500list_20240207.csv": "0189acf6590bc224688c1e74bdc249fe867efd159791b01a86477c048a2e5e71",
+    "ind_nifty500list_20240226.csv": "c5f542379945f52ddf36e17ba38260691f909818386e2ed94a02999890d890a8",
+    "ind_nifty500list_20250616.csv": "72368471eae3c86cfc4832f997f4d2ffecf696969afd3f11adfa2894cbc3ccde",
+    "ind_nifty500list_20250815.csv": "678d2a0f07836814619482ffb4067a344e37f8068a4d068b5c09728dfbe6f764",
+    "ind_nifty500list_20250821.csv": "678d2a0f07836814619482ffb4067a344e37f8068a4d068b5c09728dfbe6f764",
+    "ind_nifty500list_20260107.csv": "da6c7949e6ff1659748f99dbc08a9ab61c5ed2d924c71e06dde4d0391189700c",
+    "ind_nifty500list_20260502.csv": "42a846c927e952460d1a0f4514be1d1b923294141647e57e060c7c2332576fca",
+    "ind_nifty500list_20260827.csv": "637b99dc20a36a994b8dd43ae8449781258a9c94fab20ca3b87741fb39bd67db",
+    "ind_nifty500list_20260921.csv": "7b90cc2fbfc268cae8eeb95cf1bd80218a0a41f81f0fd1b0ff1ebf64f4dd8bfa",
+    "ind_nifty500list_20261009.csv": "2959bf206239284e145f7aecc65095b18d11556d2642323a70f2d26efe0f5cb3",
+    "ind_nifty500list_20261022.csv": "c263cbf8e8e51b4a167a34b65ed4890e750b85ba7e012dd18e870bb7ad46f906"
+  },
+  "per_date": {
+    "2016-01-18": {
+      "members": 501,
+      "mapped": 423,
+      "unmapped": 78,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2016-04-01",
-      "api_symbols": 501,
-      "mapped": 377,
-      "unique_db": 370
+    "2016-01-31": {
+      "members": 501,
+      "mapped": 423,
+      "unmapped": 78,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2016-04-29",
-      "api_symbols": 501,
-      "mapped": 377,
-      "unique_db": 370
+    "2016-02-29": {
+      "members": 501,
+      "mapped": 423,
+      "unmapped": 78,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2016-09-30",
-      "api_symbols": 501,
-      "mapped": 382,
-      "unique_db": 374
+    "2016-03-31": {
+      "members": 501,
+      "mapped": 423,
+      "unmapped": 78,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2016-11-15",
-      "api_symbols": 501,
-      "mapped": 383,
-      "unique_db": 375
+    "2016-04-01": {
+      "members": 501,
+      "mapped": 423,
+      "unmapped": 78,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-01-23",
-      "api_symbols": 501,
-      "mapped": 383,
-      "unique_db": 376
+    "2016-04-29": {
+      "members": 501,
+      "mapped": 424,
+      "unmapped": 77,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-03-16",
-      "api_symbols": 501,
-      "mapped": 385,
-      "unique_db": 378
+    "2016-04-30": {
+      "members": 501,
+      "mapped": 424,
+      "unmapped": 77,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-03-31",
-      "api_symbols": 501,
-      "mapped": 388,
-      "unique_db": 381
+    "2016-05-31": {
+      "members": 501,
+      "mapped": 425,
+      "unmapped": 76,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-05-26",
-      "api_symbols": 501,
-      "mapped": 389,
-      "unique_db": 382
+    "2016-06-30": {
+      "members": 501,
+      "mapped": 425,
+      "unmapped": 76,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-06-23",
-      "api_symbols": 501,
-      "mapped": 389,
-      "unique_db": 382
+    "2016-07-31": {
+      "members": 501,
+      "mapped": 426,
+      "unmapped": 75,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-09-05",
-      "api_symbols": 501,
-      "mapped": 390,
-      "unique_db": 383
+    "2016-08-31": {
+      "members": 501,
+      "mapped": 427,
+      "unmapped": 74,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-09-29",
-      "api_symbols": 501,
-      "mapped": 394,
-      "unique_db": 387
+    "2016-09-30": {
+      "members": 501,
+      "mapped": 428,
+      "unmapped": 73,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-10-30",
-      "api_symbols": 501,
-      "mapped": 395,
-      "unique_db": 388
+    "2016-10-31": {
+      "members": 501,
+      "mapped": 428,
+      "unmapped": 73,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-11-13",
-      "api_symbols": 501,
-      "mapped": 395,
-      "unique_db": 388
+    "2016-11-15": {
+      "members": 501,
+      "mapped": 428,
+      "unmapped": 73,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2017-11-20",
-      "api_symbols": 501,
-      "mapped": 395,
-      "unique_db": 388
+    "2016-11-30": {
+      "members": 501,
+      "mapped": 428,
+      "unmapped": 73,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2018-02-05",
-      "api_symbols": 501,
-      "mapped": 395,
-      "unique_db": 388
+    "2016-12-31": {
+      "members": 501,
+      "mapped": 428,
+      "unmapped": 73,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2018-03-13",
-      "api_symbols": 501,
-      "mapped": 395,
-      "unique_db": 388
+    "2017-01-23": {
+      "members": 501,
+      "mapped": 430,
+      "unmapped": 71,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2018-04-02",
-      "api_symbols": 501,
-      "mapped": 395,
-      "unique_db": 388
+    "2017-01-31": {
+      "members": 501,
+      "mapped": 430,
+      "unmapped": 71,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2018-06-29",
-      "api_symbols": 501,
-      "mapped": 395,
-      "unique_db": 389
+    "2017-02-28": {
+      "members": 501,
+      "mapped": 430,
+      "unmapped": 71,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2018-08-08",
-      "api_symbols": 501,
-      "mapped": 395,
-      "unique_db": 389
+    "2017-03-16": {
+      "members": 501,
+      "mapped": 430,
+      "unmapped": 71,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2018-09-28",
-      "api_symbols": 501,
-      "mapped": 397,
-      "unique_db": 391
+    "2017-03-31": {
+      "members": 503,
+      "mapped": 435,
+      "unmapped": 68,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2018-12-28",
-      "api_symbols": 501,
-      "mapped": 399,
-      "unique_db": 393
+    "2017-04-30": {
+      "members": 503,
+      "mapped": 435,
+      "unmapped": 68,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2019-01-28",
-      "api_symbols": 501,
-      "mapped": 400,
-      "unique_db": 394
-    },
-    {
-      "snapshot_date": "2019-03-29",
-      "api_symbols": 501,
-      "mapped": 403,
-      "unique_db": 397
-    },
-    {
-      "snapshot_date": "2019-04-15",
-      "api_symbols": 501,
-      "mapped": 402,
-      "unique_db": 397
-    },
-    {
-      "snapshot_date": "2019-06-28",
-      "api_symbols": 501,
-      "mapped": 402,
-      "unique_db": 397
-    },
-    {
-      "snapshot_date": "2019-09-24",
-      "api_symbols": 501,
-      "mapped": 404,
-      "unique_db": 399
-    },
-    {
-      "snapshot_date": "2019-09-27",
-      "api_symbols": 501,
-      "mapped": 407,
-      "unique_db": 404
-    },
-    {
-      "snapshot_date": "2019-12-26",
-      "api_symbols": 501,
-      "mapped": 408,
-      "unique_db": 406
-    },
-    {
-      "snapshot_date": "2019-12-27",
-      "api_symbols": 501,
-      "mapped": 409,
-      "unique_db": 407
-    },
-    {
-      "snapshot_date": "2020-01-16",
-      "api_symbols": 501,
-      "mapped": 409,
-      "unique_db": 407
-    },
-    {
-      "snapshot_date": "2020-03-19",
-      "api_symbols": 501,
-      "mapped": 410,
-      "unique_db": 408
-    },
-    {
-      "snapshot_date": "2020-06-26",
-      "api_symbols": 501,
-      "mapped": 411,
-      "unique_db": 409
-    },
-    {
-      "snapshot_date": "2020-07-31",
-      "api_symbols": 501,
-      "mapped": 411,
-      "unique_db": 409
-    },
-    {
-      "snapshot_date": "2020-09-14",
-      "api_symbols": 501,
-      "mapped": 411,
-      "unique_db": 409
-    },
-    {
-      "snapshot_date": "2020-09-30",
-      "api_symbols": 501,
-      "mapped": 411,
-      "unique_db": 409
-    },
-    {
-      "snapshot_date": "2021-03-31",
-      "api_symbols": 501,
-      "mapped": 421,
-      "unique_db": 420
-    },
-    {
-      "snapshot_date": "2021-09-30",
-      "api_symbols": 501,
-      "mapped": 431,
-      "unique_db": 430
-    },
-    {
-      "snapshot_date": "2022-03-31",
-      "api_symbols": 501,
+    "2017-05-26": {
+      "members": 503,
       "mapped": 437,
-      "unique_db": 436
+      "unmapped": 66,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2022-09-30",
-      "api_symbols": 501,
-      "mapped": 440,
-      "unique_db": 439
+    "2017-05-31": {
+      "members": 503,
+      "mapped": 437,
+      "unmapped": 66,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2023-03-31",
-      "api_symbols": 501,
+    "2017-06-23": {
+      "members": 503,
+      "mapped": 437,
+      "unmapped": 66,
+      "source": "press_release_intervals"
+    },
+    "2017-06-30": {
+      "members": 503,
+      "mapped": 437,
+      "unmapped": 66,
+      "source": "press_release_intervals"
+    },
+    "2017-07-31": {
+      "members": 503,
+      "mapped": 437,
+      "unmapped": 66,
+      "source": "press_release_intervals"
+    },
+    "2017-08-31": {
+      "members": 503,
+      "mapped": 437,
+      "unmapped": 66,
+      "source": "press_release_intervals"
+    },
+    "2017-09-05": {
+      "members": 503,
+      "mapped": 437,
+      "unmapped": 66,
+      "source": "press_release_intervals"
+    },
+    "2017-09-29": {
+      "members": 504,
+      "mapped": 444,
+      "unmapped": 60,
+      "source": "press_release_intervals"
+    },
+    "2017-09-30": {
+      "members": 503,
+      "mapped": 444,
+      "unmapped": 59,
+      "source": "press_release_intervals"
+    },
+    "2017-10-30": {
+      "members": 503,
+      "mapped": 445,
+      "unmapped": 58,
+      "source": "press_release_intervals"
+    },
+    "2017-10-31": {
+      "members": 503,
+      "mapped": 445,
+      "unmapped": 58,
+      "source": "press_release_intervals"
+    },
+    "2017-11-13": {
+      "members": 503,
       "mapped": 446,
-      "unique_db": 445
+      "unmapped": 57,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2023-09-30",
-      "api_symbols": 501,
-      "mapped": 455,
-      "unique_db": 453
+    "2017-11-20": {
+      "members": 503,
+      "mapped": 446,
+      "unmapped": 57,
+      "source": "press_release_intervals"
     },
-    {
-      "snapshot_date": "2024-03-31",
-      "api_symbols": 501,
+    "2017-11-30": {
+      "members": 503,
+      "mapped": 446,
+      "unmapped": 57,
+      "source": "press_release_intervals"
+    },
+    "2017-12-31": {
+      "members": 503,
+      "mapped": 446,
+      "unmapped": 57,
+      "source": "press_release_intervals"
+    },
+    "2018-01-31": {
+      "members": 503,
+      "mapped": 446,
+      "unmapped": 57,
+      "source": "press_release_intervals"
+    },
+    "2018-02-05": {
+      "members": 503,
+      "mapped": 445,
+      "unmapped": 58,
+      "source": "press_release_intervals"
+    },
+    "2018-02-28": {
+      "members": 503,
+      "mapped": 445,
+      "unmapped": 58,
+      "source": "press_release_intervals"
+    },
+    "2018-03-13": {
+      "members": 503,
+      "mapped": 445,
+      "unmapped": 58,
+      "source": "press_release_intervals"
+    },
+    "2018-03-31": {
+      "members": 502,
+      "mapped": 445,
+      "unmapped": 57,
+      "source": "press_release_intervals"
+    },
+    "2018-04-02": {
+      "members": 503,
+      "mapped": 448,
+      "unmapped": 55,
+      "source": "press_release_intervals"
+    },
+    "2018-04-30": {
+      "members": 503,
+      "mapped": 448,
+      "unmapped": 55,
+      "source": "press_release_intervals"
+    },
+    "2018-05-31": {
+      "members": 503,
+      "mapped": 448,
+      "unmapped": 55,
+      "source": "press_release_intervals"
+    },
+    "2018-06-29": {
+      "members": 503,
+      "mapped": 448,
+      "unmapped": 55,
+      "source": "press_release_intervals"
+    },
+    "2018-06-30": {
+      "members": 503,
+      "mapped": 448,
+      "unmapped": 55,
+      "source": "press_release_intervals"
+    },
+    "2018-07-31": {
+      "members": 503,
+      "mapped": 448,
+      "unmapped": 55,
+      "source": "press_release_intervals"
+    },
+    "2018-08-08": {
+      "members": 503,
+      "mapped": 449,
+      "unmapped": 54,
+      "source": "press_release_intervals"
+    },
+    "2018-08-31": {
+      "members": 503,
+      "mapped": 449,
+      "unmapped": 54,
+      "source": "press_release_intervals"
+    },
+    "2018-09-28": {
+      "members": 503,
+      "mapped": 452,
+      "unmapped": 51,
+      "source": "press_release_intervals"
+    },
+    "2018-09-30": {
+      "members": 502,
+      "mapped": 452,
+      "unmapped": 50,
+      "source": "press_release_intervals"
+    },
+    "2018-10-04": {
+      "members": 501,
+      "mapped": 450,
+      "unmapped": 51,
+      "source": "nse_wayback_anchor"
+    },
+    "2018-10-31": {
+      "members": 501,
+      "mapped": 450,
+      "unmapped": 51,
+      "source": "anchor_plus_press_releases"
+    },
+    "2018-11-30": {
+      "members": 501,
+      "mapped": 450,
+      "unmapped": 51,
+      "source": "anchor_plus_press_releases"
+    },
+    "2018-12-28": {
+      "members": 501,
+      "mapped": 453,
+      "unmapped": 48,
+      "source": "anchor_plus_press_releases"
+    },
+    "2018-12-31": {
+      "members": 501,
+      "mapped": 453,
+      "unmapped": 48,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-01-28": {
+      "members": 501,
+      "mapped": 456,
+      "unmapped": 45,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-01-31": {
+      "members": 501,
+      "mapped": 456,
+      "unmapped": 45,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-02-01": {
+      "members": 501,
+      "mapped": 457,
+      "unmapped": 44,
+      "source": "nse_wayback_anchor"
+    },
+    "2019-02-28": {
+      "members": 501,
+      "mapped": 457,
+      "unmapped": 44,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-03-29": {
+      "members": 502,
       "mapped": 460,
-      "unique_db": 459
+      "unmapped": 42,
+      "source": "anchor_plus_press_releases"
     },
-    {
-      "snapshot_date": "2024-09-30",
-      "api_symbols": 501,
+    "2019-03-31": {
+      "members": 502,
+      "mapped": 460,
+      "unmapped": 42,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-04-15": {
+      "members": 502,
+      "mapped": 460,
+      "unmapped": 42,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-04-30": {
+      "members": 502,
+      "mapped": 460,
+      "unmapped": 42,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-05-31": {
+      "members": 502,
+      "mapped": 460,
+      "unmapped": 42,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-06-28": {
+      "members": 502,
+      "mapped": 461,
+      "unmapped": 41,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-06-30": {
+      "members": 502,
+      "mapped": 461,
+      "unmapped": 41,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-07-31": {
+      "members": 502,
+      "mapped": 461,
+      "unmapped": 41,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-08-31": {
+      "members": 502,
+      "mapped": 461,
+      "unmapped": 41,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-09-24": {
+      "members": 502,
+      "mapped": 462,
+      "unmapped": 40,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-09-27": {
+      "members": 505,
       "mapped": 468,
-      "unique_db": 467
+      "unmapped": 37,
+      "source": "anchor_plus_press_releases"
     },
-    {
-      "snapshot_date": "2025-03-31",
-      "api_symbols": 501,
-      "mapped": 475,
-      "unique_db": 474
+    "2019-09-30": {
+      "members": 505,
+      "mapped": 468,
+      "unmapped": 37,
+      "source": "anchor_plus_press_releases"
     },
-    {
-      "snapshot_date": "2025-09-30",
-      "api_symbols": 501,
+    "2019-10-31": {
+      "members": 505,
+      "mapped": 468,
+      "unmapped": 37,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-11-30": {
+      "members": 505,
+      "mapped": 468,
+      "unmapped": 37,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-12-26": {
+      "members": 505,
+      "mapped": 469,
+      "unmapped": 36,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-12-27": {
+      "members": 505,
+      "mapped": 472,
+      "unmapped": 33,
+      "source": "anchor_plus_press_releases"
+    },
+    "2019-12-31": {
+      "members": 505,
+      "mapped": 472,
+      "unmapped": 33,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-01-16": {
+      "members": 505,
+      "mapped": 472,
+      "unmapped": 33,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-01-31": {
+      "members": 505,
+      "mapped": 472,
+      "unmapped": 33,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-02-29": {
+      "members": 505,
+      "mapped": 472,
+      "unmapped": 33,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-03-19": {
+      "members": 505,
+      "mapped": 471,
+      "unmapped": 34,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-03-31": {
+      "members": 504,
+      "mapped": 473,
+      "unmapped": 31,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-04-30": {
+      "members": 504,
+      "mapped": 472,
+      "unmapped": 32,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-05-31": {
+      "members": 504,
+      "mapped": 472,
+      "unmapped": 32,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-06-26": {
+      "members": 507,
+      "mapped": 474,
+      "unmapped": 33,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-06-30": {
+      "members": 507,
+      "mapped": 474,
+      "unmapped": 33,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-07-25": {
+      "members": 501,
+      "mapped": 476,
+      "unmapped": 25,
+      "source": "nse_wayback_anchor"
+    },
+    "2020-07-31": {
+      "members": 501,
+      "mapped": 476,
+      "unmapped": 25,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-08-31": {
+      "members": 501,
+      "mapped": 476,
+      "unmapped": 25,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-09-14": {
+      "members": 501,
+      "mapped": 474,
+      "unmapped": 27,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-09-30": {
+      "members": 504,
+      "mapped": 452,
+      "unmapped": 52,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-10-31": {
+      "members": 504,
+      "mapped": 452,
+      "unmapped": 52,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-11-30": {
+      "members": 504,
+      "mapped": 452,
+      "unmapped": 52,
+      "source": "anchor_plus_press_releases"
+    },
+    "2020-12-31": {
+      "members": 504,
+      "mapped": 452,
+      "unmapped": 52,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-01-31": {
+      "members": 504,
+      "mapped": 452,
+      "unmapped": 52,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-02-28": {
+      "members": 504,
+      "mapped": 452,
+      "unmapped": 52,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-03-31": {
+      "members": 504,
+      "mapped": 448,
+      "unmapped": 56,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-04-30": {
+      "members": 504,
+      "mapped": 448,
+      "unmapped": 56,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-05-31": {
+      "members": 504,
+      "mapped": 448,
+      "unmapped": 56,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-06-30": {
+      "members": 504,
+      "mapped": 448,
+      "unmapped": 56,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-07-31": {
+      "members": 504,
+      "mapped": 448,
+      "unmapped": 56,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-08-31": {
+      "members": 504,
+      "mapped": 448,
+      "unmapped": 56,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-09-30": {
+      "members": 505,
+      "mapped": 452,
+      "unmapped": 53,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-10-31": {
+      "members": 505,
+      "mapped": 452,
+      "unmapped": 53,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-11-30": {
+      "members": 505,
+      "mapped": 452,
+      "unmapped": 53,
+      "source": "anchor_plus_press_releases"
+    },
+    "2021-12-31": {
+      "members": 505,
+      "mapped": 452,
+      "unmapped": 53,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-01-31": {
+      "members": 505,
+      "mapped": 452,
+      "unmapped": 53,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-02-28": {
+      "members": 505,
+      "mapped": 452,
+      "unmapped": 53,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-03-31": {
+      "members": 506,
+      "mapped": 450,
+      "unmapped": 56,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-04-30": {
+      "members": 507,
+      "mapped": 452,
+      "unmapped": 55,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-05-04": {
+      "members": 501,
+      "mapped": 455,
+      "unmapped": 46,
+      "source": "nse_wayback_anchor"
+    },
+    "2022-05-31": {
+      "members": 501,
+      "mapped": 456,
+      "unmapped": 45,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-06-30": {
+      "members": 501,
+      "mapped": 456,
+      "unmapped": 45,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-07-31": {
+      "members": 501,
+      "mapped": 456,
+      "unmapped": 45,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-08-31": {
+      "members": 501,
+      "mapped": 458,
+      "unmapped": 43,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-09-30": {
+      "members": 502,
+      "mapped": 463,
+      "unmapped": 39,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-10-09": {
+      "members": 501,
+      "mapped": 462,
+      "unmapped": 39,
+      "source": "nse_wayback_anchor"
+    },
+    "2022-10-31": {
+      "members": 501,
+      "mapped": 462,
+      "unmapped": 39,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-11-30": {
+      "members": 501,
+      "mapped": 462,
+      "unmapped": 39,
+      "source": "anchor_plus_press_releases"
+    },
+    "2022-12-31": {
+      "members": 501,
+      "mapped": 462,
+      "unmapped": 39,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-01-31": {
+      "members": 501,
+      "mapped": 462,
+      "unmapped": 39,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-02-28": {
+      "members": 501,
+      "mapped": 463,
+      "unmapped": 38,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-03-31": {
+      "members": 502,
+      "mapped": 463,
+      "unmapped": 39,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-04-04": {
+      "members": 501,
+      "mapped": 464,
+      "unmapped": 37,
+      "source": "nse_wayback_anchor"
+    },
+    "2023-04-30": {
+      "members": 501,
+      "mapped": 464,
+      "unmapped": 37,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-05-31": {
+      "members": 501,
+      "mapped": 464,
+      "unmapped": 37,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-06-30": {
+      "members": 501,
+      "mapped": 464,
+      "unmapped": 37,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-07-31": {
+      "members": 501,
+      "mapped": 465,
+      "unmapped": 36,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-08-31": {
+      "members": 501,
+      "mapped": 465,
+      "unmapped": 36,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-09-30": {
+      "members": 501,
+      "mapped": 469,
+      "unmapped": 32,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-10-31": {
+      "members": 501,
+      "mapped": 470,
+      "unmapped": 31,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-11-30": {
+      "members": 501,
+      "mapped": 470,
+      "unmapped": 31,
+      "source": "anchor_plus_press_releases"
+    },
+    "2023-12-31": {
+      "members": 501,
+      "mapped": 470,
+      "unmapped": 31,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-01-31": {
+      "members": 501,
+      "mapped": 470,
+      "unmapped": 31,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-02-07": {
+      "members": 501,
+      "mapped": 474,
+      "unmapped": 27,
+      "source": "nse_wayback_anchor"
+    },
+    "2024-02-26": {
+      "members": 501,
+      "mapped": 474,
+      "unmapped": 27,
+      "source": "nse_wayback_anchor"
+    },
+    "2024-02-29": {
+      "members": 501,
+      "mapped": 474,
+      "unmapped": 27,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-03-31": {
+      "members": 501,
+      "mapped": 480,
+      "unmapped": 21,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-04-30": {
+      "members": 501,
+      "mapped": 480,
+      "unmapped": 21,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-05-31": {
+      "members": 501,
+      "mapped": 480,
+      "unmapped": 21,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-06-30": {
+      "members": 501,
+      "mapped": 480,
+      "unmapped": 21,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-07-31": {
+      "members": 501,
+      "mapped": 480,
+      "unmapped": 21,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-08-31": {
+      "members": 501,
+      "mapped": 480,
+      "unmapped": 21,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-09-30": {
+      "members": 500,
+      "mapped": 480,
+      "unmapped": 20,
+      "source": "anchor_plus_press_releases"
+    },
+    "2024-10-31": {
+      "members": 500,
       "mapped": 482,
-      "unique_db": 481
+      "unmapped": 18,
+      "source": "anchor_plus_press_releases"
     },
-    {
-      "snapshot_date": "2025-10-14",
-      "api_symbols": 501,
-      "mapped": 484,
-      "unique_db": 483
+    "2024-11-30": {
+      "members": 500,
+      "mapped": 482,
+      "unmapped": 18,
+      "source": "anchor_plus_press_releases"
     },
-    {
-      "snapshot_date": "2025-11-12",
-      "api_symbols": 501,
-      "mapped": 490,
-      "unique_db": 489
+    "2024-12-31": {
+      "members": 500,
+      "mapped": 482,
+      "unmapped": 18,
+      "source": "anchor_plus_press_releases"
     },
-    {
-      "snapshot_date": "2026-03-31",
-      "api_symbols": 501,
-      "mapped": 496,
-      "unique_db": 496
+    "2025-01-31": {
+      "members": 500,
+      "mapped": 482,
+      "unmapped": 18,
+      "source": "anchor_plus_press_releases"
     },
-    {
-      "snapshot_date": "2026-09-30",
-      "api_symbols": 501,
+    "2025-02-28": {
+      "members": 500,
+      "mapped": 482,
+      "unmapped": 18,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-03-31": {
+      "members": 500,
+      "mapped": 487,
+      "unmapped": 13,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-04-30": {
+      "members": 500,
+      "mapped": 487,
+      "unmapped": 13,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-05-31": {
+      "members": 500,
+      "mapped": 487,
+      "unmapped": 13,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-06-16": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "nse_wayback_anchor"
+    },
+    "2025-06-30": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-07-31": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-08-15": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "nse_wayback_anchor"
+    },
+    "2025-08-21": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "nse_wayback_anchor"
+    },
+    "2025-08-31": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-09-30": {
+      "members": 500,
+      "mapped": 493,
+      "unmapped": 7,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-10-14": {
+      "members": 500,
+      "mapped": 493,
+      "unmapped": 7,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-10-31": {
+      "members": 500,
+      "mapped": 493,
+      "unmapped": 7,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-11-12": {
+      "members": 500,
+      "mapped": 493,
+      "unmapped": 7,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-11-30": {
+      "members": 500,
+      "mapped": 493,
+      "unmapped": 7,
+      "source": "anchor_plus_press_releases"
+    },
+    "2025-12-31": {
+      "members": 500,
+      "mapped": 493,
+      "unmapped": 7,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-01-07": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "nse_wayback_anchor"
+    },
+    "2026-01-31": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-02-28": {
+      "members": 500,
+      "mapped": 494,
+      "unmapped": 6,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-03-31": {
+      "members": 500,
       "mapped": 497,
-      "unique_db": 497
+      "unmapped": 3,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-04-30": {
+      "members": 500,
+      "mapped": 497,
+      "unmapped": 3,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-05-02": {
+      "members": 500,
+      "mapped": 498,
+      "unmapped": 2,
+      "source": "nse_wayback_anchor"
+    },
+    "2026-05-31": {
+      "members": 500,
+      "mapped": 499,
+      "unmapped": 1,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-06-30": {
+      "members": 500,
+      "mapped": 499,
+      "unmapped": 1,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-07-31": {
+      "members": 500,
+      "mapped": 499,
+      "unmapped": 1,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-08-27": {
+      "members": 500,
+      "mapped": 500,
+      "unmapped": 0,
+      "source": "nse_wayback_anchor"
+    },
+    "2026-08-31": {
+      "members": 500,
+      "mapped": 500,
+      "unmapped": 0,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-09-21": {
+      "members": 500,
+      "mapped": 499,
+      "unmapped": 1,
+      "source": "nse_wayback_anchor"
+    },
+    "2026-09-30": {
+      "members": 500,
+      "mapped": 500,
+      "unmapped": 0,
+      "source": "anchor_plus_press_releases"
+    },
+    "2026-10-09": {
+      "members": 500,
+      "mapped": 497,
+      "unmapped": 3,
+      "source": "nse_wayback_anchor"
+    },
+    "2026-10-22": {
+      "members": 500,
+      "mapped": 497,
+      "unmapped": 3,
+      "source": "nse_wayback_anchor"
     }
-  ],
-  "note": "Primary PIT source. The CC BY 4.0 repo interval table is kept as a secondary cross-check."
+  },
+  "caveats": [
+    "Anchor dates are exact NSE publications and override every other source.",
+    "Dates after 2018-10-04 walk forward from an exact NSE anchor through press-release events (tier B). Dates before the first anchor are interval-derived (tier C) and carry residual uncertainty because pre-2018 PR coverage is thinner.",
+    "db_symbol is empty when no price series exists in universe.db for that member/date; the member is still counted in the index, but a backtest cannot trade it."
+  ]
 }

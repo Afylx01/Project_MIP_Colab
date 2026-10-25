@@ -1,13 +1,22 @@
 """Point-in-time NSE index membership.
 
-Primary source: 50 full NIFTY500 snapshots from niftyhistory.in
-(``data/pit_constituents/nifty500_snapshots.csv``, 2016-01-18 → 2026-09-30).
-Secondary cross-check: the normalized CC BY 4.0 interval table from
-https://github.com/aditya-jha/nse-historical-membership.
+Primary source: ``data/pit_constituents/nifty500_snapshots.csv``, rebuilt by
+``scripts/build_pit_membership.py`` from **17 exact NSE NIFTY 500 constituent
+files recovered from the Internet Archive** (2018-10-04 → 2026-10-22). Dates
+between anchors walk forward from the previous anchor through the CC BY 4.0
+``nse-historical-membership`` press-release event log; every later anchor snaps
+the walk, so error cannot accumulate. Dates before the first anchor use the
+interval table directly.
 
 Between snapshot dates the latest snapshot on or before the date is used, so a
 backtest uses the constituents that existed on each rebalance date, not today's
-list. Interval semantics are half-open ``[valid_from, valid_to)``.
+list. Interval semantics for non-snapshot indices are half-open
+``[valid_from, valid_to)``.
+
+Verification and provenance: ``reports/PIT_VERIFICATION.md`` and
+``certificates/PIT_UNIVERSE_CERTIFICATE.json``. The older niftyhistory.in table
+is kept only as ``nifty500_snapshots.csv.bak`` and scored 0.71 Jaccard against
+the NSE anchors; do not use it for research.
 """
 from __future__ import annotations
 

@@ -8,6 +8,7 @@ directory permission audits, and production certification assertion.
 import os
 import sys
 import json
+import hashlib
 import sqlite3
 import argparse
 from pathlib import Path
@@ -70,15 +71,33 @@ def verify_production_readiness(base_dir: Path = PROJECT_ROOT) -> Dict[str, Any]
         max_date = cursor.fetchone()[0]
         conn.close()
 
-        db_ok = (qc == "ok" and row_count == 2164420 and max_date == "2026-10-09")
+        # Expected invariants come from the certificate, never from literals: a
+        # data refresh must regenerate the certificate, and this check then
+        # recognizes the new state automatically.
+        cert_path = base_dir / "certificates" / "PRODUCTION_READINESS_CERTIFICATE.json"
+        cert = json.loads(cert_path.read_text()) if cert_path.exists() else {}
+        db_expect = cert.get("database") or cert.get("cryptographic_provenance", {}).get("database", {})
+        db_sha = hashlib.sha256(db_path.read_bytes()).hexdigest()
+        db_ok = bool(
+            qc == "ok"
+            and db_expect
+            and row_count == int(db_expect.get("row_count", -1))
+            and max_date == db_expect.get("max_date")
+            and db_sha == db_expect.get("sha256")
+        )
         results["checks"]["database_integrity"] = {
             "passed": db_ok,
             "quick_check": qc,
             "row_count": row_count,
             "max_date": max_date,
+            "sha256": db_sha,
+            "expected": db_expect or "missing certificate",
         }
         if not db_ok:
-            results["errors"].append(f"Database invariants mismatch: qc={qc}, rows={row_count}, max_date={max_date}")
+            results["errors"].append(
+                f"Database invariants mismatch vs certificate: qc={qc}, rows={row_count}, "
+                f"max_date={max_date}, sha={db_sha[:16]}... — run scripts/refresh_data_certificate.py"
+            )
     except Exception as e:
         results["checks"]["database_integrity"] = {"passed": False, "error": str(e)}
         results["errors"].append(f"Database inspection failed: {e}")
