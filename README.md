@@ -403,7 +403,7 @@ If the total cost of calculated buy tickets exceeds available cash, an automated
 * **Primary Key:** `PRIMARY KEY (symbol, date)`
 * **Cryptographic SHA-256 Fingerprint:**
   ```
-  26df1c076d02728c6d72ffaf41e0b8c2c559ea7cff001612eea073e1bb383090
+  9d2c74b1a96c03755f7984de76d771d44feb4ca37b28aa133d7c332233ed5eb7
   ```
 
 ### Survivorship Bias Elimination
@@ -524,18 +524,18 @@ The simulation sweep divides parameter combinations across CPU hardware threads 
 
 | Metric | Value |
 | :--- | ---: |
-| Final equity | **₹39,67,433.45** |
-| Total return | **+296.74%** |
-| CAGR | **17.24%** |
+| Final equity | **₹49,25,900.18** |
+| Total return | **+392.59%** |
+| CAGR | **20.21%** |
 | NIFTY500 CAGR | 11.08% |
-| Excess CAGR | **+6.16 pp** |
-| Sharpe (Rf 6.5%) | **0.62** (90% bootstrap CI 0.07–1.25) |
-| Sortino | 0.86 |
-| Calmar | 0.64 |
-| Max drawdown (monthly) | **−27.14%** |
-| Max drawdown (daily) | −28.94% |
-| Closed trades | 510 |
-| Win rate | 43.7% |
+| Excess CAGR | **+9.13 pp** |
+| Sharpe (Rf 6.5%) | **0.76** (90% bootstrap CI 0.20–1.41) |
+| Sortino | 1.04 |
+| Calmar | 0.74 |
+| Max drawdown (monthly) | **−27.22%** |
+| Max drawdown (daily) | −29.00% |
+| Closed trades | 495 |
+| Win rate | 43.4% |
 | PIT members at start / end | 446 / 500 |
 
 Cross-engine check (C99 tensor kernel, same parameters): **16.56% CAGR / 0.54 Sharpe / −29.75% MaxDD /
@@ -561,11 +561,11 @@ two independent engines and 24 random windows. Full table with confidence interv
 
 | Setting (top_n / lookback / EMA / retrace / sector) | CAGR | Sharpe | MaxDD | Trades |
 | :--- | ---: | ---: | ---: | ---: |
-| 15 / 315 / 150 / 0.85 / 2 | 21.76% | 0.82 | −21.31% | 355 |
-| 10 / 315 / 150 / 0.85 / off | 21.46% | 0.72 | −25.02% | 212 |
-| 15 / 315 / 250 / 0.80 / 2 | 18.21% | 0.61 | −24.39% | 308 |
-| 15 / 315 / 250 / 0.75 / 2 | 20.76% | 0.69 | −21.35% | 269 |
-| 20 / 315 / 250 / 0.75 / 3 | 18.86% | 0.63 | −21.99% | 376 |
+| 10 / 189 / 250 / 0.80 / 2 | 27.51% | 0.95 | −25.37% | 200 |
+| 10 / 189 / 200 / 0.80 / 2 | 27.53% | 0.95 | −25.37% | 200 |
+| 10 / 126 / 250 / 0.75 / 1 | 28.27% | 1.01 | −25.34% | 269 |
+| 10 / 126 / 250 / 0.70 / 1 | 28.85% | 1.02 | −25.33% | 267 |
+| 10 / 126 / 150 / 0.70 / 1 | 28.02% | 0.99 | −28.59% | 268 |
 
 **Statistical caveat:** with 2,400 trials, the expected maximum Sharpe under the null is 0.58
 annualised. The best variant's Deflated Sharpe is **0.72**, so it is not yet statistically
@@ -578,9 +578,8 @@ The 2016–2026 canonical table, the 2008–2026 multi-schedule matrix, the macr
 the next-gen comparison table and the current-list survivorship control from before 2026-10-25 are
 **withdrawn**: they were produced on the retracted niftyhistory membership. The survivorship
 control has been re-derived on the verified table: the same engine on today's 2026 list returns
-**25.75% CAGR / 0.93 Sharpe** versus **17.24% / 0.62** on PIT membership — a **+8.51 pp**
-current-list look-ahead overstatement (the old +2.81 pp figure was an artefact of the corrupted
-membership table).
+**25.76% CAGR / 0.98 Sharpe** versus **20.21% / 0.76** on PIT membership — a **+5.55 pp**
+current-list look-ahead overstatement on clean data (the earlier +8.51 pp / +2.81 pp figures were artefacts of the corrupted membership and raw prices).
 
 ---
 

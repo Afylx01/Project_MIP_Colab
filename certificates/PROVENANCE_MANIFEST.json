@@ -1,7 +1,7 @@
 {
   "manifest_schema_version": "1.1.0",
   "migration_phase": "Phase 11: Android Productization, Parity Hardening & Long-Run Validation",
-  "timestamp_utc": "2026-10-25T06:55:00+00:00",
+  "timestamp_utc": "2026-10-25T08:25:00+00:00",
   "source_project": "Project_MIP_Pydroid3",
   "destination_project": "MIP_Android",
   "source_scanner_sha256": "f21e00e10dfdcf33cefc1c9d1e2874b9d52bf81599f93bec0be0a41b635b1237",
@@ -42,9 +42,9 @@
     {
       "filename": "backtest.py",
       "sha256_source": "ca05f5b082d09c88f088b7c1820bd036ab5ff9b7e164031300a02d7348521ede",
-      "sha256_migrated": "af7b8d3799a35a8df1cf50ab58cabad2b3fcbc1457d7b9d11e23035ad8c3c321",
+      "sha256_migrated": "8a6d81a045f830a8b2c330ca841c828726f8dd8e1267c8dec17a74a131d845ef",
       "status": "refactored",
-      "refactor_notes": "Ablation campaign bar-caching acceleration and research overrides; hash refreshed 2026-10-25 (verified-campaign changes)"
+      "refactor_notes": "parameterised factor windows + break firewall (2026-10-25)"
     },
     {
       "filename": "benchmark_validator.py",

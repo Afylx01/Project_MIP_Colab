@@ -524,6 +524,17 @@ def build_tensor_cube(
     print(f"  • Half-Yearly: {len(schedule_indices_map['half_yearly']):,} rebalances")
     print(f"  • Yearly:      {len(schedule_indices_map['yearly']):,} rebalances")
 
+    # Data-quality firewall (parity with core/backtest.py and the live scanner):
+    # a symbol with an unexplained >35% single-session move in the trailing 252
+    # sessions is not selectable, even on dates where it is an index member.
+    if universe_membership_mask is not None:
+        _ret = pd.DataFrame(close_px).pct_change()
+        _brk = _ret.abs().rolling(252, min_periods=1).max().fillna(0.0).to_numpy() > 0.35
+        _before = int(universe_membership_mask.sum())
+        universe_membership_mask = (universe_membership_mask.astype(bool) & ~_brk).astype(np.uint8)
+        print(f"[CubeBuilder] Break firewall: {_before - int(universe_membership_mask.sum()):,} "
+              f"member-days blocked ({int(universe_membership_mask.sum()):,} remain)")
+
     container = TensorCubeContainer(
         dates=all_dates,
         symbols=all_symbols,

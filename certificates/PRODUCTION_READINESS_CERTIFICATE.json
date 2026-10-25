@@ -2,14 +2,14 @@
   "certificate_type": "DATA_INTEGRITY_AND_PIT_CERTIFICATE",
   "project_name": "Project MIP",
   "version": "2.5.0",
-  "issued_at_utc": "2026-10-25T07:31:14.271662+00:00",
+  "issued_at_utc": "2026-10-25T09:19:01.828593+00:00",
   "governance_mode": "PIT_ANCHOR_VERIFIED__PRICE_DATA_PARTIAL",
   "verdict": "PIT_VERIFIED",
   "strategy_fingerprint": "9036fae5c41a27713901c8e82a97dfa07bc2f26a86f8e3231fdb8868d78673de",
   "database": {
     "path": "data/universe.db",
-    "bytes": 352485376,
-    "sha256": "26df1c076d02728c6d72ffaf41e0b8c2c559ea7cff001612eea073e1bb383090",
+    "bytes": 354168832,
+    "sha256": "9d2c74b1a96c03755f7984de76d771d44feb4ca37b28aa133d7c332233ed5eb7",
     "row_count": 2170608,
     "symbol_count": 1083,
     "min_date": "2007-01-02",
@@ -57,14 +57,14 @@
       "random": 240
     },
     "grid_sharpe": {
-      "sharpe_mean": 0.238,
-      "sharpe_std": 0.167,
-      "sharpe_max": 0.778
+      "sharpe_mean": 0.485,
+      "sharpe_std": 0.18,
+      "sharpe_max": 0.932
     },
     "deflated_sharpe": {
-      "best_config": 0.7781526,
-      "expected_max_under_null": 0.583,
-      "dsr_best": 0.716
+      "best_config": 0.93248624,
+      "expected_max_under_null": 0.629,
+      "dsr_best": 0.813
     },
     "canonical": {
       "param_id": 3,
@@ -90,76 +90,76 @@
       "risk_per_trade_pct": 1.0,
       "tier": "C_canonical",
       "config_name": "C_canonical",
-      "cagr": 16.559303283691406,
-      "sharpe": 0.5389630198478699,
-      "sortino": 0.7904152274131775,
-      "max_drawdown": 29.74864387512207,
-      "calmar": 0.556640625,
-      "win_rate": 43.423797607421875,
-      "profit_factor": 1.8679966926574707,
-      "ending_equity": 3631646.5,
-      "total_trades": 479,
-      "winning_trades": 208,
-      "turnover_annual": 481.5681457519531
+      "cagr": 19.889772415161133,
+      "sharpe": 0.7063043713569641,
+      "sortino": 1.110992670059204,
+      "max_drawdown": 28.756776809692383,
+      "calmar": 0.691655158996582,
+      "win_rate": 43.128963470458984,
+      "profit_factor": 2.020932674407959,
+      "ending_equity": 4603446.5,
+      "total_trades": 473,
+      "winning_trades": 204,
+      "turnover_annual": 481.8362731933594
     },
     "top5": [
       {
-        "name": "top1_15_315_150_0.85_s2",
-        "py_cagr": 21.76,
-        "py_sharpe": 0.82,
-        "py_dd": -21.31,
-        "trades": 355,
+        "name": "v2top1_10_189_250_0.80_s2",
+        "py_cagr": 27.51,
+        "py_sharpe": 0.95,
+        "py_dd": -25.37,
+        "trades": 200,
         "wins": 4
       },
       {
-        "name": "top4_10_315_150_0.85_s99",
-        "py_cagr": 21.46,
-        "py_sharpe": 0.72,
-        "py_dd": -25.02,
-        "trades": 212,
-        "wins": 5
+        "name": "v2top3_10_189_200_0.80_s2",
+        "py_cagr": 27.53,
+        "py_sharpe": 0.95,
+        "py_dd": -25.37,
+        "trades": 200,
+        "wins": 0
       },
       {
-        "name": "top2_15_315_250_0.80_s2",
-        "py_cagr": 18.21,
-        "py_sharpe": 0.61,
-        "py_dd": -24.39,
-        "trades": 308,
-        "wins": 10
-      },
-      {
-        "name": "top5_15_315_250_0.75_s2",
-        "py_cagr": 20.76,
-        "py_sharpe": 0.69,
-        "py_dd": -21.35,
+        "name": "v2top5_10_126_250_0.75_s1",
+        "py_cagr": 28.27,
+        "py_sharpe": 1.01,
+        "py_dd": -25.34,
         "trades": 269,
-        "wins": 2
+        "wins": 3
       },
       {
-        "name": "top3_20_315_250_0.75_s3",
-        "py_cagr": 18.86,
-        "py_sharpe": 0.63,
-        "py_dd": -21.99,
-        "trades": 376,
+        "name": "v2top2_10_126_250_0.70_s1",
+        "py_cagr": 28.85,
+        "py_sharpe": 1.02,
+        "py_dd": -25.33,
+        "trades": 267,
+        "wins": 1
+      },
+      {
+        "name": "v2top4_10_126_150_0.70_s1",
+        "py_cagr": 28.02,
+        "py_sharpe": 0.99,
+        "py_dd": -28.59,
+        "trades": 268,
         "wins": 1
       }
     ],
     "current_list_control": {
-      "cagr_pct": 25.75,
-      "sharpe_ratio": 0.93,
-      "max_drawdown_pct": -20.96,
-      "total_trades": 495,
-      "excess_cagr_pct": 14.66,
+      "cagr_pct": 25.76,
+      "sharpe_ratio": 0.98,
+      "max_drawdown_pct": -20.43,
+      "total_trades": 487,
+      "excess_cagr_pct": 14.67,
       "eligible_symbols": 327,
-      "universe": "current 2026 NIFTY500 list (biased control)"
+      "universe": "current 2026 NIFTY500 list (biased control, repaired prices)"
     },
-    "python_canonical_cagr": 17.24,
-    "lookahead_overstatement_pp": 8.51,
+    "python_canonical_cagr": 20.21,
+    "lookahead_overstatement_pp": 5.55,
     "canonical_windows": {
       "windows": 24,
-      "median_cagr": 26.12,
+      "median_cagr": 29.46,
       "worst_cagr": -6.17,
-      "median_excess": 11.41,
+      "median_excess": 14.72,
       "beat_benchmark_pct": 95.8
     }
   },
@@ -170,11 +170,11 @@
       "passed": 635,
       "skipped": 5,
       "failed": 0,
-      "duration_seconds": 1290.6,
+      "duration_seconds": 1343.5,
       "exit_code": 0,
-      "recorded_at_utc": "2026-10-25T07:22:47.637871+00:00",
-      "log_tail": "635 passed, 5 skipped, 0 failed in 1290.64s",
-      "notes": "Final run of v2.5.0: PIT rebuild, verified campaign, backtester parameterisation."
+      "recorded_at_utc": "2026-10-25T09:17:17.403079+00:00",
+      "log_tail": "635 passed, 5 skipped, 0 failed in 1343.47s",
+      "notes": "Final v2.5.0 run after PIT rebuild, price repair, break firewall and verified campaign."
     },
     "pit_gates": {
       "STRUCTURE": true,
@@ -187,18 +187,35 @@
     }
   },
   "data_quality": {
+    "price_repairs": {
+      "status": "APPLIED",
+      "ledger": "data/price_repairs.json",
+      "ledger_sha256": "7016c0f824794ecc111645831f26f9d950f710466919334a92f391a262d94f72",
+      "spikes_flattened": 431,
+      "vendor_level_shifts": 227,
+      "vendor_batch_dates": [
+        "2016-01-04",
+        "2020-09-15"
+      ],
+      "resume_gaps": 240,
+      "method": {
+        "spike": "OHLC := previous close; volume := 0",
+        "shift": "OHLC before break multiplied by break ratio (cumulative across shifts)",
+        "excluded": "isolated level shifts (real events) and >365d resumptions are not repriced"
+      }
+    },
     "price_discontinuities": {
-      "events": 1325,
-      "symbols": 342,
+      "events": 248,
+      "symbols": 236,
       "top_dates": {
         "2026-09-01": 177,
-        "2016-01-04": 110,
-        "2019-01-02": 110,
-        "2016-08-16": 110,
-        "2019-01-01": 109,
-        "2018-01-02": 108,
-        "2016-08-12": 108,
-        "2019-10-29": 107
+        "2024-01-01": 3,
+        "2008-05-26": 2,
+        "2019-01-02": 2,
+        "2016-08-16": 2,
+        "2018-01-02": 2,
+        "2025-01-01": 2,
+        "2008-03-14": 2
       },
       "status": "OPEN",
       "note": "Vendor-segment discontinuities not covered by the corporate-action registry; the live scanner fail-closes on them, the research backtester does not. Repair before citing any price-driven performance number."
@@ -208,7 +225,7 @@
     "unmapped_pit_members": "8.1% of member-dates have no price series in universe.db"
   },
   "known_limitations": [
-    "Price series contain vendor-segment discontinuities (see data_quality).",
+    "Remaining price breaks are isolated unregistered corporate actions (splits/bonuses) and the 2026-09-01 resume block; both are quarantined from selection for 252 sessions.",
     "Corporate-action registry covers 6 events; CCAVENUE/HEG breaks are unexplained.",
     "PIT membership before 2018-10-04 is press-release derived (no NSE anchor).",
     "Optimised grid settings are in-sample selections (Deflated Sharpe 0.72); no live track record yet."

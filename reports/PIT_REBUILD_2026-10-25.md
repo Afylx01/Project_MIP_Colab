@@ -161,7 +161,9 @@ and the 2017 mapped count moved from 375 to 428.
 
 ## 7. Still open
 
-- Price-series discontinuities (1,325 events / 342 symbols) — membership is now true, prices are not.
+- Price-series discontinuities were reduced from 1,325 to **248** on 2026-10-25 (431 spikes flattened,
+  227 vendor scale shifts back-adjusted on 2016-01-04 and 2020-09-15). The 248 remaining are 177 rows of
+  the 2026-09-01 resume block plus 71 isolated corporate actions; see `reports/VERIFIED_STRATEGY_2026-10-25.md`.
 - Corporate-action registry covers 6 events; CCAVENUE (+840% on 2026-10-19) and HEG (-62.6%) unexplained.
 - Pre-2018-10-04 membership has no NSE anchor (tier C).
 - The canonical backtest **has now been re-run** on the rebuilt membership (17.24% CAGR / 0.62 Sharpe,

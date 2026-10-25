@@ -1,18 +1,18 @@
 {
-  "sharpe_mean": 0.238,
-  "sharpe_std": 0.167,
-  "sharpe_min": -0.39,
-  "sharpe_max": 0.778,
+  "sharpe_mean": 0.485,
+  "sharpe_std": 0.18,
+  "sharpe_min": -0.193,
+  "sharpe_max": 0.932,
   "top": {
     "trials": 2400,
-    "sr_annual": 0.7781526,
-    "sr0_annual": 0.583,
-    "dsr": 0.716
+    "sr_annual": 0.93248624,
+    "sr0_annual": 0.629,
+    "dsr": 0.813
   },
   "canonical": {
     "trials": 2400,
     "sr_annual": 0.62,
-    "sr0_annual": 0.583,
-    "dsr": 0.543
+    "sr0_annual": 0.629,
+    "dsr": 0.49
   }
 }

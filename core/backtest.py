@@ -267,6 +267,13 @@ class LightweightBacktester:
                 lambda s: s.rolling(lookback_bars, min_periods=min(50, len(s))).std() * np.sqrt(252)
             )
             bars["volar"] = bars["ret_1y"] / bars["vol_252"].clip(lower=0.05)
+            # Data-quality gate: mirror the live scanner's anomaly firewall. A
+            # symbol with any unexplained >35% single-session move in the last
+            # 252 bars is not selectable (the move is either an unregistered
+            # corporate action or a vendor artifact — never a momentum signal).
+            bars["break_recent"] = bars.groupby("symbol")["daily_ret"].transform(
+                lambda s: s.abs().rolling(252, min_periods=1).max() > 0.35
+            )
             bars["ema_200"] = bars.groupby("symbol")["close"].transform(
                 lambda s: s.ewm(span=ema_trend_span, adjust=True, min_periods=min(50, len(s))).mean()
             )
@@ -574,6 +581,8 @@ class LightweightBacktester:
                 candidates = sig_slice[sig_slice["pass_all"]].copy()
                 if pit_members is not None:
                     candidates = candidates[candidates["symbol"].isin(pit_members)]
+                if "break_recent" in candidates.columns:
+                    candidates = candidates[~candidates["break_recent"].fillna(False)]
                 candidates = candidates[~candidates["symbol"].isin(set(current_holdings.keys()))]
                 if random_selection:
                     rnd_seed = (seed + i) if seed is not None else None

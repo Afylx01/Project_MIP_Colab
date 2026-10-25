@@ -21,6 +21,8 @@ data/universe.db-wal
 data/universe.db-shm
 data/universe.db.bak
 data/*.db
+data/universe.db.pre_repair_*
+data/universe.db.bak
 data/*.sqlite
 data/*.sqlite3
 

@@ -1,125 +1,124 @@
-# Verified Strategy Results — NIFTY 500 PIT (v2.5.0)
+# Verified Strategy Results — NIFTY 500 PIT + repaired prices (v2.5.0)
 
-**Date:** 2026-10-25 · **Data:** `universe.db` sha `26df1c07…` (PIT membership verified against 17 NSE anchors)
-**Window:** 2018-01-01 → 2026-08-31 · **Costs:** 15 bps friction + 5 bps slippage · **Engine:** Python `LightweightBacktester`, cross-checked against the C99 kernel
+**Date:** 2026-10-25 · **Database:** `universe.db` sha `9d2c74b1…` · **PIT:** 17 NSE anchors · **Prices:** vendor artifacts repaired
+**Window:** 2018-01-01 → 2026-08-31 · **Costs:** 15 bps friction + 5 bps slippage
 
-## 1. Canonical strategy on verified membership
+## 0. What changed since the first pass
 
-The strategy logic is unchanged (5 filters, Volar ranking, sector cap, rank-40 exit buffer,
-ATR risk-parity, t+1 open, whole shares).
+| Layer | Before | After |
+|---|---|---|
+| Membership | niftyhistory table (0.71 Jaccard) | 17 exact NSE anchors + press-release walk |
+| Prices | 1,325 unexplained discontinuities | **248** (177 = 2026-09 resume block, 71 isolated CAs) |
+| Repair | — | 431 single-row spikes flattened, 227 vendor scale shifts back-adjusted on 2016-01-04, 2020-09-15 |
+| Engine parity | scanner had an anomaly gate, backtester did not | both engines now block a symbol for 252 sessions after an unexplained >35% move (20,685 member-days blocked in the C cube) |
 
-| Metric | Value |
+Repair ledger: `data/price_repairs.json`; every edit is also recorded in the `price_repairs` table of
+`universe.db`. Raw pre-repair state: `data/universe.db.pre_repair_20261025`.
+
+## 1. Canonical strategy (unchanged logic)
+
+| Metric | Python | C99 kernel |
+|---|---:|---:|
+| CAGR | **20.21%** | 19.89% |
+| NIFTY 500 | 11.08% | 11.08% |
+| Excess | **+9.13 pp** | +8.81 pp |
+| Sharpe | **0.76** (90% CI 0.20–1.41) | 0.71 |
+| Sortino | 1.04 | — |
+| MaxDD (monthly / daily) | -27.22% / -29.00% | 28.76% |
+| Trades | 495 | 473 |
+| Win rate | 43.4% | — |
+
+> History of this number: 22.94% (retracted membership) → 17.24% (verified membership, raw prices)
+> → **20.21%** (verified membership + repaired prices + break firewall).
+
+## 2. Survivorship / look-ahead control
+
+| Universe | CAGR | Sharpe | MaxDD | Trades |
+|---|---:|---:|---:|---:|
+| Verified PIT membership | **20.21%** | 0.76 | -27.22% | 495 |
+| Today's 2026 list applied backwards | 25.76% | 0.98 | −20.43% | 487 |
+
+**Look-ahead overstatement: +5.55 pp CAGR** on clean data (was +8.51 pp before the price repair).
+Artifact: `reports/verified/current_list_control.json`.
+
+## 3. Full grid
+
+2,400 configurations (top_n × lookback × EMA × retrace × sector cap), monthly, same filters/costs,
+C99 kernel with the break firewall: **2,400 runs in 8.3 s**.
+
+| Statistic | Value |
 |---|---:|
-| CAGR | **17.24%** |
-| NIFTY 500 benchmark CAGR | 11.08% |
-| Excess CAGR | **+6.16 pp** |
-| Sharpe | **0.62** (90% bootstrap CI 0.07–1.25) |
-| Sortino | 0.86 |
-| Max drawdown (monthly / daily) | -27.14% / -28.94% |
-| Closed trades | 510 |
-| Win rate | 43.7% |
-| PIT members at start / end | 446 / 500 |
-| Eligible symbols at start | 439 |
+| Sharpe mean / std / min / max | 0.485 / 0.180 / -0.193 / 0.932 |
+| Configs with Sharpe > 0.9 | 5 |
+| Canonical | 19.89% / 0.706 |
+| Best | 27.50% / 0.932 |
 
-> The previously published **22.94% CAGR / 0.82 Sharpe** was computed on the retracted
-> niftyhistory membership table and is **withdrawn**. On verified PIT data the same strategy
-> returns **17.24% / 0.62**.
+After the repair the optimum moved to **short lookbacks (126–189) with small books (top_n = 10)** —
+the opposite of the pre-repair grid, where 315-day lookbacks dominated. The pre-repair optimum was
+driven by the very discontinuities now removed, which is itself evidence the repair mattered.
 
-## 2. Full grid
-
-2,400 configurations: top_n 5/10/15/20/25/30 × lookback 126/189/252/315 × EMA
-50/100/150/200/250 × retrace 0.70/0.75/0.80/0.85/0.90 × sector cap 1/2/3/99, monthly,
-same filters/costs. C99 kernel: 2,400 runs in 8.3 s.
-
-| Grid statistic | Value |
-|---|---:|
-| Sharpe mean / std / min / max | 0.238 / 0.167 / -0.390 / 0.778 |
-| Configs with Sharpe > 0.6 | 28 / 2,400 |
-| Canonical (20/252/200/0.80/2) | 16.56% CAGR, 0.54 Sharpe |
-| Best (15/315/150/0.85/2) | 21.39% CAGR, 0.78 Sharpe |
-
-All top configurations share **lookback 315** and a **retrace threshold of 0.75–0.85**, i.e. the
-signal is slow momentum with a looser 52-week-high filter. `top_n=5` is uniformly bad.
-
-## 3. Top-5 settings (optimisation candidates)
-
-Ranked by full-period Sharpe, cross-window rank, worst-window CAGR, drawdown and bootstrap CI.
+## 4. Top-5 settings (optimisation candidates)
 
 | Setting (top_n / lookback / EMA / retrace / sector) | Python CAGR | Sharpe | MaxDD | Trades | Sharpe 90% CI | Window wins | Median rank |
 |---|---:|---:|---:|---:|---|---:|---:|
-| 15 / 315 / 150 / 0.85 / 2 | 21.76% | 0.82 | −21.3% | 355 | 0.25–1.48 | 4/24 | 5.0 |
-| 10 / 315 / 150 / 0.85 / off | 21.46% | 0.72 | −25.0% | 212 | 0.16–1.36 | 5/24 | 3.0 |
-| 15 / 315 / 250 / 0.80 / 2 | 18.21% | 0.61 | −24.4% | 308 | 0.05–1.27 | 10/24 | 2.0 |
-| 15 / 315 / 250 / 0.75 / 2 | 20.76% | 0.69 | −21.4% | 269 | 0.14–1.30 | 2/24 | 4.0 |
-| 20 / 315 / 250 / 0.75 / 3 | 18.86% | 0.63 | −22.0% | 376 | 0.07–1.28 | 1/24 | 4.5 |
+| 10 / 189 / 250 / 0.80 / 2 | 27.51% | 0.95 | -25.37% | 200 | 0.39–1.61 | 4/24 | 2.0 |
+| 10 / 189 / 200 / 0.80 / 2 | 27.53% | 0.95 | -25.37% | 200 | 0.38–1.62 | 0/24 | 2.2 |
+| 10 / 126 / 250 / 0.75 / 1 | 28.27% | 1.01 | -25.34% | 269 | 0.46–1.61 | 3/24 | 4.0 |
+| 10 / 126 / 250 / 0.70 / 1 | 28.85% | 1.02 | -25.33% | 267 | 0.48–1.66 | 1/24 | 5.0 |
+| 10 / 126 / 150 / 0.70 / 1 | 28.02% | 0.99 | -28.59% | 268 | 0.43–1.61 | 1/24 | 5.0 |
 
-Reference — canonical (unchanged strategy): 17.24% / 0.62 Sharpe / -27.1% DD / 510 trades.
+Reference — canonical: 20.21% / 0.76 / -27.22% / 495 trades.
+Most robust: `10 / 189 / 250 / 0.80 / 2` (median window rank 2.0; median window CAGR 41.6%,
+median excess vs NIFTY 500 +26.1 pp, worst window −5.9%).
 
-**Most consistent across windows:** `15/315/250/0.80/2` wins 10 of 24 windows (median rank 2,
-worst window +1.33%). **Best full-period:** `15/315/150/0.85/2` (21.76% / 0.82) but only 4 window
-wins and a −0.98% worst window.
+## 5. Cross-engine validation (same parameters)
 
-## 4. Cross-engine validation
-
-| Config | Python CAGR | C CAGR | Δ CAGR | Python Sharpe | C Sharpe |
+| Config | Python CAGR | C CAGR | Δ | Python Sharpe | C Sharpe |
 |---|---:|---:|---:|---:|---:|
-| 15/315/150/0.85/2 | 21.76% | 21.39% | +0.37 | 0.82 | 0.78 |
-| 15/315/250/0.80/2 | 18.21% | 20.28% | −2.07 | 0.61 | 0.66 |
-| 20/315/250/0.75/3 | 18.86% | 19.07% | −0.21 | 0.63 | 0.63 |
-| 10/315/150/0.85/99 | 21.46% | 21.10% | +0.36 | 0.72 | 0.64 |
-| 15/315/250/0.75/2 | 20.76% | 19.99% | +0.77 | 0.69 | 0.64 |
-| canonical 20/252/200/0.80/2 | 17.24% | 16.56% | +0.68 | 0.62 | 0.54 |
+| 10/189/250/0.80/2 | 27.51% | 27.41% | −0.10 | 0.95 | 0.916 |
+| 10/126/250/0.70/1 | 28.85% | 27.50% | −1.35 | 1.02 | 0.932 |
+| 10/189/200/0.80/2 | 27.53% | 26.88% | −0.65 | 0.95 | 0.889 |
+| 10/126/150/0.70/1 | 28.02% | 27.21% | −0.81 | 0.99 | 0.914 |
+| 10/126/250/0.75/1 | 28.27% | 26.67% | −1.60 | 1.01 | 0.903 |
+| canonical 20/252/200/0.80/2 | 20.21% | 19.89% | −0.32 | 0.76 | 0.706 |
 
-Two independent implementations agree within ~2 pp CAGR; the residual gap is exit/execution
-accounting (the Python engine defers fills on halted names and books exits at t+1 open).
+Two independent implementations agree within 1.6 pp CAGR; the Python engine is systematically a
+little higher (exit/execution accounting on halted names).
 
-## 5. Out-of-window robustness
+## 6. Out-of-window robustness
 
-24 random windows (2–5 years, 2018+, seed 20261025), canonical and top-1, benchmark = NIFTY 500:
+24 random windows (2–5 years, 2018+, seed 20261025), benchmark NIFTY 500:
 
-| Config | Median CAGR | Worst window | Median excess vs NIFTY500 | Beats benchmark | Median Sharpe |
+| Config | Median CAGR | Worst window | Median excess | Beats benchmark | Median Sharpe |
 |---|---:|---:|---:|---:|---:|
-| canonical | 26.12% | −6.17% | +11.41 pp | 23/24 (96%) | 1.04 |
-| top-1 | 31.73% | −0.98% | +15.54 pp | 23/24 (96%) | 1.18 |
+| canonical | 29.46% | −6.17% | +14.72 pp | 23/24 (96%) | 1.13 |
+| 10/189/250/0.80/2 | 41.58% | −5.88% | +26.06 pp | 23/24 (96%) | 1.31 |
 
-Schedule sensitivity (top-1): monthly 21.39% / 0.78; quarterly 14.63% / 0.39; half-yearly
-17.16% / 0.47; yearly 22.78% / 0.53; weekly **2.99% / 0.22 with 72.8% drawdown**. Monthly is the
-only schedule with acceptable risk-adjusted results.
+Schedule sensitivity (canonical): monthly 19.89%; weekly remains destructive (≈3% CAGR with >70%
+drawdown), quarterly/half-yearly sit in between — monthly is the production cadence.
 
+## 7. Statistical fact-check
 
-## 5b. Survivorship / look-ahead control (measured on verified membership)
+- Bootstrap (5,000 resamples of 103 monthly returns): canonical Sharpe 90% CI **0.20–1.41**, P(Sharpe>0)=**98.7%**, CAGR CI 8.8%–33.0%.
+- Top-1: Sharpe CI **0.39–1.61**, P>0=99.7%.
+- Multiple testing: with 2,400 trials the expected maximum Sharpe under the null is **0.629**. Top-1's 0.932 → Deflated Sharpe **0.81**; canonical's 0.76 → 0.49.
+- Reading: the canonical edge survives the data repair and is positive in 23/24 windows, but the
+  best grid variant still falls short of the 0.95 DSR bar. It stays a research candidate.
 
-Same Python engine, config, dates and costs; only the universe differs: per-rebalance PIT membership
-versus today's 2026 NIFTY 500 list applied backwards.
+## 8. Verdict
 
-| Run | Universe | CAGR | Sharpe | MaxDD (monthly) | Trades |
-| :--- | :--- | ---: | ---: | ---: | ---: |
-| **PIT (canonical)** | verified per-rebalance membership | **17.24%** | 0.62 | −27.14% | 510 |
-| Current 2026 list (biased control) | today's 501 members, applied backwards | 25.75% | 0.93 | −20.96% | 495 |
+1. PIT membership is true and verified; price artifacts are repaired and every edit is auditable.
+2. The canonical strategy survives: **+9.13 pp** over the NIFTY 500 with a 0.76 Sharpe on clean data.
+3. The optimisation candidates roughly **+7–9 pp** over the canonical, but their Deflated Sharpe
+   (0.81) does not clear 0.95 — no production change is justified yet.
+4. Next: forward paper validation (2026-10 → 2027-06) and a second independent price source for the
+   remaining 71 isolated corporate-action breaks.
 
-**Current-list look-ahead overstatement: +8.51 pp CAGR** (25.75% vs 17.24%). On the old, corrupted
-membership table this control measured only +2.81 pp; with true membership the bias is three times
-larger, which is why the verified number is 17.24% and not 22.94%. Artifact:
-`reports/verified/current_list_control.json`.
-
-## 6. Statistical fact-check
-
-- Bootstrap (5,000 resamples of 103 monthly returns): canonical Sharpe 90% CI **0.07–1.25**, P(Sharpe>0)=**96.8%**; CAGR CI 6.3%–29.7%.
-- Multiple testing: with 2,400 trials the expected maximum Sharpe under the null is **0.58** annualised. Top-1's 0.82 gives a Deflated Sharpe of **0.72**; top-2's 0.66 → 0.59.
-- The canonical 0.62 was **pre-registered**, not selected from the grid, so the trial correction does not apply to it the same way; its uncorrected t-stat is **1.59** (p≈0.06) and it needs ~159 months of live track record for 95% confidence (we have 103).
-- Honest reading: the strategy shows a consistent excess return across windows and engines, but after correcting for the 2,400-config search the optimised variants are **not yet statistically decisive** (DSR 0.72 at best). Treat the top-5 as research candidates, not production settings.
-
-## 7. Verdict
-
-1. **Strategy is proven to work on real, PIT-verified data** in the sense that it beats the NIFTY 500 in 23 of 24 random windows and in the full period, on two independent engines, after costs.
-2. **The canonical configuration remains the production setting.** No change to strategy logic or parameters is justified by a grid result whose Deflated Sharpe is below 0.95.
-3. **Top-5 candidates** are recorded for forward paper trading: `15/315/150/0.85/2`, `10/315/150/0.85/99`, `15/315/250/0.80/2`, `15/315/250/0.75/2`, `20/315/250/0.75/3`.
-4. Next proof step: forward (out-of-sample) validation on 2026-10 → 2027-06, which the anchor pipeline can now support automatically.
-
-## 8. Reproduce
+## 9. Reproduce
 
 ```bash
-python3 scripts/run_verified_campaign.py          # cube + 2,400-run grid + schedules + windows
-python3 -m pytest -q -p no:cacheprovider tests/test_pit_source_integrity.py
-# raw outputs: reports/verified/{config_matrix,full_grid,schedule_matrix,random_windows,window_robustness,top5_final}.csv
+python3 scripts/repair_price_series.py --dry-run      # plan (431 spikes, 227 shifts)
+MIP_ALLOW_PROD_MUTATION=1 python3 scripts/repair_price_series.py --apply
+python3 scripts/run_verified_campaign.py              # 2,400-run grid + schedules + windows
+python3 scripts/rank_verified_results.py              # bootstrap + DSR + top-5
 ```

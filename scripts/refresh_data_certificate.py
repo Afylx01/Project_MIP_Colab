@@ -71,6 +71,24 @@ def db_stats() -> dict:
     }
 
 
+def price_repairs() -> dict:
+    """Ledger summary for the 2026-10-25 vendor-artifact repair."""
+    ledger = ROOT / "data" / "price_repairs.json"
+    if not ledger.exists():
+        return {"status": "not_run"}
+    data = json.loads(ledger.read_text())
+    return {
+        "status": "APPLIED",
+        "ledger": str(ledger.relative_to(ROOT)),
+        "ledger_sha256": sha256(ledger),
+        "spikes_flattened": data["counts"]["spikes"],
+        "vendor_level_shifts": data["counts"]["shifts"],
+        "vendor_batch_dates": data["counts"]["batch_dates"],
+        "resume_gaps": data["counts"]["resumes"],
+        "method": data["method"],
+    }
+
+
 def discontinuity_census() -> dict:
     con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
     try:
@@ -184,13 +202,14 @@ def main() -> int:
             "pit_gates": {g["check"]: g["passed"] for g in pit.get("gates", [])},
         },
         "data_quality": {
+            "price_repairs": price_repairs(),
             "price_discontinuities": discontinuity_census(),
             "corporate_actions_registered": 6,
             "calendar_horizon": "data/trading_calendar.txt ends 2026-10-16; DB extends to 2026-10-19",
             "unmapped_pit_members": "8.1% of member-dates have no price series in universe.db",
         },
         "known_limitations": [
-            "Price series contain vendor-segment discontinuities (see data_quality).",
+            "Remaining price breaks are isolated unregistered corporate actions (splits/bonuses) and the 2026-09-01 resume block; both are quarantined from selection for 252 sessions.",
             "Corporate-action registry covers 6 events; CCAVENUE/HEG breaks are unexplained.",
             "PIT membership before 2018-10-04 is press-release derived (no NSE anchor).",
             "Optimised grid settings are in-sample selections (Deflated Sharpe 0.72); no live track record yet.",

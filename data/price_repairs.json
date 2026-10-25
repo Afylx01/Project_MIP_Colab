@@ -1,0 +1,3844 @@
+{
+  "generated_at_utc": "2026-10-25T07:52:17.332413+00:00",
+  "db_sha256_before": "26df1c076d02728c6d72ffaf41e0b8c2c559ea7cff001612eea073e1bb383090",
+  "counts": {
+    "spikes": 431,
+    "shifts": 227,
+    "resumes": 240,
+    "batch_dates": [
+      "2016-01-04",
+      "2020-09-15"
+    ]
+  },
+  "spikes": [
+    {
+      "symbol": "AARTIDRUGS",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "AARTIDRUGS",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "AARTIDRUGS",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "AARTIDRUGS",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "AARTIIND",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "AARTIIND",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "AARTIIND",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "AARTIIND",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ADANIENT",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ADANIENT",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "AFFLE",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "AHLUCONT",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "AJANTPHARM",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "AJANTPHARM",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "AJANTPHARM",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "AJANTPHARM",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ALKYLAMINE",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ALKYLAMINE",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ALKYLAMINE",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "ALKYLAMINE",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ARVIND",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ARVIND",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ASTRAL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ASTRAL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ASTRAL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "ASTRAL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "AUBANK",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "AUBANK",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "AUBANK",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "AVANTIFEED",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "AVANTIFEED",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "BDL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "BDL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "BEL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "BEL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "BEL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "BEL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "BEML",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "BEML",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "BEML",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "BEML",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "BPCL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "BPCL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "BPCL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "BPCL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "BSE",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "BSE",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "BSE",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "CANBK",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "CANBK",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "CANBK",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "CANBK",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "CAPLIPOINT",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "CASTROLIND",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "CDSL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "CDSL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "CDSL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "CESC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "CESC",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "CESC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "CESC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "CGCL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "COALINDIA",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "COALINDIA",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "COALINDIA",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "COALINDIA",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "COCHINSHIP",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "COCHINSHIP",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "COCHINSHIP",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "DABUR",
+      "date": "2007-01-25"
+    },
+    {
+      "symbol": "DIXON",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "DIXON",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "DIXON",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "DRREDDY",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "DRREDDY",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "DRREDDY",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "DRREDDY",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ECLERX",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ECLERX",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ECLERX",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "ECLERX",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "EDELWEISS",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "EDELWEISS",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "EDELWEISS",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "EDELWEISS",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ELGIEQUIP",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ELGIEQUIP",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ELGIEQUIP",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "ELGIEQUIP",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "FINPIPE",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "FINPIPE",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "FINPIPE",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "FINPIPE",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "FSL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "GAEL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "GAEL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "GAEL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "GAEL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "GAIL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "GAIL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "GAIL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "GAIL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "GMMPFAUDLR",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "GMMPFAUDLR",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "HAL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "HAL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "HDFCAMC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "HDFCAMC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "HDFCBANK",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "HDFCBANK",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "HDFCBANK",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "HDFCBANK",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "HERITGFOOD",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "HERITGFOOD",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "HERITGFOOD",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "HERITGFOOD",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "HINDPETRO",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "HINDPETRO",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "HINDPETRO",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "HINDPETRO",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "HINDZINC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "HINDZINC",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "HINDZINC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "HINDZINC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ICIL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "IDEA",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "IDEA",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "IDEA",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IEX",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "IEX",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IEX",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "IGL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "IGL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "IGL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IGL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "IIFL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "IIFL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "IIFL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IMFA",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "IMFA",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "IMFA",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IMFA",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "INDIAMART",
+      "date": "2020-11-14"
+    },
+    {
+      "symbol": "INOXWIND",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "INOXWIND",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "INOXWIND",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "INOXWIND",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "IOC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "IOC",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "IOC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IOC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "IPCALAB",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "IPCALAB",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "IPCALAB",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IPCALAB",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "IRB",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "IRB",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "IRB",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IRB",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "IRCON",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "IRCON",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "IRCTC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "J&KBANK",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "JAIBALAJI",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "JAIBALAJI",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "JAIBALAJI",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "JAIBALAJI",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "JINDALSAW",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "JINDALSAW",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "JINDALSAW",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "JINDALSAW",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "JSWSTEEL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "KANSAINER",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "KANSAINER",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "KANSAINER",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "KANSAINER",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "KARURVYSYA",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "KITEX",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "KITEX",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "KITEX",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "KITEX",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "KNRCON",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "KNRCON",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "KNRCON",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "KNRCON",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "KPRMILL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "KPRMILL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "KPRMILL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "KPRMILL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "KSB",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "KSB",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "LALPATHLAB",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "LALPATHLAB",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "LALPATHLAB",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "LALPATHLAB",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "M&MFIN",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "M&MFIN",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "M&MFIN",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "M&MFIN",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "MAHSEAMLES",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "MAHSEAMLES",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "MAHSEAMLES",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "MAHSEAMLES",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "MCX",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "MCX",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "MCX",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "MCX",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "METROPOLIS",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "NATIONALUM",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "NATIONALUM",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "NAUKRI",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "NAUKRI",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "NAUKRI",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "NAUKRI",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "NBCC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "NBCC",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "NBCC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "NBCC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "NESTLEIND",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "NESTLEIND",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "NESTLEIND",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "NESTLEIND",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "NHPC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "NLCINDIA",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "NMDC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "NMDC",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "NMDC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "NMDC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "OFSS",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "OIL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "OIL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "OIL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "OIL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ONGC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ONGC",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ONGC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "PCJEWELLER",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "PCJEWELLER",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "PCJEWELLER",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "PCJEWELLER",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "PERSISTENT",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "PERSISTENT",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "PERSISTENT",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "PERSISTENT",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "PFC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "PFC",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "PFC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "PFC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "PGIL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "PGIL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "PGIL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "PGIL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "PIDILITIND",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "PIDILITIND",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "PIDILITIND",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "PIDILITIND",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "POWERGRID",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "POWERGRID",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "POWERGRID",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "POWERGRID",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "PTC",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "PTC",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "PTC",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "PTC",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "RATNAMANI",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "RATNAMANI",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "RATNAMANI",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "RATNAMANI",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "RECLTD",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "RECLTD",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "RECLTD",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "RECLTD",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "REDINGTON",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "REDINGTON",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "REDINGTON",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "REDINGTON",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "RELIANCE",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "RELIANCE",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "RELIANCE",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "RELIANCE",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "RITES",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "RITES",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "RKFORGE",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "RKFORGE",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "RKFORGE",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "RKFORGE",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "SAREGAMA",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "SAREGAMA",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SAREGAMA",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "SAREGAMA",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "SCHAEFFLER",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SCHAEFFLER",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "SCHAEFFLER",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "SFL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SFL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "SFL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "SHILPAMED",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "SHILPAMED",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SHILPAMED",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "SHILPAMED",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "SIEMENS",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "SIEMENS",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SIEMENS",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "SIEMENS",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "SJVN",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "SJVN",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SONATSOFTW",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "SONATSOFTW",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SONATSOFTW",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "SONATSOFTW",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "SRF",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "SRF",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SRF",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "SRF",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "SURYAROSNI",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "SURYAROSNI",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "SURYAROSNI",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "SURYAROSNI",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "TATACHEM",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "TATACHEM",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "TATACHEM",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "TATACHEM",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "TATACOMM",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "TATACOMM",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "TATACOMM",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "TATAINVEST",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "TATAINVEST",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "TATAINVEST",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "TATAINVEST",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "TATASTEEL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "TATASTEEL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "TATASTEEL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "TATASTEEL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "TDPOWERSYS",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "TDPOWERSYS",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "TDPOWERSYS",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "TDPOWERSYS",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "THOMASCOOK",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "THOMASCOOK",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "THOMASCOOK",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "THOMASCOOK",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "THYROCARE",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "THYROCARE",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "THYROCARE",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "THYROCARE",
+      "date": "2020-11-14"
+    },
+    {
+      "symbol": "TIMETECHNO",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "TIMETECHNO",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "TIMETECHNO",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "TIMETECHNO",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "V2RETAIL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "V2RETAIL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "V2RETAIL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "V2RETAIL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "VAIBHAVGBL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "VAIBHAVGBL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "VAIBHAVGBL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "VAIBHAVGBL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "VBL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "VBL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "VBL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "VEDL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "VEDL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "VEDL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "VEDL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "VMART",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "VMART",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "VMART",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "VMART",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "VTL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "VTL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "VTL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "VTL",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "WIPRO",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "WIPRO",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "WIPRO",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "WIPRO",
+      "date": "2019-10-27"
+    },
+    {
+      "symbol": "ZYDUSWELL",
+      "date": "2016-08-12"
+    },
+    {
+      "symbol": "ZYDUSWELL",
+      "date": "2018-01-01"
+    },
+    {
+      "symbol": "ZYDUSWELL",
+      "date": "2019-01-01"
+    },
+    {
+      "symbol": "ZYDUSWELL",
+      "date": "2019-10-27"
+    }
+  ],
+  "shifts": [
+    {
+      "symbol": "AARTIDRUGS",
+      "date": "2016-01-04",
+      "factor": 4.10216657
+    },
+    {
+      "symbol": "AARTIDRUGS",
+      "date": "2020-09-15",
+      "factor": 0.24842173
+    },
+    {
+      "symbol": "AARTIIND",
+      "date": "2016-01-04",
+      "factor": 2.1252927
+    },
+    {
+      "symbol": "AARTIIND",
+      "date": "2020-09-15",
+      "factor": 0.50395678
+    },
+    {
+      "symbol": "ADANIENT",
+      "date": "2016-01-04",
+      "factor": 1.78885454
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "date": "2016-01-04",
+      "factor": 4.80882339
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "date": "2020-09-15",
+      "factor": 0.19946308
+    },
+    {
+      "symbol": "AFFLE",
+      "date": "2020-09-15",
+      "factor": 0.19802837
+    },
+    {
+      "symbol": "AHLUCONT",
+      "date": "2016-01-04",
+      "factor": 2.74321653
+    },
+    {
+      "symbol": "AJANTPHARM",
+      "date": "2016-01-04",
+      "factor": 1.66276772
+    },
+    {
+      "symbol": "AJANTPHARM",
+      "date": "2020-09-15",
+      "factor": 0.61523458
+    },
+    {
+      "symbol": "ALKYLAMINE",
+      "date": "2016-01-04",
+      "factor": 2.61350358
+    },
+    {
+      "symbol": "ALKYLAMINE",
+      "date": "2020-09-15",
+      "factor": 0.39339022
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "date": "2016-01-04",
+      "factor": 2.50596776
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "date": "2020-09-15",
+      "factor": 0.40973333
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "date": "2016-01-04",
+      "factor": 10.57951187
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "date": "2020-09-15",
+      "factor": 0.10393786
+    },
+    {
+      "symbol": "ARVIND",
+      "date": "2016-01-04",
+      "factor": 3.00622661
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "date": "2016-01-04",
+      "factor": 2.52561012
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "date": "2020-09-15",
+      "factor": 0.46777659
+    },
+    {
+      "symbol": "ASTRAL",
+      "date": "2016-01-04",
+      "factor": 1.79403583
+    },
+    {
+      "symbol": "ASTRAL",
+      "date": "2020-09-15",
+      "factor": 0.54977317
+    },
+    {
+      "symbol": "AUBANK",
+      "date": "2020-09-15",
+      "factor": 0.49646191
+    },
+    {
+      "symbol": "AVANTIFEED",
+      "date": "2016-01-04",
+      "factor": 2.20075787
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "date": "2016-01-04",
+      "factor": 9.9345011
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "date": "2020-09-15",
+      "factor": 0.09974591
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "date": "2016-01-04",
+      "factor": 51.60388809
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "date": "2020-09-15",
+      "factor": 0.09941497
+    },
+    {
+      "symbol": "BDL",
+      "date": "2020-09-15",
+      "factor": 0.46075611
+    },
+    {
+      "symbol": "BEL",
+      "date": "2016-01-04",
+      "factor": 3.60476248
+    },
+    {
+      "symbol": "BEL",
+      "date": "2020-09-15",
+      "factor": 0.29874127
+    },
+    {
+      "symbol": "BEML",
+      "date": "2016-01-04",
+      "factor": 2.52062344
+    },
+    {
+      "symbol": "BEML",
+      "date": "2020-09-15",
+      "factor": 0.41392893
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "date": "2016-01-04",
+      "factor": 2.19648997
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "date": "2020-09-15",
+      "factor": 0.5066064
+    },
+    {
+      "symbol": "BPCL",
+      "date": "2016-01-04",
+      "factor": 3.74875198
+    },
+    {
+      "symbol": "BPCL",
+      "date": "2020-09-15",
+      "factor": 0.33598259
+    },
+    {
+      "symbol": "BRIGADE",
+      "date": "2016-01-04",
+      "factor": 1.43589928
+    },
+    {
+      "symbol": "BSE",
+      "date": "2020-09-15",
+      "factor": 0.11002203
+    },
+    {
+      "symbol": "CANBK",
+      "date": "2016-01-04",
+      "factor": 5.96428994
+    },
+    {
+      "symbol": "CANBK",
+      "date": "2020-09-15",
+      "factor": 0.1695264
+    },
+    {
+      "symbol": "CAPLIPOINT",
+      "date": "2016-01-04",
+      "factor": 4.98098298
+    },
+    {
+      "symbol": "CASTROLIND",
+      "date": "2016-01-04",
+      "factor": 1.56311474
+    },
+    {
+      "symbol": "CDSL",
+      "date": "2020-09-15",
+      "factor": 0.48515809
+    },
+    {
+      "symbol": "CESC",
+      "date": "2016-01-04",
+      "factor": 16.98834628
+    },
+    {
+      "symbol": "CESC",
+      "date": "2020-09-15",
+      "factor": 0.07535765
+    },
+    {
+      "symbol": "CGCL",
+      "date": "2016-01-04",
+      "factor": 5.24775003
+    },
+    {
+      "symbol": "COALINDIA",
+      "date": "2016-01-04",
+      "factor": 2.36481038
+    },
+    {
+      "symbol": "COALINDIA",
+      "date": "2020-09-15",
+      "factor": 0.58862809
+    },
+    {
+      "symbol": "COCHINSHIP",
+      "date": "2020-09-15",
+      "factor": 0.42292146
+    },
+    {
+      "symbol": "CUB",
+      "date": "2016-01-04",
+      "factor": 1.42017575
+    },
+    {
+      "symbol": "DIXON",
+      "date": "2020-09-15",
+      "factor": 0.20326772
+    },
+    {
+      "symbol": "DRREDDY",
+      "date": "2016-01-04",
+      "factor": 5.29022167
+    },
+    {
+      "symbol": "DRREDDY",
+      "date": "2020-09-15",
+      "factor": 0.19604331
+    },
+    {
+      "symbol": "ECLERX",
+      "date": "2016-01-04",
+      "factor": 2.96461912
+    },
+    {
+      "symbol": "ECLERX",
+      "date": "2020-09-15",
+      "factor": 0.33118019
+    },
+    {
+      "symbol": "EDELWEISS",
+      "date": "2016-01-04",
+      "factor": 2.27208182
+    },
+    {
+      "symbol": "EDELWEISS",
+      "date": "2020-09-15",
+      "factor": 0.47059656
+    },
+    {
+      "symbol": "ELGIEQUIP",
+      "date": "2016-01-04",
+      "factor": 2.08326779
+    },
+    {
+      "symbol": "ELGIEQUIP",
+      "date": "2020-09-15",
+      "factor": 0.49318344
+    },
+    {
+      "symbol": "FINPIPE",
+      "date": "2016-01-04",
+      "factor": 6.01622762
+    },
+    {
+      "symbol": "FINPIPE",
+      "date": "2020-09-15",
+      "factor": 0.18131004
+    },
+    {
+      "symbol": "FSL",
+      "date": "2016-01-04",
+      "factor": 1.56674841
+    },
+    {
+      "symbol": "GAEL",
+      "date": "2016-01-04",
+      "factor": 4.04323891
+    },
+    {
+      "symbol": "GAEL",
+      "date": "2020-09-15",
+      "factor": 0.25263023
+    },
+    {
+      "symbol": "GAIL",
+      "date": "2016-01-04",
+      "factor": 2.15546366
+    },
+    {
+      "symbol": "GAIL",
+      "date": "2020-09-15",
+      "factor": 0.52016005
+    },
+    {
+      "symbol": "GESHIP",
+      "date": "2016-01-04",
+      "factor": 1.41940625
+    },
+    {
+      "symbol": "GMMPFAUDLR",
+      "date": "2020-09-15",
+      "factor": 0.33350154
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "date": "2016-01-04",
+      "factor": 3.39529423
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "date": "2020-09-15",
+      "factor": 0.30036422
+    },
+    {
+      "symbol": "GPPL",
+      "date": "2016-01-04",
+      "factor": 1.64664671
+    },
+    {
+      "symbol": "GSFC",
+      "date": "2016-01-04",
+      "factor": 1.42813198
+    },
+    {
+      "symbol": "HAL",
+      "date": "2020-09-15",
+      "factor": 0.45053425
+    },
+    {
+      "symbol": "HCLTECH",
+      "date": "2016-01-04",
+      "factor": 1.36822548
+    },
+    {
+      "symbol": "HDFCAMC",
+      "date": "2020-09-15",
+      "factor": 0.43713197
+    },
+    {
+      "symbol": "HDFCBANK",
+      "date": "2016-01-04",
+      "factor": 2.17385178
+    },
+    {
+      "symbol": "HDFCBANK",
+      "date": "2020-09-15",
+      "factor": 0.47140893
+    },
+    {
+      "symbol": "HERITGFOOD",
+      "date": "2016-01-04",
+      "factor": 2.108964
+    },
+    {
+      "symbol": "HERITGFOOD",
+      "date": "2020-09-15",
+      "factor": 0.48751509
+    },
+    {
+      "symbol": "HEROMOTOCO",
+      "date": "2016-01-04",
+      "factor": 1.39268771
+    },
+    {
+      "symbol": "HINDPETRO",
+      "date": "2016-01-04",
+      "factor": 2.53299904
+    },
+    {
+      "symbol": "HINDPETRO",
+      "date": "2020-09-15",
+      "factor": 0.51193136
+    },
+    {
+      "symbol": "HINDZINC",
+      "date": "2016-01-04",
+      "factor": 2.4955923
+    },
+    {
+      "symbol": "HINDZINC",
+      "date": "2020-09-15",
+      "factor": 0.58766526
+    },
+    {
+      "symbol": "ICIL",
+      "date": "2016-01-04",
+      "factor": 5.31160395
+    },
+    {
+      "symbol": "IDEA",
+      "date": "2016-01-04",
+      "factor": 1.58167871
+    },
+    {
+      "symbol": "IEX",
+      "date": "2020-09-15",
+      "factor": 0.30154689
+    },
+    {
+      "symbol": "IGL",
+      "date": "2016-01-04",
+      "factor": 2.27755468
+    },
+    {
+      "symbol": "IGL",
+      "date": "2020-09-15",
+      "factor": 0.45796889
+    },
+    {
+      "symbol": "IIFL",
+      "date": "2016-01-04",
+      "factor": 2.18113054
+    },
+    {
+      "symbol": "IMFA",
+      "date": "2016-01-04",
+      "factor": 2.6096015
+    },
+    {
+      "symbol": "IMFA",
+      "date": "2020-09-15",
+      "factor": 0.42654934
+    },
+    {
+      "symbol": "INDIAMART",
+      "date": "2020-09-15",
+      "factor": 0.48064628
+    },
+    {
+      "symbol": "INOXWIND",
+      "date": "2016-01-04",
+      "factor": 3.99666581
+    },
+    {
+      "symbol": "INOXWIND",
+      "date": "2020-09-15",
+      "factor": 0.24971362
+    },
+    {
+      "symbol": "IOC",
+      "date": "2016-01-04",
+      "factor": 2.88427246
+    },
+    {
+      "symbol": "IOC",
+      "date": "2020-09-15",
+      "factor": 0.43644505
+    },
+    {
+      "symbol": "IPCALAB",
+      "date": "2016-01-04",
+      "factor": 2.03631145
+    },
+    {
+      "symbol": "IPCALAB",
+      "date": "2020-09-15",
+      "factor": 0.49176465
+    },
+    {
+      "symbol": "IRB",
+      "date": "2016-01-04",
+      "factor": 24.1263976
+    },
+    {
+      "symbol": "IRB",
+      "date": "2020-09-15",
+      "factor": 0.04771255
+    },
+    {
+      "symbol": "IRCON",
+      "date": "2020-09-15",
+      "factor": 0.40103088
+    },
+    {
+      "symbol": "IRCTC",
+      "date": "2020-09-15",
+      "factor": 0.19097032
+    },
+    {
+      "symbol": "ITC",
+      "date": "2016-01-04",
+      "factor": 1.51657686
+    },
+    {
+      "symbol": "J&KBANK",
+      "date": "2016-01-04",
+      "factor": 0.55922915
+    },
+    {
+      "symbol": "JAIBALAJI",
+      "date": "2016-01-04",
+      "factor": 5.20270264
+    },
+    {
+      "symbol": "JAIBALAJI",
+      "date": "2020-09-15",
+      "factor": 0.20107527
+    },
+    {
+      "symbol": "JINDALSAW",
+      "date": "2016-01-04",
+      "factor": 2.34082465
+    },
+    {
+      "symbol": "JINDALSAW",
+      "date": "2020-09-15",
+      "factor": 0.4478689
+    },
+    {
+      "symbol": "JSWSTEEL",
+      "date": "2016-01-04",
+      "factor": 11.39281333
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "date": "2016-01-04",
+      "factor": 5.05029327
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "date": "2020-09-15",
+      "factor": 0.19878634
+    },
+    {
+      "symbol": "KANSAINER",
+      "date": "2016-01-04",
+      "factor": 1.69921673
+    },
+    {
+      "symbol": "KANSAINER",
+      "date": "2020-09-15",
+      "factor": 0.6267189
+    },
+    {
+      "symbol": "KARURVYSYA",
+      "date": "2016-01-04",
+      "factor": 7.38988326
+    },
+    {
+      "symbol": "KITEX",
+      "date": "2016-01-04",
+      "factor": 3.17273575
+    },
+    {
+      "symbol": "KITEX",
+      "date": "2020-09-15",
+      "factor": 0.31688982
+    },
+    {
+      "symbol": "KNRCON",
+      "date": "2016-01-04",
+      "factor": 9.93593914
+    },
+    {
+      "symbol": "KNRCON",
+      "date": "2020-09-15",
+      "factor": 0.49329303
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "date": "2016-01-04",
+      "factor": 4.88908623
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "date": "2020-09-15",
+      "factor": 0.2017582
+    },
+    {
+      "symbol": "KPRMILL",
+      "date": "2016-01-04",
+      "factor": 10.24804472
+    },
+    {
+      "symbol": "KPRMILL",
+      "date": "2020-09-15",
+      "factor": 0.19744004
+    },
+    {
+      "symbol": "KSB",
+      "date": "2020-09-15",
+      "factor": 0.19023568
+    },
+    {
+      "symbol": "KTKBANK",
+      "date": "2016-01-04",
+      "factor": 1.56792931
+    },
+    {
+      "symbol": "LALPATHLAB",
+      "date": "2016-01-04",
+      "factor": 2.16911693
+    },
+    {
+      "symbol": "LALPATHLAB",
+      "date": "2020-09-15",
+      "factor": 0.47442759
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "date": "2020-09-15",
+      "factor": 0.19730093
+    },
+    {
+      "symbol": "M&MFIN",
+      "date": "2016-01-04",
+      "factor": 1.88021835
+    },
+    {
+      "symbol": "MAHSEAMLES",
+      "date": "2016-01-04",
+      "factor": 2.18405742
+    },
+    {
+      "symbol": "MAHSEAMLES",
+      "date": "2020-09-15",
+      "factor": 0.4734648
+    },
+    {
+      "symbol": "MCX",
+      "date": "2016-01-04",
+      "factor": 5.62220345
+    },
+    {
+      "symbol": "MCX",
+      "date": "2020-09-15",
+      "factor": 0.18475577
+    },
+    {
+      "symbol": "METROPOLIS",
+      "date": "2020-09-15",
+      "factor": 0.2582899
+    },
+    {
+      "symbol": "MOIL",
+      "date": "2016-01-04",
+      "factor": 1.37528392
+    },
+    {
+      "symbol": "NATIONALUM",
+      "date": "2016-01-04",
+      "factor": 1.77506947
+    },
+    {
+      "symbol": "NAUKRI",
+      "date": "2016-01-04",
+      "factor": 4.93642735
+    },
+    {
+      "symbol": "NAUKRI",
+      "date": "2020-09-15",
+      "factor": 0.20100755
+    },
+    {
+      "symbol": "NBCC",
+      "date": "2016-01-04",
+      "factor": 1.64820213
+    },
+    {
+      "symbol": "NBCC",
+      "date": "2020-09-15",
+      "factor": 0.60881098
+    },
+    {
+      "symbol": "NESTLEIND",
+      "date": "2016-01-04",
+      "factor": 22.33715818
+    },
+    {
+      "symbol": "NESTLEIND",
+      "date": "2020-09-15",
+      "factor": 0.04655275
+    },
+    {
+      "symbol": "NHPC",
+      "date": "2016-01-04",
+      "factor": 1.74406027
+    },
+    {
+      "symbol": "NMDC",
+      "date": "2016-01-04",
+      "factor": 8.28664186
+    },
+    {
+      "symbol": "NMDC",
+      "date": "2020-09-15",
+      "factor": 0.17565052
+    },
+    {
+      "symbol": "NTPC",
+      "date": "2016-01-04",
+      "factor": 1.44850861
+    },
+    {
+      "symbol": "OFSS",
+      "date": "2016-01-04",
+      "factor": 1.56153118
+    },
+    {
+      "symbol": "OIL",
+      "date": "2016-01-04",
+      "factor": 2.64860629
+    },
+    {
+      "symbol": "OIL",
+      "date": "2020-09-15",
+      "factor": 0.50368811
+    },
+    {
+      "symbol": "ONGC",
+      "date": "2016-01-04",
+      "factor": 1.67650402
+    },
+    {
+      "symbol": "PCJEWELLER",
+      "date": "2016-01-04",
+      "factor": 10.23110425
+    },
+    {
+      "symbol": "PCJEWELLER",
+      "date": "2020-09-15",
+      "factor": 0.10031949
+    },
+    {
+      "symbol": "PERSISTENT",
+      "date": "2016-01-04",
+      "factor": 2.25458813
+    },
+    {
+      "symbol": "PERSISTENT",
+      "date": "2020-09-15",
+      "factor": 0.48261563
+    },
+    {
+      "symbol": "PETRONET",
+      "date": "2016-01-04",
+      "factor": 1.41424427
+    },
+    {
+      "symbol": "PFC",
+      "date": "2016-01-04",
+      "factor": 2.22774894
+    },
+    {
+      "symbol": "PFC",
+      "date": "2020-09-15",
+      "factor": 0.54099059
+    },
+    {
+      "symbol": "PGIL",
+      "date": "2016-01-04",
+      "factor": 2.23975757
+    },
+    {
+      "symbol": "PGIL",
+      "date": "2020-09-15",
+      "factor": 0.47750128
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "date": "2016-01-04",
+      "factor": 2.02604012
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "date": "2020-09-15",
+      "factor": 0.48993661
+    },
+    {
+      "symbol": "PIDILITIND",
+      "date": "2016-01-04",
+      "factor": 2.12916437
+    },
+    {
+      "symbol": "PIDILITIND",
+      "date": "2020-09-15",
+      "factor": 0.4904647
+    },
+    {
+      "symbol": "POWERGRID",
+      "date": "2016-01-04",
+      "factor": 2.8273763
+    },
+    {
+      "symbol": "POWERGRID",
+      "date": "2020-09-15",
+      "factor": 0.42036509
+    },
+    {
+      "symbol": "PTC",
+      "date": "2016-01-04",
+      "factor": 2.0786398
+    },
+    {
+      "symbol": "PTC",
+      "date": "2020-09-15",
+      "factor": 0.61721636
+    },
+    {
+      "symbol": "RATNAMANI",
+      "date": "2016-01-04",
+      "factor": 1.5757809
+    },
+    {
+      "symbol": "RATNAMANI",
+      "date": "2020-09-15",
+      "factor": 0.6446001
+    },
+    {
+      "symbol": "RECLTD",
+      "date": "2016-01-04",
+      "factor": 3.00352953
+    },
+    {
+      "symbol": "RECLTD",
+      "date": "2020-09-15",
+      "factor": 0.48159466
+    },
+    {
+      "symbol": "REDINGTON",
+      "date": "2016-01-04",
+      "factor": 2.82933601
+    },
+    {
+      "symbol": "REDINGTON",
+      "date": "2020-09-15",
+      "factor": 0.41538815
+    },
+    {
+      "symbol": "RELIANCE",
+      "date": "2016-01-04",
+      "factor": 2.27240071
+    },
+    {
+      "symbol": "RELIANCE",
+      "date": "2020-09-15",
+      "factor": 0.45453957
+    },
+    {
+      "symbol": "RITES",
+      "date": "2020-09-15",
+      "factor": 0.39500174
+    },
+    {
+      "symbol": "RKFORGE",
+      "date": "2016-01-04",
+      "factor": 5.05821208
+    },
+    {
+      "symbol": "RKFORGE",
+      "date": "2020-09-15",
+      "factor": 0.19938843
+    },
+    {
+      "symbol": "SAREGAMA",
+      "date": "2016-01-04",
+      "factor": 10.83095901
+    },
+    {
+      "symbol": "SAREGAMA",
+      "date": "2020-09-15",
+      "factor": 0.09519535
+    },
+    {
+      "symbol": "SCHAEFFLER",
+      "date": "2020-09-15",
+      "factor": 0.19452152
+    },
+    {
+      "symbol": "SFL",
+      "date": "2020-09-15",
+      "factor": 0.49085568
+    },
+    {
+      "symbol": "SHILPAMED",
+      "date": "2016-01-04",
+      "factor": 2.02072779
+    },
+    {
+      "symbol": "SHILPAMED",
+      "date": "2020-09-15",
+      "factor": 0.48942605
+    },
+    {
+      "symbol": "SIEMENS",
+      "date": "2016-01-04",
+      "factor": 1.90472719
+    },
+    {
+      "symbol": "SIEMENS",
+      "date": "2020-09-15",
+      "factor": 0.57003724
+    },
+    {
+      "symbol": "SJVN",
+      "date": "2016-01-04",
+      "factor": 1.79663484
+    },
+    {
+      "symbol": "SOLARINDS",
+      "date": "2016-01-04",
+      "factor": 5.15094248
+    },
+    {
+      "symbol": "SONATSOFTW",
+      "date": "2016-01-04",
+      "factor": 3.64620248
+    },
+    {
+      "symbol": "SONATSOFTW",
+      "date": "2020-09-15",
+      "factor": 0.33100091
+    },
+    {
+      "symbol": "SRF",
+      "date": "2016-01-04",
+      "factor": 5.19869158
+    },
+    {
+      "symbol": "SRF",
+      "date": "2020-09-15",
+      "factor": 0.19524515
+    },
+    {
+      "symbol": "SUNDARMFIN",
+      "date": "2016-01-04",
+      "factor": 1.37354215
+    },
+    {
+      "symbol": "SURYAROSNI",
+      "date": "2016-01-04",
+      "factor": 4.5379574
+    },
+    {
+      "symbol": "SURYAROSNI",
+      "date": "2020-09-15",
+      "factor": 0.24452595
+    },
+    {
+      "symbol": "TATACHEM",
+      "date": "2016-01-04",
+      "factor": 3.13834173
+    },
+    {
+      "symbol": "TATACOMM",
+      "date": "2016-01-04",
+      "factor": 1.83044417
+    },
+    {
+      "symbol": "TATAINVEST",
+      "date": "2016-01-04",
+      "factor": 12.22653116
+    },
+    {
+      "symbol": "TATAINVEST",
+      "date": "2020-09-15",
+      "factor": 0.09605583
+    },
+    {
+      "symbol": "TATASTEEL",
+      "date": "2016-01-04",
+      "factor": 13.84990023
+    },
+    {
+      "symbol": "TATASTEEL",
+      "date": "2020-09-15",
+      "factor": 0.08447333
+    },
+    {
+      "symbol": "TDPOWERSYS",
+      "date": "2016-01-04",
+      "factor": 10.66116398
+    },
+    {
+      "symbol": "TDPOWERSYS",
+      "date": "2020-09-15",
+      "factor": 0.09711369
+    },
+    {
+      "symbol": "TECHM",
+      "date": "2016-01-04",
+      "factor": 1.41160751
+    },
+    {
+      "symbol": "THOMASCOOK",
+      "date": "2016-01-04",
+      "factor": 2.83023324
+    },
+    {
+      "symbol": "THYROCARE",
+      "date": "2020-09-15",
+      "factor": 0.28936744
+    },
+    {
+      "symbol": "TIMETECHNO",
+      "date": "2016-01-04",
+      "factor": 2.1549792
+    },
+    {
+      "symbol": "TIMETECHNO",
+      "date": "2020-09-15",
+      "factor": 0.5036536
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "date": "2016-01-04",
+      "factor": 2.26861578
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "date": "2020-09-15",
+      "factor": 0.47367627
+    },
+    {
+      "symbol": "TORNTPOWER",
+      "date": "2016-01-04",
+      "factor": 1.40237156
+    },
+    {
+      "symbol": "V2RETAIL",
+      "date": "2016-01-04",
+      "factor": 9.78022005
+    },
+    {
+      "symbol": "V2RETAIL",
+      "date": "2020-09-15",
+      "factor": 0.09847943
+    },
+    {
+      "symbol": "VAIBHAVGBL",
+      "date": "2016-01-04",
+      "factor": 5.77665179
+    },
+    {
+      "symbol": "VAIBHAVGBL",
+      "date": "2020-09-15",
+      "factor": 0.17926924
+    },
+    {
+      "symbol": "VBL",
+      "date": "2020-09-15",
+      "factor": 0.08660449
+    },
+    {
+      "symbol": "VEDL",
+      "date": "2016-01-04",
+      "factor": 2.92293032
+    },
+    {
+      "symbol": "VEDL",
+      "date": "2020-09-15",
+      "factor": 0.44138745
+    },
+    {
+      "symbol": "VMART",
+      "date": "2016-01-04",
+      "factor": 3.81322104
+    },
+    {
+      "symbol": "VMART",
+      "date": "2020-09-15",
+      "factor": 0.258106
+    },
+    {
+      "symbol": "VTL",
+      "date": "2016-01-04",
+      "factor": 5.58410196
+    },
+    {
+      "symbol": "VTL",
+      "date": "2020-09-15",
+      "factor": 0.18941887
+    },
+    {
+      "symbol": "WIPRO",
+      "date": "2016-01-04",
+      "factor": 2.25592786
+    },
+    {
+      "symbol": "WIPRO",
+      "date": "2020-09-15",
+      "factor": 0.45593138
+    },
+    {
+      "symbol": "ZYDUSWELL",
+      "date": "2016-01-04",
+      "factor": 5.20378557
+    },
+    {
+      "symbol": "ZYDUSWELL",
+      "date": "2020-09-15",
+      "factor": 0.21124027
+    }
+  ],
+  "resumes": [
+    {
+      "symbol": "20MICRONS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "63MOONS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ABAN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ADSL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "AKSHOPTFBR",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ALLCARGO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ANSALAPI",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ARCHIES",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ASHIANA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ASHIMASYN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "AUTOAXLES",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "AUTOIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BAJAJCON",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BAJAJHIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BALAJITELE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BALMLAWRIE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BASF",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BEPL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BFUTILITIE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BGRENERGY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BHARATRAS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BLISSGVS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BLKASHYAP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BOMDYEING",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BPL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "BSL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "CAMLINFINE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "CARERATING",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "CENTENKA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "CINEVISTA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "COFFEEDAY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "CONSOFINVT",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "CREATIVEYE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "CYBERTECH",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DALMIASUG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DBCORP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DCAL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DCW",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DELTACORP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DEN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DHAMPURSUG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DHANBANK",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DHANUKA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DICIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DISHTV",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DONEAR",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "DREDGECORP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "EKC",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ENIL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ESABINDIA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "EVEREADY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "EVERESTIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "FDC",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "FINEORG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "FLEXITUFF",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "FLFL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "FMGOETZE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GALAXYSURF",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GARFIBRES",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GAYAPROJ",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GEOJITFSL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GICHSGFIN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GIPCL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GLFL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GOLDENTOBC",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GREENPLY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GTL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GTLINFRA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GUJALKALI",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GULFOILLUB",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "GVKPIL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HARRMALAYA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HATHWAY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HATSUN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HCL-INSYS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HDIL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HEIDELBERG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HIKAL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HIMATSEIDE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HMT",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HMVL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HTMEDIA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "HUBTOWN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ICRA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "IGARASHI",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "IL&FSENGG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "IL&FSTRANS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "INDIANCARD",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "INDNIPPON",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "INDOCO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "INDOSTAR",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "INDRAMEDCO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "INDSWFTLAB",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "INGERRAND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ITDC",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "JAGRAN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "JAGSNPHARM",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "JAICORPLTD",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "JINDALPOLY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "JKIL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "JSWHL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "JTEKTINDIA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "JYOTISTRUC",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "KAKATCEM",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "KCP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "KENNAMET",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "KESORAMIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "KIOCL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "KKCL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "KOLTEPATIL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "KOTHARIPRO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "LAOPALA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "LGBBROSLTD",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "LOVABLE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "LUMAXIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "LUXIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MADRASFERT",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MAHLIFE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MAHLOG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MANGLMCEM",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MANINDS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MANINFRA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MARALOVER",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MASFIN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MAXIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MAYURUNIQ",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MCLEODRUSS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MHRIL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MIRZAINT",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MODIRUBBER",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MPSLTD",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MTEDUCARE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MTNL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MUKTAARTS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "MUNJALSHOW",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "NAVKARCORP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "NAVNETEDUL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "NEXTMEDIA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "NIITLTD",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "NILKAMAL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "NOCIL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "NOIDATOLL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "OILCOUNTUB",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "OMAXAUTO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "OMAXE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ONELIFECAP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ONMOBILE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ONWARDTEC",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ORIENTELEC",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ORIENTHOT",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ORIENTPPR",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "OSWALAGRO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PANACEABIO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PARAGMILK",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PATELENG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PENIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PENINLAND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PGHH",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PGHL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PNBGILTS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PRAKASH",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PREMIER",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PSB",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "PVP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RADIOCITY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RAJESHEXPO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RAJTV",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RAMCOIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RAMCOSYS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RAYMOND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RCOM",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "REGENCERAM",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RELINFRA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "REPCOHOME",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RESPONIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RHFL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RICOAUTO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RIIL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RSSOFTWARE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RSWM",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "RUPA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SADBHAV",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SADBHIN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SAKHTISUG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SANOFI",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SEAMECLTD",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SESHAPAPER",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SHANKARA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SHANTIGEAR",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SHK",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SHOPERSTOP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SHREERAMA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SIMPLEXINF",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SITINET",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SNOWMAN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SOMANYCERA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SPANDANA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SPIC",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SUNDRMBRAK",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SUNDRMFAST",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SUPRAJIT",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SUPREMEINF",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SUVEN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SWARAJENG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "SYMPHONY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TAJGVK",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TAKE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TASTYBITE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TBZ",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TCI",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TCIEXP",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TEAMLEASE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TEXINFRA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TNPL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TREEHOUSE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TRIGYN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TTKPRESTIG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TVSSRICHAK",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "TVTODAY",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "UFLEX",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "UFO",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "UNICHEMLAB",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "UNITECH",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "UTTAMSUGAR",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VAKRANGEE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VENKEYS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VESUVIUS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VINATIORGA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VINDHYATEL",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VISAKAIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VIVIDHA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VLSFINANCE",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VRLLOG",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "VSTIND",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "WHEELS",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "WONDERLA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "WSTCSTPAPR",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ZEELEARN",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ZEEMEDIA",
+      "date": "2026-09-01"
+    },
+    {
+      "symbol": "ZODIACLOTH",
+      "date": "2026-09-01"
+    }
+  ],
+  "method": {
+    "spike": "OHLC := previous close; volume := 0",
+    "shift": "OHLC before break multiplied by break ratio (cumulative across shifts)",
+    "excluded": "isolated level shifts (real events) and >365d resumptions are not repriced"
+  },
+  "db_sha256_after": "9d2c74b1a96c03755f7984de76d771d44feb4ca37b28aa133d7c332233ed5eb7"
+}

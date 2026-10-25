@@ -1,9 +1,9 @@
 {
-  "cagr_pct": 25.75,
-  "sharpe_ratio": 0.93,
-  "max_drawdown_pct": -20.96,
-  "total_trades": 495,
-  "excess_cagr_pct": 14.66,
+  "cagr_pct": 25.76,
+  "sharpe_ratio": 0.98,
+  "max_drawdown_pct": -20.43,
+  "total_trades": 487,
+  "excess_cagr_pct": 14.67,
   "eligible_symbols": 327,
-  "universe": "current 2026 NIFTY500 list (biased control)"
+  "universe": "current 2026 NIFTY500 list (biased control, repaired prices)"
 }

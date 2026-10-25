@@ -75,6 +75,7 @@ class TestColabCompatibilityAndSecurity(unittest.TestCase):
             "PROVENANCE_MANIFEST.json",
             "PRODUCTION_READINESS_CERTIFICATE.json",
             "PIT_UNIVERSE_CERTIFICATE.json",
+            "price_repairs.json",
             "RELEASE_DISTRIBUTION_MANIFEST.json",
             "cache_manifest.json",
         }
